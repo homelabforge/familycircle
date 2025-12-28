@@ -1,0 +1,132 @@
+"""Auth-related schemas."""
+
+from typing import Optional
+from pydantic import BaseModel, EmailStr
+
+
+class FamilyInfo(BaseModel):
+    """Family basic info for listing."""
+
+    id: str
+    name: str
+    family_code: str
+    role: str  # admin or member
+
+    class Config:
+        from_attributes = True
+
+
+class UserResponse(BaseModel):
+    """User response (public info)."""
+
+    id: str
+    email: str
+    is_super_admin: bool
+    theme: str
+    big_mode: bool
+    current_family_id: Optional[str] = None
+    families: list[FamilyInfo] = []
+
+    class Config:
+        from_attributes = True
+
+
+class UserWithFamilyContext(BaseModel):
+    """User response with current family context."""
+
+    id: str
+    email: str
+    is_super_admin: bool
+    theme: str
+    big_mode: bool
+    current_family_id: Optional[str] = None
+    current_family_name: Optional[str] = None
+    display_name: Optional[str] = None  # Name in current family
+    role_in_family: Optional[str] = None  # admin/member in current family
+    families: list[FamilyInfo] = []
+
+    class Config:
+        from_attributes = True
+
+
+class LoginRequest(BaseModel):
+    """Email + password login."""
+
+    email: EmailStr
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    """Register with family code."""
+
+    family_code: str
+    email: EmailStr
+    password: str
+    display_name: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request password reset."""
+
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset password with magic link token."""
+
+    token: str
+    new_password: str
+
+
+class SwitchFamilyRequest(BaseModel):
+    """Switch active family context."""
+
+    family_id: str
+
+
+class SetupRequest(BaseModel):
+    """Initial setup - create super admin + first family."""
+
+    email: EmailStr
+    password: str
+    display_name: str
+    family_name: str
+
+
+class CreateFamilyRequest(BaseModel):
+    """Create a new family (super admin only)."""
+
+    name: str
+
+
+class ChangePasswordRequest(BaseModel):
+    """Change password (for logged-in user)."""
+
+    current_password: str
+    new_password: str
+
+
+class AdminResetPasswordRequest(BaseModel):
+    """Admin resetting another user's password."""
+
+    user_id: str
+    new_password: str
+
+
+# Legacy schemas for backwards compatibility during transition
+class MagicLinkRequest(BaseModel):
+    """Request to send magic link (for password recovery)."""
+
+    email: EmailStr
+
+
+class MagicLinkVerify(BaseModel):
+    """Verify magic link token."""
+
+    token: str
+
+
+# Keep for backwards compat
+MemberResponse = UserResponse
+OrganizerLogin = LoginRequest
+JoinFamilyRequest = RegisterRequest

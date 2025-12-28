@@ -1,0 +1,67 @@
+"""Secret Santa schemas."""
+
+from typing import Optional, List
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class SecretSantaStatus(BaseModel):
+    """Secret Santa status for an event."""
+
+    event_id: str
+    is_assigned: bool
+    assigned_at: Optional[datetime]
+    participant_count: int
+
+
+class AssignmentResponse(BaseModel):
+    """Your Secret Santa assignment."""
+
+    receiver_id: str
+    receiver_name: str
+    receiver_wishlist: List["WishlistItemResponse"]
+
+
+class ExclusionCreate(BaseModel):
+    """Create exclusion rule."""
+
+    member1_id: str
+    member2_id: str
+
+
+class ExclusionResponse(BaseModel):
+    """Exclusion rule response."""
+
+    id: str
+    member1_id: str
+    member1_name: str
+    member2_id: str
+    member2_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class MessageCreate(BaseModel):
+    """Send anonymous message."""
+
+    message: str
+
+
+class MessageResponse(BaseModel):
+    """Message response."""
+
+    id: str
+    message: str
+    is_from_me: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Import for forward reference
+from app.schemas.wishlist import WishlistItemResponse  # noqa: E402
+
+AssignmentResponse.model_rebuild()

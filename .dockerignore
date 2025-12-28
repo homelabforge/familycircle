@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Development
+.env
+.venv
+env/
+venv/
+ENV/
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Data
+data/
+*.db
+*.db-*
+
+# Docker
+docker-compose*.yml
+compose*.yaml
+Dockerfile*
+
+# Misc
+.DS_Store
+*.log

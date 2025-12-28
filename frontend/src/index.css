@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  /* FamilyCircle Color Palette */
+  --color-primary: var(--color-teal-600);
+  --color-primary-hover: var(--color-teal-700);
+  --color-primary-light: var(--color-teal-400);
+
+  /* Light theme semantic colors */
+  --color-fc-bg: var(--color-white);
+  --color-fc-surface: var(--color-gray-50);
+  --color-fc-surface-hover: var(--color-gray-100);
+  --color-fc-border: var(--color-gray-200);
+  --color-fc-text: var(--color-gray-900);
+  --color-fc-text-muted: var(--color-gray-600);
+
+  /* Status colors */
+  --color-success: var(--color-green-600);
+  --color-warning: var(--color-amber-600);
+  --color-error: var(--color-red-600);
+}
+
+/* Dark theme overrides */
+.dark {
+  --color-primary: var(--color-teal-400);
+  --color-primary-hover: var(--color-teal-300);
+  --color-primary-light: var(--color-teal-500);
+
+  --color-fc-bg: var(--color-gray-950);
+  --color-fc-surface: var(--color-gray-900);
+  --color-fc-surface-hover: var(--color-gray-800);
+  --color-fc-border: var(--color-gray-700);
+  --color-fc-text: var(--color-gray-100);
+  --color-fc-text-muted: var(--color-gray-400);
+
+  --color-success: var(--color-green-400);
+  --color-warning: var(--color-amber-400);
+  --color-error: var(--color-red-400);
+}
+
+/* Big Mode root scaling */
+.big-mode {
+  font-size: 24px;
+}
+
+/* Base styles */
+body {
+  @apply bg-fc-bg text-fc-text antialiased;
+  font-size: 18px;
+}
+
+/* Big Mode adjustments */
+.big-mode body {
+  font-size: 24px;
+}
