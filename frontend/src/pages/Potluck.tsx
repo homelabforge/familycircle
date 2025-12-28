@@ -12,10 +12,15 @@ export default function Potluck() {
   const { user } = useAuth()
   const [items, setItems] = useState<PotluckItem[]>([])
   const [eventTitle, setEventTitle] = useState('')
+  const [potluckMode, setPotluckMode] = useState<string>('organized')
+  const [hostProviding, setHostProviding] = useState<string | null>(null)
+  const [canManage, setCanManage] = useState(false)
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [claimingId, setClaimingId] = useState<string | null>(null)
+  const [showAddItemModal, setShowAddItemModal] = useState(false)
+  const [showManageItemsModal, setShowManageItemsModal] = useState(false)
 
   useEffect(() => {
     if (eventId) {
@@ -53,6 +58,9 @@ export default function Potluck() {
       const response = await potluckApi.get(id)
       setItems(response.items)
       setEventTitle(response.event_title)
+      setPotluckMode(response.potluck_mode)
+      setHostProviding(response.potluck_host_providing || null)
+      setCanManage(response.can_manage)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load potluck')
     } finally {
@@ -201,6 +209,55 @@ export default function Potluck() {
             {error}
           </div>
         )}
+
+        {/* Host Providing Message */}
+        {hostProviding && (
+          <div className="mb-6 bg-fc-surface border border-fc-border rounded-2xl p-6">
+            <h2
+              className={`
+                font-semibold text-fc-text mb-3
+                ${bigMode ? 'text-xl' : 'text-lg'}
+              `}
+            >
+              Host is Providing:
+            </h2>
+            <p className={`text-fc-text ${bigMode ? 'text-base' : 'text-sm'}`}>
+              {hostProviding}
+            </p>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="mb-6 flex gap-3">
+          {potluckMode === 'organized' && canManage && (
+            <button
+              onClick={() => setShowManageItemsModal(true)}
+              className={`
+                flex items-center gap-2
+                bg-primary text-white rounded-xl
+                hover:bg-primary-hover transition-colors
+                ${bigMode ? 'px-6 py-4 text-lg' : 'px-5 py-3'}
+              `}
+            >
+              <Plus className={bigMode ? 'w-6 h-6' : 'w-5 h-5'} />
+              Manage Items
+            </button>
+          )}
+          {potluckMode === 'open' && (
+            <button
+              onClick={() => setShowAddItemModal(true)}
+              className={`
+                flex items-center gap-2
+                bg-primary text-white rounded-xl
+                hover:bg-primary-hover transition-colors
+                ${bigMode ? 'px-6 py-4 text-lg' : 'px-5 py-3'}
+              `}
+            >
+              <Plus className={bigMode ? 'w-6 h-6' : 'w-5 h-5'} />
+              Add What You're Bringing
+            </button>
+          )}
+        </div>
 
         {/* My Items */}
         {myItems.length > 0 && (
@@ -356,6 +413,186 @@ export default function Potluck() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Add Item Modal (Open Mode) */}
+      {showAddItemModal && eventId && (
+        <AddItemModal
+          eventId={eventId}
+          onClose={() => setShowAddItemModal(false)}
+          onItemAdded={() => {
+            loadPotluck(eventId)
+            setShowAddItemModal(false)
+          }}
+          bigMode={bigMode}
+        />
+      )}
+
+      {/* Manage Items Modal (Organized Mode) */}
+      {showManageItemsModal && eventId && (
+        <div>Manage Items Modal - Coming Soon</div>
+      )}
+    </div>
+  )
+}
+
+// Simple Add Item Modal for Open Mode
+function AddItemModal({
+  eventId,
+  onClose,
+  onItemAdded,
+  bigMode,
+}: {
+  eventId: string
+  onClose: () => void
+  onItemAdded: () => void
+  bigMode: boolean
+}) {
+  const [name, setName] = useState('')
+  const [category, setCategory] = useState('')
+  const [description, setDescription] = useState('')
+  const [serves, setServes] = useState('')
+  const [dietaryInfo, setDietaryInfo] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+
+    try {
+      setSaving(true)
+      setError(null)
+      await potluckApi.addItem(eventId, {
+        name: name.trim(),
+        category: category || undefined,
+        description: description || undefined,
+        serves: serves ? parseInt(serves) : undefined,
+        dietary_info: dietaryInfo || undefined,
+      })
+      onItemAdded()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add item')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div
+        className={`
+          bg-fc-surface rounded-2xl w-full max-w-md
+          ${bigMode ? 'p-6' : 'p-5'}
+        `}
+      >
+        <h2
+          className={`
+            font-semibold text-fc-text mb-4
+            ${bigMode ? 'text-xl' : 'text-lg'}
+          `}
+        >
+          Add What You're Bringing
+        </h2>
+
+        {error && (
+          <div className="bg-error/10 text-error px-4 py-3 rounded-xl mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-fc-text mb-2">
+              Item Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="e.g., Potato Salad"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-fc-text mb-2">
+              Category
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Select category</option>
+              <option value="appetizer">Appetizer</option>
+              <option value="main">Main Dish</option>
+              <option value="side">Side Dish</option>
+              <option value="dessert">Dessert</option>
+              <option value="drink">Drink</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-fc-text mb-2">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              placeholder="Optional details"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-fc-text mb-2">
+                Serves
+              </label>
+              <input
+                type="number"
+                value={serves}
+                onChange={(e) => setServes(e.target.value)}
+                className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="8"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-fc-text mb-2">
+                Dietary Info
+              </label>
+              <input
+                type="text"
+                value={dietaryInfo}
+                onChange={(e) => setDietaryInfo(e.target.value)}
+                className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Vegan"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 text-fc-text-muted hover:text-fc-text transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !name.trim()}
+              className="px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Adding...' : 'Add Item'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

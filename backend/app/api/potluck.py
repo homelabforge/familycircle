@@ -106,9 +106,15 @@ async def get_potluck(
             categories[cat] = []
         categories[cat].append(item)
 
+    # Check if user can manage this potluck
+    can_manage = await permissions.can_manage_event(db, user, event)
+
     return {
         "event_id": event_id,
         "event_title": event.title,
+        "potluck_mode": event.potluck_mode or "organized",  # Default to organized for old events
+        "potluck_host_providing": event.potluck_host_providing,
+        "can_manage": can_manage,
         "items": items,
         "categories": categories,
         "stats": {
@@ -162,7 +168,7 @@ async def add_item(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Add a potluck item (family admin or event creator only)."""
+    """Add a potluck item. Permissions vary by potluck mode."""
     # Super admin can access any event, others only their current family
     if user.is_super_admin:
         result = await db.execute(select(Event).where(Event.id == event_id))
@@ -178,13 +184,25 @@ async def add_item(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
 
-    # Check if user can manage this event
+    # Get potluck mode (default to organized for old events)
+    potluck_mode = event.potluck_mode or "organized"
+
+    # Check permissions based on mode
     can_manage = await permissions.can_manage_event(db, user, event)
-    if not can_manage:
-        raise HTTPException(
-            status_code=403,
-            detail="Only family admins or event creators can add potluck items",
-        )
+
+    if potluck_mode == "organized":
+        # Organized mode: Only admin/creator can add items
+        if not can_manage:
+            raise HTTPException(
+                status_code=403,
+                detail="Only family admins or event creators can add items in organized mode",
+            )
+        # Items added by admin are unclaimed by default
+        claimed_by = None
+    else:
+        # Open mode: Anyone in the family can add items
+        # Items are automatically claimed by whoever adds them
+        claimed_by = str(user.id)
 
     item = PotluckItem(
         event_id=event_id,
@@ -194,6 +212,7 @@ async def add_item(
         serves=request.serves,
         dietary_info=request.dietary_info,
         allergens=request.allergens,
+        claimed_by_id=claimed_by,
     )
     db.add(item)
     await db.commit()
