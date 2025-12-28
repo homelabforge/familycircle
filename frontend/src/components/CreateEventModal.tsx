@@ -33,6 +33,8 @@ interface FeatureConfig {
   }
   potluck: {
     enabled: boolean
+    mode: 'organized' | 'open'
+    hostProviding: string
     useDefaultLocation: boolean
     location_name: string
     location_address: string
@@ -60,6 +62,8 @@ const emptyFeatureConfig: FeatureConfig = {
   },
   potluck: {
     enabled: false,
+    mode: 'organized',
+    hostProviding: '',
     useDefaultLocation: true,
     location_name: '',
     location_address: '',
@@ -137,6 +141,11 @@ export default function CreateEventModal({
           ? parseInt(features.giftExchange.budget_max)
           : undefined
         payload.secret_santa_notes = features.giftExchange.notes || undefined
+      }
+
+      if (features.potluck.enabled) {
+        payload.potluck_mode = features.potluck.mode
+        payload.potluck_host_providing = features.potluck.hostProviding || undefined
       }
 
       await eventsApi.create(payload)
@@ -668,17 +677,85 @@ function PotluckSetupStep({
       <h2
         className={`font-bold text-fc-text mb-2 ${bigMode ? 'text-2xl' : 'text-xl'}`}
       >
-        Potluck Setup
+        Potluck Configuration
       </h2>
-      <p className="text-fc-text-muted mb-6">Configure potluck details</p>
+      <p className="text-fc-text-muted mb-6">Choose how to manage this potluck</p>
 
       <form
         onSubmit={(e) => {
           e.preventDefault()
           onNext()
         }}
-        className="space-y-4"
+        className="space-y-6"
       >
+        {/* Potluck Mode Selection */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-fc-text mb-3">
+            Signup Method
+          </label>
+
+          {/* Organized Mode */}
+          <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-colors bg-fc-surface hover:bg-fc-surface-hover"
+            style={{
+              borderColor: config.mode === 'organized' ? 'var(--color-primary)' : 'var(--color-fc-border)',
+            }}
+          >
+            <input
+              type="radio"
+              name="potluck-mode"
+              checked={config.mode === 'organized'}
+              onChange={() => onChange({ ...config, mode: 'organized' })}
+              className="mt-1 w-5 h-5 text-primary"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-fc-text">Organized Signup</div>
+              <div className="text-sm text-fc-text-muted mt-1">
+                You'll create a list of items needed. Family members choose what to bring.
+              </div>
+            </div>
+          </label>
+
+          {/* Open Mode */}
+          <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-colors bg-fc-surface hover:bg-fc-surface-hover"
+            style={{
+              borderColor: config.mode === 'open' ? 'var(--color-primary)' : 'var(--color-fc-border)',
+            }}
+          >
+            <input
+              type="radio"
+              name="potluck-mode"
+              checked={config.mode === 'open'}
+              onChange={() => onChange({ ...config, mode: 'open' })}
+              className="mt-1 w-5 h-5 text-primary"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-fc-text">Open Signup</div>
+              <div className="text-sm text-fc-text-muted mt-1">
+                Family members add their own items. Best for casual potlucks.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        {/* Host Providing (optional) */}
+        <div>
+          <label className="block text-sm font-medium text-fc-text mb-2">
+            What are you providing? (Optional)
+          </label>
+          <textarea
+            value={config.hostProviding}
+            onChange={(e) => onChange({ ...config, hostProviding: e.target.value })}
+            rows={3}
+            className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            placeholder={config.mode === 'organized'
+              ? "e.g., Ham, corn on the cob, mashed potatoes"
+              : "e.g., I'm providing the turkey and ham, please bring sides and desserts"}
+          />
+          <p className="text-xs text-fc-text-muted mt-2">
+            This will be shown to attendees when they view the potluck.
+          </p>
+        </div>
+
         {/* Location Selection */}
         {basics.location_name && (
           <div className="bg-fc-bg rounded-xl p-4 border border-fc-border">

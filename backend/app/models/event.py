@@ -54,6 +54,14 @@ class Event(Base, UUIDMixin, TimestampMixin):
     has_potluck: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     has_rsvp: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Potluck configuration
+    potluck_mode: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True
+    )  # 'organized' or 'open'
+    potluck_host_providing: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # What the host is providing
+
     # Secret Santa status
     secret_santa_assigned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     secret_santa_assigned_at: Mapped[Optional[datetime]] = mapped_column(

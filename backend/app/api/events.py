@@ -98,6 +98,10 @@ def event_to_dict(
         "location_address": event.location_address,
         "has_secret_santa": event.has_secret_santa,
         "has_potluck": event.has_potluck,
+        "has_rsvp": event.has_rsvp,
+        # Potluck configuration
+        "potluck_mode": event.potluck_mode,
+        "potluck_host_providing": event.potluck_host_providing,
         "secret_santa_assigned": event.secret_santa_assigned,
         # Secret Santa rules
         "secret_santa_budget_min": event.secret_santa_budget_min,
@@ -264,6 +268,9 @@ async def create_event(
         location_address=request.location_address,
         has_secret_santa=request.has_secret_santa,
         has_potluck=request.has_potluck,
+        has_rsvp=request.has_rsvp,
+        potluck_mode=request.potluck_mode,
+        potluck_host_providing=request.potluck_host_providing,
         secret_santa_budget_min=request.secret_santa_budget_min,
         secret_santa_budget_max=request.secret_santa_budget_max,
         secret_santa_notes=request.secret_santa_notes,

@@ -17,6 +17,9 @@ class EventCreate(BaseModel):
     has_secret_santa: bool = False
     has_potluck: bool = False
     has_rsvp: bool = True
+    # Potluck configuration
+    potluck_mode: Optional[str] = None  # 'organized' or 'open'
+    potluck_host_providing: Optional[str] = None
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None
     secret_santa_budget_max: Optional[int] = None
@@ -34,6 +37,9 @@ class EventUpdate(BaseModel):
     has_secret_santa: Optional[bool] = None
     has_potluck: Optional[bool] = None
     has_rsvp: Optional[bool] = None
+    # Potluck configuration
+    potluck_mode: Optional[str] = None
+    potluck_host_providing: Optional[str] = None
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None
     secret_santa_budget_max: Optional[int] = None
@@ -52,6 +58,9 @@ class EventResponse(BaseModel):
     has_secret_santa: bool
     has_potluck: bool
     has_rsvp: bool
+    # Potluck configuration
+    potluck_mode: Optional[str] = None
+    potluck_host_providing: Optional[str] = None
     secret_santa_assigned: bool
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None
