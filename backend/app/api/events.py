@@ -177,7 +177,7 @@ async def list_upcoming_events(
         select(Event)
         .where(
             Event.family_id == user.current_family_id,
-            Event.event_date >= datetime.now(timezone.utc),
+            Event.event_date >= datetime.now(),  # Use naive datetime to match DB storage
             Event.cancelled_at.is_(None),  # Exclude cancelled events
         )
         .order_by(Event.event_date.asc())
