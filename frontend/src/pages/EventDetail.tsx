@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Clock, Check, X, HelpCircle, Loader2, TreePine, UtensilsCrossed, AlertTriangle, Ban, Heart, ChevronDown, ChevronUp } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
@@ -236,6 +236,7 @@ function HealthSummarySection({
 
 export default function EventDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { bigMode } = useBigMode()
   const [event, setEvent] = useState<EventDetailType | null>(null)
   const [loading, setLoading] = useState(true)
@@ -288,7 +289,8 @@ export default function EventDetail() {
       setCancelLoading(true)
       await eventsApi.cancel(event.id, reason || undefined)
       setShowCancelModal(false)
-      await loadEvent() // Reload to show cancelled state
+      // Redirect to dashboard after canceling
+      navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel event')
     } finally {

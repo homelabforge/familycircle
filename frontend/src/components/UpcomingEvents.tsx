@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle, HelpCircle, XCircle } from 'lucide-react'
+import { Calendar, CheckCircle, HelpCircle, XCircle, Ban } from 'lucide-react'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { Link } from 'react-router-dom'
 
@@ -8,6 +8,7 @@ interface UpcomingEvent {
   date: string
   time: string
   rsvpStatus?: 'yes' | 'no' | 'maybe' | null
+  isCancelled?: boolean
 }
 
 interface UpcomingEventsProps {
@@ -71,37 +72,49 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
             `}
           >
             <div className="flex items-center justify-between">
-              <div>
-                <h3
-                  className={`
-                    font-medium text-fc-text
-                    ${bigMode ? 'text-lg' : 'text-base'}
-                  `}
-                >
-                  {event.title}
-                </h3>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3
+                    className={`
+                      font-medium text-fc-text
+                      ${bigMode ? 'text-lg' : 'text-base'}
+                      ${event.isCancelled ? 'line-through opacity-60' : ''}
+                    `}
+                  >
+                    {event.title}
+                  </h3>
+                  {event.isCancelled && (
+                    <span className="flex items-center gap-1 text-error text-xs font-medium px-2 py-1 bg-error/10 rounded-md">
+                      <Ban className="w-3 h-3" />
+                      Cancelled
+                    </span>
+                  )}
+                </div>
                 <p
                   className={`
                     text-fc-text-muted
                     ${bigMode ? 'text-base' : 'text-sm'}
+                    ${event.isCancelled ? 'line-through' : ''}
                   `}
                 >
                   {event.date} @ {event.time}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                {getRsvpIcon(event.rsvpStatus)}
-                <span
-                  className={`
-                    text-fc-text-muted
-                    ${bigMode ? 'text-base' : 'text-sm'}
-                    ${!event.rsvpStatus ? 'text-warning font-medium' : ''}
-                  `}
-                >
-                  {getRsvpLabel(event.rsvpStatus)}
-                </span>
-              </div>
+              {!event.isCancelled && (
+                <div className="flex items-center gap-2">
+                  {getRsvpIcon(event.rsvpStatus)}
+                  <span
+                    className={`
+                      text-fc-text-muted
+                      ${bigMode ? 'text-base' : 'text-sm'}
+                      ${!event.rsvpStatus ? 'text-warning font-medium' : ''}
+                    `}
+                  >
+                    {getRsvpLabel(event.rsvpStatus)}
+                  </span>
+                </div>
+              )}
             </div>
           </Link>
         ))}

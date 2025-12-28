@@ -49,6 +49,7 @@ export default function Dashboard() {
           minute: '2-digit',
         }),
         rsvpStatus: e.user_rsvp as 'yes' | 'no' | 'maybe' | null,
+        isCancelled: e.is_cancelled,
       }))
 
       setUpcomingEvents(formatted)

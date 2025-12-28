@@ -53,3 +53,16 @@ body {
 .big-mode body {
   font-size: 24px;
 }
+
+/* Form controls - use primary color */
+input[type='radio']:checked,
+input[type='checkbox']:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+input[type='radio']:focus,
+input[type='checkbox']:focus {
+  --tw-ring-color: var(--color-primary);
+  border-color: var(--color-primary);
+}

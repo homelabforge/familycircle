@@ -211,6 +211,7 @@ export default function CreateEventModal({
           <GiftExchangeSetupStep
             basics={basics}
             config={features.giftExchange}
+            potluckEnabled={features.potluck.enabled}
             onChange={(updated) =>
               setFeatures({ ...features, giftExchange: updated })
             }
@@ -226,6 +227,7 @@ export default function CreateEventModal({
           <PotluckSetupStep
             basics={basics}
             config={features.potluck}
+            giftExchangeEnabled={features.giftExchange.enabled}
             onChange={(updated) =>
               setFeatures({ ...features, potluck: updated })
             }
@@ -497,6 +499,7 @@ function FeatureSelectionStep({
 function GiftExchangeSetupStep({
   basics,
   config,
+  potluckEnabled,
   onChange,
   onBack,
   onNext,
@@ -505,6 +508,7 @@ function GiftExchangeSetupStep({
 }: {
   basics: EventBasics
   config: FeatureConfig['giftExchange']
+  potluckEnabled: boolean
   onChange: (c: FeatureConfig['giftExchange']) => void
   onBack: () => void
   onNext: () => void
@@ -527,8 +531,8 @@ function GiftExchangeSetupStep({
         }}
         className="space-y-4"
       >
-        {/* Location Selection */}
-        {basics.location_name && (
+        {/* Location Selection - only show when both features are enabled */}
+        {basics.location_name && potluckEnabled && (
           <div className="bg-fc-bg rounded-xl p-4 border border-fc-border">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -658,6 +662,7 @@ function GiftExchangeSetupStep({
 function PotluckSetupStep({
   basics,
   config,
+  giftExchangeEnabled,
   onChange,
   onBack,
   onNext,
@@ -666,6 +671,7 @@ function PotluckSetupStep({
 }: {
   basics: EventBasics
   config: FeatureConfig['potluck']
+  giftExchangeEnabled: boolean
   onChange: (c: FeatureConfig['potluck']) => void
   onBack: () => void
   onNext: () => void
@@ -756,8 +762,8 @@ function PotluckSetupStep({
           </p>
         </div>
 
-        {/* Location Selection */}
-        {basics.location_name && (
+        {/* Location Selection - only show when both features are enabled */}
+        {basics.location_name && giftExchangeEnabled && (
           <div className="bg-fc-bg rounded-xl p-4 border border-fc-border">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
