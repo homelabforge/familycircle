@@ -72,13 +72,6 @@ export default function Dashboard() {
       badgeColor: 'primary' as const,
     },
     {
-      to: '/events',
-      icon: Calendar,
-      title: 'Events',
-      badge: eventCount > 0 ? String(eventCount) : undefined,
-      badgeColor: 'primary' as const,
-    },
-    {
       to: '/wishlist',
       icon: Gift,
       title: 'Wishlist',
