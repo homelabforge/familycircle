@@ -35,6 +35,7 @@ export default function SecretSanta() {
     } else {
       loadEventsWithSecretSanta()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlEventId])
 
   const loadEventsWithSecretSanta = async () => {

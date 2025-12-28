@@ -47,6 +47,7 @@ export default function Profile() {
 
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFamily?.id])
 
   const loadData = async () => {

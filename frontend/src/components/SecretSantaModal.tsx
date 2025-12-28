@@ -40,6 +40,7 @@ export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalPr
     if (isOpen) {
       loadEvents()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalPr
         setNotes(event.secret_santa_notes || '')
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEventId, events])
 
   const loadEvents = async () => {
@@ -168,8 +170,6 @@ export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalPr
   }
 
   if (!isOpen) return null
-
-  const selectedEvent = events.find((e) => e.id === selectedEventId)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

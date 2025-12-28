@@ -38,12 +38,14 @@ export default function PotluckModal({ isOpen, onClose }: PotluckModalProps) {
     if (isOpen) {
       loadEvents()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   useEffect(() => {
     if (selectedEventId) {
       loadPotluckItems()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEventId])
 
   const loadEvents = async () => {

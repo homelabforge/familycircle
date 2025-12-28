@@ -248,6 +248,7 @@ export default function EventDetail() {
     if (id) {
       loadEvent()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const loadEvent = async () => {

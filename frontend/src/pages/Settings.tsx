@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Settings as SettingsIcon, Moon, Sun, Monitor, ZoomIn, Loader2 } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'

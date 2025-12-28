@@ -23,6 +23,7 @@ export default function Potluck() {
     } else {
       loadEventsWithPotluck()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
   const loadEventsWithPotluck = async () => {
