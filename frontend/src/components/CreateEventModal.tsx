@@ -18,6 +18,7 @@ interface EventBasics {
   event_date: string
   location_name: string
   location_address: string
+  has_rsvp: boolean
 }
 
 interface FeatureConfig {
@@ -44,6 +45,7 @@ const emptyBasics: EventBasics = {
   event_date: '',
   location_name: '',
   location_address: '',
+  has_rsvp: true,
 }
 
 const emptyFeatureConfig: FeatureConfig = {
@@ -124,7 +126,7 @@ export default function CreateEventModal({
         location_address: basics.location_address || undefined,
         has_secret_santa: features.giftExchange.enabled,
         has_potluck: features.potluck.enabled,
-        has_rsvp: true,
+        has_rsvp: basics.has_rsvp,
       }
 
       if (features.giftExchange.enabled) {
@@ -332,6 +334,25 @@ function EventBasicsStep({
             className="w-full px-4 py-3 bg-fc-bg border border-fc-border rounded-xl text-fc-text focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Full address"
           />
+        </div>
+
+        <div className="pt-4 border-t border-fc-border">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={basics.has_rsvp}
+              onChange={(e) =>
+                setBasics({ ...basics, has_rsvp: e.target.checked })
+              }
+              className="mt-1 w-5 h-5 text-primary border-fc-border rounded focus:ring-2 focus:ring-primary"
+            />
+            <div>
+              <div className="font-medium text-fc-text">RSVP Tracking</div>
+              <div className="text-sm text-fc-text-muted">
+                Track who's attending this event
+              </div>
+            </div>
+          </label>
         </div>
 
         <div className="flex justify-end pt-4">

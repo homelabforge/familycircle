@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Wrench, Calendar, Users, Settings, Plus, Mail } from 'lucide-react'
+import { Wrench, Users, Settings, Plus, Mail } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import NewFamilyModal from '@/components/NewFamilyModal'
 import EmailSettingsModal from '@/components/EmailSettingsModal'
-import ManageEventsModal from '@/components/ManageEventsModal'
 import FamilyMembersModal from '@/components/FamilyMembersModal'
 import AppSettingsModal from '@/components/AppSettingsModal'
 import { useBigMode } from '@/contexts/BigModeContext'
@@ -16,17 +15,10 @@ export default function Admin() {
   // Modal states
   const [showNewFamilyModal, setShowNewFamilyModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
-  const [showEventsModal, setShowEventsModal] = useState(false)
   const [showFamilyModal, setShowFamilyModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const adminCards = [
-    {
-      onClick: () => setShowEventsModal(true),
-      icon: Calendar,
-      title: 'Manage Events',
-      description: 'Create and edit events',
-    },
     {
       onClick: () => setShowFamilyModal(true),
       icon: Users,
@@ -179,10 +171,6 @@ export default function Admin() {
       </div>
 
       {/* Modals */}
-      <ManageEventsModal
-        isOpen={showEventsModal}
-        onClose={() => setShowEventsModal(false)}
-      />
       <FamilyMembersModal
         isOpen={showFamilyModal}
         onClose={() => setShowFamilyModal(false)}
