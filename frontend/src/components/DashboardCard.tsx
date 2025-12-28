@@ -3,7 +3,8 @@ import { LucideIcon, ChevronRight } from 'lucide-react'
 import { useBigMode } from '@/contexts/BigModeContext'
 
 interface DashboardCardProps {
-  to: string
+  to?: string
+  onClick?: () => void
   icon: LucideIcon
   title: string
   description?: string
@@ -13,6 +14,7 @@ interface DashboardCardProps {
 
 export default function DashboardCard({
   to,
+  onClick,
   icon: Icon,
   title,
   description,
@@ -21,6 +23,11 @@ export default function DashboardCard({
 }: DashboardCardProps) {
   const { bigMode } = useBigMode()
 
+  // Require either to OR onClick
+  if (!to && !onClick) {
+    throw new Error('DashboardCard requires either "to" or "onClick" prop')
+  }
+
   const badgeColorClasses = {
     primary: 'bg-primary text-white',
     success: 'bg-success text-white',
@@ -28,19 +35,8 @@ export default function DashboardCard({
     error: 'bg-error text-white',
   }
 
-  return (
-    <Link
-      to={to}
-      className={`
-        relative flex flex-col items-center justify-center
-        bg-fc-surface hover:bg-fc-surface-hover
-        border border-fc-border rounded-2xl
-        transition-all duration-200
-        hover:shadow-lg hover:-translate-y-1
-        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-        ${bigMode ? 'min-h-[180px] p-6 gap-4' : 'min-h-[140px] p-4 gap-3'}
-      `}
-    >
+  const content = (
+    <>
       {/* Badge */}
       {badge && (
         <span
@@ -97,6 +93,30 @@ export default function DashboardCard({
       <div className="absolute bottom-3 right-3 text-fc-text-muted">
         <ChevronRight className={bigMode ? 'w-6 h-6' : 'w-5 h-5'} />
       </div>
+    </>
+  )
+
+  const commonClassName = `
+    relative flex flex-col items-center justify-center
+    bg-fc-surface hover:bg-fc-surface-hover
+    border border-fc-border rounded-2xl
+    transition-all duration-200
+    hover:shadow-lg hover:-translate-y-1
+    focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+    ${bigMode ? 'min-h-[180px] p-6 gap-4' : 'min-h-[140px] p-4 gap-3'}
+  `
+
+  if (onClick) {
+    return (
+      <button onClick={onClick} className={commonClassName}>
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <Link to={to!} className={commonClassName}>
+      {content}
     </Link>
   )
 }

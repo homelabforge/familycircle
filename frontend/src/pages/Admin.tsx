@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Wrench, Calendar, TreePine, Users, Settings, UtensilsCrossed, Plus, Mail } from 'lucide-react'
+import { Wrench, Calendar, Users, Settings, Plus, Mail } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import NewFamilyModal from '@/components/NewFamilyModal'
 import EmailSettingsModal from '@/components/EmailSettingsModal'
 import ManageEventsModal from '@/components/ManageEventsModal'
-import SecretSantaModal from '@/components/SecretSantaModal'
-import PotluckModal from '@/components/PotluckModal'
 import FamilyMembersModal from '@/components/FamilyMembersModal'
 import AppSettingsModal from '@/components/AppSettingsModal'
 import { useBigMode } from '@/contexts/BigModeContext'
@@ -19,8 +17,6 @@ export default function Admin() {
   const [showNewFamilyModal, setShowNewFamilyModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showEventsModal, setShowEventsModal] = useState(false)
-  const [showSecretSantaModal, setShowSecretSantaModal] = useState(false)
-  const [showPotluckModal, setShowPotluckModal] = useState(false)
   const [showFamilyModal, setShowFamilyModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
 
@@ -30,18 +26,6 @@ export default function Admin() {
       icon: Calendar,
       title: 'Manage Events',
       description: 'Create and edit events',
-    },
-    {
-      onClick: () => setShowSecretSantaModal(true),
-      icon: TreePine,
-      title: 'Secret Santa',
-      description: 'Run assignments',
-    },
-    {
-      onClick: () => setShowPotluckModal(true),
-      icon: UtensilsCrossed,
-      title: 'Potluck',
-      description: 'Manage items',
     },
     {
       onClick: () => setShowFamilyModal(true),
@@ -198,14 +182,6 @@ export default function Admin() {
       <ManageEventsModal
         isOpen={showEventsModal}
         onClose={() => setShowEventsModal(false)}
-      />
-      <SecretSantaModal
-        isOpen={showSecretSantaModal}
-        onClose={() => setShowSecretSantaModal(false)}
-      />
-      <PotluckModal
-        isOpen={showPotluckModal}
-        onClose={() => setShowPotluckModal(false)}
       />
       <FamilyMembersModal
         isOpen={showFamilyModal}

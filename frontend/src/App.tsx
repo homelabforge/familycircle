@@ -14,7 +14,7 @@ const Setup = lazy(() => import('@/pages/Setup'))
 
 // Lazy load all pages for code splitting
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const SecretSanta = lazy(() => import('@/pages/SecretSanta'))
+const GiftExchange = lazy(() => import('@/pages/GiftExchange'))
 const Potluck = lazy(() => import('@/pages/Potluck'))
 const Events = lazy(() => import('@/pages/Events'))
 const EventDetail = lazy(() => import('@/pages/EventDetail'))
@@ -169,8 +169,8 @@ function AppRoutes() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="secret-santa" element={<SecretSanta />} />
-          <Route path="secret-santa/:eventId" element={<SecretSanta />} />
+          <Route path="gift-exchange" element={<GiftExchange />} />
+          <Route path="gift-exchange/:eventId" element={<GiftExchange />} />
           <Route path="potluck" element={<Potluck />} />
           <Route path="potluck/:eventId" element={<Potluck />} />
           <Route path="events" element={<Events />} />

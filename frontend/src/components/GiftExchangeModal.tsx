@@ -12,12 +12,12 @@ import {
   type FamilyMember,
 } from '@/lib/api'
 
-interface SecretSantaModalProps {
+interface GiftExchangeModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalProps) {
+export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModalProps) {
   const { bigMode } = useBigMode()
   const [events, setEvents] = useState<Event[]>([])
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
@@ -201,7 +201,7 @@ export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalPr
             <TreePine className={`text-success ${bigMode ? 'w-7 h-7' : 'w-6 h-6'}`} />
           </div>
           <h2 className={`font-bold text-fc-text ${bigMode ? 'text-2xl' : 'text-xl'}`}>
-            Secret Santa
+            Gift Exchange
           </h2>
         </div>
 
@@ -212,7 +212,7 @@ export default function SecretSantaModal({ isOpen, onClose }: SecretSantaModalPr
         ) : events.length === 0 ? (
           <div className="text-center py-8 text-fc-text-muted">
             <TreePine className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p>No events with Secret Santa enabled.</p>
+            <p>No events with Gift Exchange enabled.</p>
             <p className="text-sm mt-1">Enable it when creating an event.</p>
           </div>
         ) : (

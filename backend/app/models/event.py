@@ -52,6 +52,7 @@ class Event(Base, UUIDMixin, TimestampMixin):
     # Features enabled for this event
     has_secret_santa: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     has_potluck: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    has_rsvp: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Secret Santa status
     secret_santa_assigned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

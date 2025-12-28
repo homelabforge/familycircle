@@ -13,7 +13,7 @@ import {
   type Event,
 } from '@/lib/api'
 
-export default function SecretSanta() {
+export default function GiftExchange() {
   const { eventId: urlEventId } = useParams()
   const { bigMode } = useBigMode()
   const [status, setStatus] = useState<SecretSantaStatus | null>(null)
@@ -82,7 +82,7 @@ export default function SecretSanta() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load Secret Santa')
+      setError(err instanceof Error ? err.message : 'Failed to load Gift Exchange')
     } finally {
       setLoading(false)
     }
@@ -122,7 +122,7 @@ export default function SecretSanta() {
             `}
           >
             <TreePine className={bigMode ? 'w-9 h-9' : 'w-7 h-7'} />
-            Secret Santa
+            Gift Exchange
           </h1>
 
           <p className={`text-fc-text-muted mb-6 ${bigMode ? 'text-lg' : ''}`}>
@@ -133,7 +133,7 @@ export default function SecretSanta() {
             {events.map((event) => (
               <Link
                 key={event.id}
-                to={`/secret-santa/${event.id}`}
+                to={`/gift-exchange/${event.id}`}
                 className={`
                   block bg-fc-surface border border-fc-border rounded-xl
                   hover:bg-fc-surface-hover transition-colors
@@ -181,13 +181,13 @@ export default function SecretSanta() {
             `}
           >
             <TreePine className={bigMode ? 'w-9 h-9' : 'w-7 h-7'} />
-            Secret Santa
+            Gift Exchange
           </h1>
 
           <div className="text-center py-12">
             <TreePine className="w-16 h-16 text-fc-text-muted mx-auto mb-4" />
             <p className={`text-fc-text-muted ${bigMode ? 'text-lg' : ''}`}>
-              No Secret Santa events yet.
+              No Gift Exchange events yet.
             </p>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function SecretSanta() {
             </ul>
           ) : (
             <p className={`text-fc-text-muted ${bigMode ? 'text-base' : 'text-sm'}`}>
-              Your wishlist is empty. Add some items to help your Secret Santa!
+              Your wishlist is empty. Add some items to help your Gift Exchange match!
             </p>
           )}
           <Link

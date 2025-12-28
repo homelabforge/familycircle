@@ -16,6 +16,7 @@ class EventCreate(BaseModel):
     location_address: Optional[str] = None
     has_secret_santa: bool = False
     has_potluck: bool = False
+    has_rsvp: bool = True
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None
     secret_santa_budget_max: Optional[int] = None
@@ -32,6 +33,7 @@ class EventUpdate(BaseModel):
     location_address: Optional[str] = None
     has_secret_santa: Optional[bool] = None
     has_potluck: Optional[bool] = None
+    has_rsvp: Optional[bool] = None
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None
     secret_santa_budget_max: Optional[int] = None
@@ -49,6 +51,7 @@ class EventResponse(BaseModel):
     location_address: Optional[str]
     has_secret_santa: bool
     has_potluck: bool
+    has_rsvp: bool
     secret_santa_assigned: bool
     # Secret Santa rules
     secret_santa_budget_min: Optional[int] = None

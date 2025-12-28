@@ -269,7 +269,7 @@ export default function ManageEventsModal({ isOpen, onClose }: ManageEventsModal
                   className="w-4 h-4 accent-primary"
                 />
                 <TreePine className="w-4 h-4 text-success" />
-                <span className={`text-fc-text ${bigMode ? 'text-base' : 'text-sm'}`}>Secret Santa</span>
+                <span className={`text-fc-text ${bigMode ? 'text-base' : 'text-sm'}`}>Gift Exchange</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">

@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import {
-  TreePine,
-  UtensilsCrossed,
   Calendar,
   Gift,
   Users,
   MessageCircle,
   Wrench,
   User,
+  Plus,
 } from 'lucide-react'
 import DashboardCard from '@/components/DashboardCard'
+import CreateEventModal from '@/components/CreateEventModal'
 import UpcomingEvents from '@/components/UpcomingEvents'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'
@@ -29,8 +29,7 @@ export default function Dashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
   const [eventCount, setEventCount] = useState(0)
   const [memberCount, setMemberCount] = useState(0)
-  const [hasSecretSanta, setHasSecretSanta] = useState(false)
-  const [hasPotluck, setHasPotluck] = useState(false)
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false)
 
   const loadDashboardData = async () => {
     try {
@@ -55,8 +54,6 @@ export default function Dashboard() {
       setUpcomingEvents(formatted)
       setEventCount(eventsRes.events.length)
       setMemberCount(membersRes.members.length)
-      setHasSecretSanta(eventsRes.events.some((e) => e.has_secret_santa))
-      setHasPotluck(eventsRes.events.some((e) => e.has_potluck))
     } catch {
       // Silently fail - dashboard will show empty state
     }
@@ -67,28 +64,13 @@ export default function Dashboard() {
   }, [])
 
   const cards = [
-    ...(hasSecretSanta
-      ? [
-          {
-            to: '/secret-santa',
-            icon: TreePine,
-            title: 'Secret Santa',
-            badge: undefined,
-            badgeColor: 'success' as const,
-          },
-        ]
-      : []),
-    ...(hasPotluck
-      ? [
-          {
-            to: '/potluck',
-            icon: UtensilsCrossed,
-            title: 'Potluck',
-            badge: undefined,
-            badgeColor: 'warning' as const,
-          },
-        ]
-      : []),
+    {
+      onClick: () => setShowCreateEventModal(true),
+      icon: Plus,
+      title: 'Create Event',
+      badge: undefined,
+      badgeColor: 'primary' as const,
+    },
     {
       to: '/events',
       icon: Calendar,
@@ -161,18 +143,21 @@ export default function Dashboard() {
       >
         {cards.map((card) => (
           <DashboardCard
-            key={card.to}
-            to={card.to}
-            icon={card.icon}
-            title={card.title}
-            badge={card.badge}
-            badgeColor={card.badgeColor}
+            key={'to' in card ? card.to : card.title}
+            {...card}
           />
         ))}
       </div>
 
       {/* Upcoming Events */}
       <UpcomingEvents events={upcomingEvents} />
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        isOpen={showCreateEventModal}
+        onClose={() => setShowCreateEventModal(false)}
+        onEventCreated={loadDashboardData}
+      />
     </div>
   )
 }
