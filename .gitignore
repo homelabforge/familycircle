@@ -181,3 +181,7 @@ temp/
 *.bak
 *.backup.*
 *.cache
+
+# Root-level npm artifacts (frontend uses Bun)
+/package.json
+/package-lock.json
