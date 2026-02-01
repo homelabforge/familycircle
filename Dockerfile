@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Frontend Builder
 # ==============================================================================
-FROM oven/bun:1.3.5-alpine AS frontend-builder
+FROM oven/bun:1.3.8-alpine AS frontend-builder
 
 WORKDIR /build
 
@@ -63,7 +63,7 @@ FROM python:3.14-slim AS production
 
 # HTTP server metadata
 LABEL http.server.name="granian"
-LABEL http.server.version="2.6.0"
+LABEL http.server.version="2.6.1"
 LABEL http.server.type="asgi"
 LABEL org.opencontainers.image.frontend.builder="bun-1.3.5"
 

@@ -122,7 +122,7 @@ export default function CreateEventModal({
     try {
       setSaving(true)
 
-      const payload: any = {
+      await eventsApi.create({
         title: basics.title,
         description: basics.description || undefined,
         event_date: basics.event_date,
@@ -131,24 +131,20 @@ export default function CreateEventModal({
         has_secret_santa: features.giftExchange.enabled,
         has_potluck: features.potluck.enabled,
         has_rsvp: basics.has_rsvp,
-      }
-
-      if (features.giftExchange.enabled) {
-        payload.secret_santa_budget_min = features.giftExchange.budget_min
-          ? parseInt(features.giftExchange.budget_min)
-          : undefined
-        payload.secret_santa_budget_max = features.giftExchange.budget_max
-          ? parseInt(features.giftExchange.budget_max)
-          : undefined
-        payload.secret_santa_notes = features.giftExchange.notes || undefined
-      }
-
-      if (features.potluck.enabled) {
-        payload.potluck_mode = features.potluck.mode
-        payload.potluck_host_providing = features.potluck.hostProviding || undefined
-      }
-
-      await eventsApi.create(payload)
+        ...(features.giftExchange.enabled && {
+          secret_santa_budget_min: features.giftExchange.budget_min
+            ? parseInt(features.giftExchange.budget_min)
+            : undefined,
+          secret_santa_budget_max: features.giftExchange.budget_max
+            ? parseInt(features.giftExchange.budget_max)
+            : undefined,
+          secret_santa_notes: features.giftExchange.notes || undefined,
+        }),
+        ...(features.potluck.enabled && {
+          potluck_mode: features.potluck.mode,
+          potluck_host_providing: features.potluck.hostProviding || undefined,
+        }),
+      })
       toast.success('Event created successfully!')
       handleClose()
       onEventCreated?.()

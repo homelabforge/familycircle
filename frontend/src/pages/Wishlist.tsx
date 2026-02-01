@@ -236,7 +236,7 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
     name: item?.name || '',
     description: item?.description || '',
     url: item?.url || '',
-    price_range: (item?.price_range as '' | '$' | '$$' | '$$$') || '',
+    price_range: item?.price_range as '$' | '$$' | '$$$' | undefined,
     priority: item?.priority || 3,
   })
 
@@ -349,7 +349,7 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
             </label>
             <select
               value={form.values.price_range || ''}
-              onChange={(e) => form.setValue('price_range', e.target.value as '' | '$' | '$$' | '$$$')}
+              onChange={(e) => form.setValue('price_range', (e.target.value || undefined) as '$' | '$$' | '$$$' | undefined)}
               className={inputClass}
             >
               <option value="">Not specified</option>

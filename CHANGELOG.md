@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dev Dependencies
+- **@testing-library/react**: 16.3.1 → 16.3.2
+- **@types/react**: 19.2.7 → 19.2.10
+- **@vitest/ui**: 4.0.16 → 4.0.18
+- **globals**: 16.5.0 → 17.3.0
+- **ruff**: 0.14.10 → 0.14.14
+- **typescript-eslint**: 8.50.1 → 8.54.0
+- **vite**: 7.3.0 → 7.3.1
+- **vitest**: 4.0.16 → 4.0.18
+
+### App Dependencies
+- **@tanstack/react-query**: 5.90.13 → 5.90.20
+- **lucide-react**: 0.562.0 → 0.563.0
+- **react**: 19.2.3 → 19.2.4
+- **react-dom**: 19.2.3 → 19.2.4
+- **react-router-dom**: 7.11.0 → 7.13.0
+- **zod**: 4.2.1 → 4.3.6
+
+### Dockerfile Dependencies
+- **oven/bun**: 1.3.5-alpine → 1.3.8-alpine
+
 ### Added
 - Vitest test runner with React Testing Library
 - Frontend test infrastructure with jsdom and coverage reporting

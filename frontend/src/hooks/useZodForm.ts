@@ -44,7 +44,7 @@ export function useZodForm<T extends z.ZodType>(
   const [submitting, setSubmitting] = useState(false)
 
   const setValue = useCallback(<K extends keyof FormValues>(field: K, value: FormValues[K]) => {
-    setValuesState((prev) => ({ ...prev, [field]: value }))
+    setValuesState((prev) => ({ ...(prev as object), [field]: value }) as FormValues)
     // Clear field error when user starts typing
     setErrors((prev) => {
       if (prev[field as string]) {
@@ -57,7 +57,7 @@ export function useZodForm<T extends z.ZodType>(
   }, [])
 
   const setValues = useCallback((newValues: Partial<FormValues>) => {
-    setValuesState((prev) => ({ ...prev, ...newValues }))
+    setValuesState((prev) => ({ ...(prev as object), ...newValues }) as FormValues)
   }, [])
 
   const reset = useCallback((newValues?: FormValues) => {

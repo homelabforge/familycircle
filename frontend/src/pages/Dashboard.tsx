@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import {
-  Calendar,
   Gift,
   Users,
   MessageCircle,
@@ -27,7 +26,6 @@ export default function Dashboard() {
   const { user, isOrganizer } = useAuth()
   const { bigMode } = useBigMode()
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
-  const [eventCount, setEventCount] = useState(0)
   const [memberCount, setMemberCount] = useState(0)
   const [showCreateEventModal, setShowCreateEventModal] = useState(false)
 
@@ -53,7 +51,6 @@ export default function Dashboard() {
       }))
 
       setUpcomingEvents(formatted)
-      setEventCount(eventsRes.events.length)
       setMemberCount(membersRes.members.length)
     } catch {
       // Silently fail - dashboard will show empty state
@@ -84,7 +81,7 @@ export default function Dashboard() {
       icon: Users,
       title: 'Family',
       badge: memberCount > 0 ? String(memberCount) : undefined,
-      badgeColor: 'muted' as const,
+      badgeColor: 'primary' as const,
     },
     {
       to: '/messages',
@@ -98,7 +95,7 @@ export default function Dashboard() {
       icon: User,
       title: 'My Profile',
       badge: undefined,
-      badgeColor: 'muted' as const,
+      badgeColor: 'primary' as const,
     },
   ]
 
