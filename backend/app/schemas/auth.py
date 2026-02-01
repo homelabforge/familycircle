@@ -1,6 +1,5 @@
 """Auth-related schemas."""
 
-from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 
@@ -24,7 +23,7 @@ class UserResponse(BaseModel):
     is_super_admin: bool
     theme: str
     big_mode: bool
-    current_family_id: Optional[str] = None
+    current_family_id: str | None = None
     families: list[FamilyInfo] = []
 
     class Config:
@@ -39,10 +38,10 @@ class UserWithFamilyContext(BaseModel):
     is_super_admin: bool
     theme: str
     big_mode: bool
-    current_family_id: Optional[str] = None
-    current_family_name: Optional[str] = None
-    display_name: Optional[str] = None  # Name in current family
-    role_in_family: Optional[str] = None  # admin/member in current family
+    current_family_id: str | None = None
+    current_family_name: str | None = None
+    display_name: str | None = None  # Name in current family
+    role_in_family: str | None = None  # admin/member in current family
     families: list[FamilyInfo] = []
 
     class Config:

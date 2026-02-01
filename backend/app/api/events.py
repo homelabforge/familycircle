@@ -1,22 +1,20 @@
 """Events API endpoints - multi-family aware."""
 
-import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select, and_, or_
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.auth import require_family_context
 from app.db import get_db_session
-from app.models import Event, EventRSVP, User, FamilyMembership
+from app.models import Event, EventRSVP, FamilyMembership, User
 from app.models.event import RSVPStatus
-from app.api.auth import get_current_user, require_family_context, require_family_admin
+from app.services.email import get_smtp_config, send_event_cancelled_email
 from app.services.permissions import permissions
-from app.services.email import send_event_cancelled_email, get_smtp_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,38 +25,38 @@ class EventCreate(BaseModel):
     """Create event request."""
 
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     event_date: datetime
-    location_name: Optional[str] = None
-    location_address: Optional[str] = None
+    location_name: str | None = None
+    location_address: str | None = None
     has_secret_santa: bool = False
     has_potluck: bool = False
     # Secret Santa rules
-    secret_santa_budget_min: Optional[int] = None
-    secret_santa_budget_max: Optional[int] = None
-    secret_santa_notes: Optional[str] = None
+    secret_santa_budget_min: int | None = None
+    secret_santa_budget_max: int | None = None
+    secret_santa_notes: str | None = None
 
 
 class EventUpdate(BaseModel):
     """Update event request."""
 
-    title: Optional[str] = None
-    description: Optional[str] = None
-    event_date: Optional[datetime] = None
-    location_name: Optional[str] = None
-    location_address: Optional[str] = None
-    has_secret_santa: Optional[bool] = None
-    has_potluck: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    event_date: datetime | None = None
+    location_name: str | None = None
+    location_address: str | None = None
+    has_secret_santa: bool | None = None
+    has_potluck: bool | None = None
     # Secret Santa rules
-    secret_santa_budget_min: Optional[int] = None
-    secret_santa_budget_max: Optional[int] = None
-    secret_santa_notes: Optional[str] = None
+    secret_santa_budget_min: int | None = None
+    secret_santa_budget_max: int | None = None
+    secret_santa_notes: str | None = None
 
 
 class EventCancel(BaseModel):
     """Cancel event request."""
 
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class RSVPRequest(BaseModel):
@@ -67,9 +65,7 @@ class RSVPRequest(BaseModel):
     status: str  # yes, no, maybe
 
 
-async def get_member_display_name(
-    db: AsyncSession, user_id: str, family_id: str
-) -> str:
+async def get_member_display_name(db: AsyncSession, user_id: str, family_id: str) -> str:
     """Get user's display name in a family."""
     result = await db.execute(
         select(FamilyMembership).where(
@@ -83,7 +79,7 @@ async def get_member_display_name(
 
 def event_to_dict(
     event: Event,
-    user_rsvp: Optional[EventRSVP] = None,
+    user_rsvp: EventRSVP | None = None,
     can_manage: bool = False,
 ) -> dict:
     """Convert event to response dict."""
@@ -139,7 +135,7 @@ async def list_events(
         retention_days = 7
 
     # Calculate cutoff date for cancelled events
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
     result = await db.execute(
         select(Event)
@@ -149,16 +145,14 @@ async def list_events(
             or_(
                 Event.cancelled_at.is_(None),  # Not cancelled
                 Event.cancelled_at >= cutoff_date,  # Cancelled but within retention
-            )
+            ),
         )
         .order_by(Event.event_date.desc())
     )
     events = result.scalars().all()
 
     # Get user's RSVPs
-    rsvp_result = await db.execute(
-        select(EventRSVP).where(EventRSVP.user_id == user.id)
-    )
+    rsvp_result = await db.execute(select(EventRSVP).where(EventRSVP.user_id == user.id))
     user_rsvps = {str(r.event_id): r for r in rsvp_result.scalars().all()}
 
     # Check management permissions for each event
@@ -190,9 +184,7 @@ async def list_upcoming_events(
     events = result.scalars().all()
 
     # Get user's RSVPs
-    rsvp_result = await db.execute(
-        select(EventRSVP).where(EventRSVP.user_id == user.id)
-    )
+    rsvp_result = await db.execute(select(EventRSVP).where(EventRSVP.user_id == user.id))
     user_rsvps = {str(r.event_id): r for r in rsvp_result.scalars().all()}
 
     events_data = []
@@ -211,9 +203,7 @@ async def get_event(
 ):
     """Get a specific event."""
     result = await db.execute(
-        select(Event)
-        .options(selectinload(Event.rsvps))
-        .where(Event.id == event_id)
+        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
     )
     event = result.scalar_one_or_none()
 
@@ -237,11 +227,13 @@ async def get_event(
     rsvps = []
     for rsvp in event.rsvps:
         display_name = await get_member_display_name(db, rsvp.user_id, event.family_id)
-        rsvps.append({
-            "user_id": str(rsvp.user_id),
-            "display_name": display_name,
-            "status": rsvp.status.value,
-        })
+        rsvps.append(
+            {
+                "user_id": str(rsvp.user_id),
+                "display_name": display_name,
+                "status": rsvp.status.value,
+            }
+        )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     response = event_to_dict(event, user_rsvp, can_manage)
@@ -337,9 +329,7 @@ async def cancel_event(
 ):
     """Cancel an event (creator or admin only)."""
     result = await db.execute(
-        select(Event)
-        .options(selectinload(Event.rsvps))
-        .where(Event.id == event_id)
+        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
     )
     event = result.scalar_one_or_none()
 
@@ -347,12 +337,14 @@ async def cancel_event(
         raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
 
     if not await permissions.can_manage_event(db, user, event):
-        raise HTTPException(status_code=403, detail="You don't have permission to cancel this event")
+        raise HTTPException(
+            status_code=403, detail="You don't have permission to cancel this event"
+        )
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Event is already cancelled")
 
-    event.cancelled_at = datetime.now(timezone.utc)
+    event.cancelled_at = datetime.now(UTC)
     event.cancellation_reason = request.reason
 
     await db.commit()
@@ -362,8 +354,7 @@ async def cancel_event(
     if smtp_config.is_configured:
         # Get attendees who RSVPed yes or maybe
         attendee_user_ids = [
-            r.user_id for r in event.rsvps
-            if r.status in (RSVPStatus.YES, RSVPStatus.MAYBE)
+            r.user_id for r in event.rsvps if r.status in (RSVPStatus.YES, RSVPStatus.MAYBE)
         ]
 
         if attendee_user_ids:
@@ -377,17 +368,13 @@ async def cancel_event(
             for attendee_id in attendee_user_ids:
                 try:
                     # Get user email
-                    user_result = await db.execute(
-                        select(User).where(User.id == attendee_id)
-                    )
+                    user_result = await db.execute(select(User).where(User.id == attendee_id))
                     attendee = user_result.scalar_one_or_none()
                     if not attendee:
                         continue
 
                     # Get display name
-                    attendee_name = await get_member_display_name(
-                        db, attendee_id, event.family_id
-                    )
+                    attendee_name = await get_member_display_name(db, attendee_id, event.family_id)
 
                     await send_event_cancelled_email(
                         db=db,
@@ -412,9 +399,7 @@ async def delete_event(
 ):
     """Delete an event (creator or admin only)."""
     result = await db.execute(
-        select(Event)
-        .options(selectinload(Event.rsvps))
-        .where(Event.id == event_id)
+        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
     )
     event = result.scalar_one_or_none()
 
@@ -422,7 +407,9 @@ async def delete_event(
         raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
 
     if not await permissions.can_manage_event(db, user, event):
-        raise HTTPException(status_code=403, detail="You don't have permission to delete this event")
+        raise HTTPException(
+            status_code=403, detail="You don't have permission to delete this event"
+        )
 
     # Only allow deletion if cancelled or no RSVPs
     has_rsvps = any(r.status == RSVPStatus.YES for r in event.rsvps)
@@ -530,9 +517,7 @@ async def remove_rsvp(
     return {"message": "RSVP removed"}
 
 
-async def check_event_conflicts(
-    db: AsyncSession, user_id: str, target_event: Event
-) -> list[dict]:
+async def check_event_conflicts(db: AsyncSession, user_id: str, target_event: Event) -> list[dict]:
     """
     Check for events on the same day that user has RSVPed yes to.
     Returns list of conflicting events.
@@ -557,16 +542,17 @@ async def check_event_conflicts(
         if event.event_date.date() == event_date:
             # Get family name
             from app.models import Family
-            family_result = await db.execute(
-                select(Family).where(Family.id == event.family_id)
-            )
+
+            family_result = await db.execute(select(Family).where(Family.id == event.family_id))
             family = family_result.scalar_one_or_none()
 
-            conflicts.append({
-                "title": event.title,
-                "family_name": family.name if family else "Unknown",
-                "date": event.event_date.isoformat(),
-            })
+            conflicts.append(
+                {
+                    "title": event.title,
+                    "family_name": family.name if family else "Unknown",
+                    "date": event.event_date.isoformat(),
+                }
+            )
 
     return conflicts
 
@@ -591,9 +577,7 @@ async def get_event_health_summary(
 
     # Get the event
     result = await db.execute(
-        select(Event)
-        .options(selectinload(Event.rsvps))
-        .where(Event.id == event_id)
+        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
     )
     event = result.scalar_one_or_none()
 
@@ -603,15 +587,11 @@ async def get_event_health_summary(
     # Check user has permission to view health summary
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
-            status_code=403,
-            detail="Only event organizers can view health information"
+            status_code=403, detail="Only event organizers can view health information"
         )
 
     # Get user IDs who RSVPed yes
-    attending_user_ids = [
-        rsvp.user_id for rsvp in event.rsvps
-        if rsvp.status == RSVPStatus.YES
-    ]
+    attending_user_ids = [rsvp.user_id for rsvp in event.rsvps if rsvp.status == RSVPStatus.YES]
 
     if not attending_user_ids:
         return {
@@ -628,7 +608,7 @@ async def get_event_health_summary(
     result = await db.execute(
         select(UserProfile).where(
             UserProfile.user_id.in_(attending_user_ids),
-            UserProfile.share_health_info == True,
+            UserProfile.share_health_info.is_(True),
         )
     )
     profiles = result.scalars().all()
@@ -642,13 +622,13 @@ async def get_event_health_summary(
     for profile in profiles:
         if profile.allergies:
             # Split by comma if multiple allergies
-            for allergy in profile.allergies.split(','):
+            for allergy in profile.allergies.split(","):
                 allergy = allergy.strip()
                 if allergy and allergy not in allergies:
                     allergies.append(allergy)
 
         if profile.dietary_restrictions:
-            for restriction in profile.dietary_restrictions.split(','):
+            for restriction in profile.dietary_restrictions.split(","):
                 restriction = restriction.strip()
                 if restriction and restriction not in dietary_restrictions:
                     dietary_restrictions.append(restriction)

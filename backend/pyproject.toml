@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "familycircle"
-version = "1.1.0"
+version = "2.1.0"
 description = "Family event coordination platform"
 requires-python = ">=3.13"
 license = "MIT"

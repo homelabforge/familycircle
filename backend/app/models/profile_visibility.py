@@ -8,17 +8,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.family import Family
+    from app.models.user import User
 
 
 class ProfileVisibility(Base, UUIDMixin, TimestampMixin):
     """Controls what profile information is visible to a specific family."""
 
     __tablename__ = "profile_visibility"
-    __table_args__ = (
-        UniqueConstraint("user_id", "family_id", name="uq_user_family_visibility"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "family_id", name="uq_user_family_visibility"),)
 
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True

@@ -4,11 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
-    User,
-    Family,
+    Event,
     FamilyMembership,
     FamilyRole,
-    Event,
+    User,
 )
 
 
@@ -21,9 +20,7 @@ class PermissionService:
         return user.is_super_admin
 
     @staticmethod
-    async def is_family_admin(
-        session: AsyncSession, user: User, family_id: str
-    ) -> bool:
+    async def is_family_admin(session: AsyncSession, user: User, family_id: str) -> bool:
         """Check if user is an admin of the specified family."""
         if user.is_super_admin:
             return True
@@ -38,9 +35,7 @@ class PermissionService:
         return result.scalar_one_or_none() is not None
 
     @staticmethod
-    async def is_family_member(
-        session: AsyncSession, user: User, family_id: str
-    ) -> bool:
+    async def is_family_member(session: AsyncSession, user: User, family_id: str) -> bool:
         """Check if user is a member of the specified family."""
         if user.is_super_admin:
             return True
@@ -54,23 +49,17 @@ class PermissionService:
         return result.scalar_one_or_none() is not None
 
     @staticmethod
-    async def can_manage_family(
-        session: AsyncSession, user: User, family_id: str
-    ) -> bool:
+    async def can_manage_family(session: AsyncSession, user: User, family_id: str) -> bool:
         """Check if user can manage family settings and members."""
         return await PermissionService.is_family_admin(session, user, family_id)
 
     @staticmethod
-    async def can_view_family(
-        session: AsyncSession, user: User, family_id: str
-    ) -> bool:
+    async def can_view_family(session: AsyncSession, user: User, family_id: str) -> bool:
         """Check if user can view family data."""
         return await PermissionService.is_family_member(session, user, family_id)
 
     @staticmethod
-    async def can_manage_event(
-        session: AsyncSession, user: User, event: Event
-    ) -> bool:
+    async def can_manage_event(session: AsyncSession, user: User, event: Event) -> bool:
         """
         Check if user can edit/delete an event.
         - Super admin can manage any event
@@ -91,16 +80,12 @@ class PermissionService:
         return False
 
     @staticmethod
-    async def can_view_event(
-        session: AsyncSession, user: User, event: Event
-    ) -> bool:
+    async def can_view_event(session: AsyncSession, user: User, event: Event) -> bool:
         """Check if user can view an event."""
         return await PermissionService.is_family_member(session, user, event.family_id)
 
     @staticmethod
-    async def can_view_health_summary(
-        session: AsyncSession, user: User, event: Event
-    ) -> bool:
+    async def can_view_health_summary(session: AsyncSession, user: User, event: Event) -> bool:
         """
         Check if user can view health/allergy summary for an event.
         Only event creator and family admins can see this.
@@ -128,9 +113,7 @@ class PermissionService:
             return True
 
         # Check both users are in the same family
-        user_in_family = await PermissionService.is_family_member(
-            session, user, family_id
-        )
+        user_in_family = await PermissionService.is_family_member(session, user, family_id)
         if not user_in_family:
             return False
 

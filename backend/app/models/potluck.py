@@ -23,22 +23,22 @@ class PotluckItem(Base, UUIDMixin, TimestampMixin):
 
     # Item details
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    category: Mapped[Optional[str]] = mapped_column(
+    category: Mapped[str | None] = mapped_column(
         String(50), nullable=True
     )  # appetizer, main, side, dessert, drink, other
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    serves: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    serves: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Dietary information
-    dietary_info: Mapped[Optional[str]] = mapped_column(
+    dietary_info: Mapped[str | None] = mapped_column(
         String(200), nullable=True
     )  # e.g., "vegetarian, gluten-free, contains nuts"
-    allergens: Mapped[Optional[str]] = mapped_column(
+    allergens: Mapped[str | None] = mapped_column(
         String(200), nullable=True
     )  # e.g., "nuts, dairy, gluten"
 
     # Who claimed it (now references users table)
-    claimed_by_id: Mapped[Optional[str]] = mapped_column(
+    claimed_by_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
 

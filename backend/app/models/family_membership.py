@@ -1,16 +1,17 @@
 """Family membership model - links users to families with roles."""
 
-from typing import TYPE_CHECKING
 import enum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Enum as SQLEnum, UniqueConstraint
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.family import Family
+    from app.models.user import User
 
 
 class FamilyRole(str, enum.Enum):
@@ -24,9 +25,7 @@ class FamilyMembership(Base, UUIDMixin, TimestampMixin):
     """Links a user to a family with a specific role."""
 
     __tablename__ = "family_memberships"
-    __table_args__ = (
-        UniqueConstraint("user_id", "family_id", name="uq_user_family"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "family_id", name="uq_user_family"),)
 
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True

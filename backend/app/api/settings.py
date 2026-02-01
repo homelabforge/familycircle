@@ -9,22 +9,21 @@ User preferences are stored on the User model.
 
 import random
 import string
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db_session
-from app.models import Setting, User, Family
 from app.api.auth import get_current_user, get_optional_user, require_family_context
+from app.db import get_db_session
+from app.models import Family, Setting, User
 from app.services.permissions import permissions
 
 router = APIRouter()
 
 
-async def get_global_setting(db: AsyncSession, key: str) -> Optional[str]:
+async def get_global_setting(db: AsyncSession, key: str) -> str | None:
     """Get a global setting value (family_id is NULL)."""
     result = await db.execute(
         select(Setting).where(Setting.key == key, Setting.family_id.is_(None))
@@ -46,7 +45,7 @@ async def set_global_setting(db: AsyncSession, key: str, value: str) -> None:
     await db.commit()
 
 
-async def get_family_setting(db: AsyncSession, family_id: str, key: str) -> Optional[str]:
+async def get_family_setting(db: AsyncSession, family_id: str, key: str) -> str | None:
     """Get a family-specific setting value."""
     result = await db.execute(
         select(Setting).where(Setting.key == key, Setting.family_id == family_id)
@@ -70,7 +69,7 @@ async def set_family_setting(db: AsyncSession, family_id: str, key: str, value: 
 
 @router.get("")
 async def get_settings(
-    user: Optional[User] = Depends(get_optional_user),
+    user: User | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get application settings.
@@ -92,8 +91,7 @@ async def get_settings(
     if user.current_family_id:
         family_settings = {
             "theme_color": (
-                await get_family_setting(db, user.current_family_id, "theme_color")
-                or "teal"
+                await get_family_setting(db, user.current_family_id, "theme_color") or "teal"
             ),
         }
 
@@ -102,8 +100,12 @@ async def get_settings(
     if is_super:
         smtp_password = await get_global_setting(db, "smtp_password")
         admin_settings = {
-            "magic_link_expiry_days": await get_global_setting(db, "magic_link_expiry_days") or "90",
-            "cancelled_event_retention_days": await get_global_setting(db, "cancelled_event_retention_days") or "7",
+            "magic_link_expiry_days": await get_global_setting(db, "magic_link_expiry_days")
+            or "90",
+            "cancelled_event_retention_days": await get_global_setting(
+                db, "cancelled_event_retention_days"
+            )
+            or "7",
             # SMTP settings (password masked)
             "smtp_host": await get_global_setting(db, "smtp_host") or "",
             "smtp_port": await get_global_setting(db, "smtp_port") or "587",
@@ -112,9 +114,7 @@ async def get_settings(
             "smtp_from_email": await get_global_setting(db, "smtp_from_email") or "",
             "smtp_from_name": await get_global_setting(db, "smtp_from_name") or "",
             "smtp_use_tls": await get_global_setting(db, "smtp_use_tls") or "true",
-            "smtp_configured": bool(
-                await get_global_setting(db, "smtp_host") and smtp_password
-            ),
+            "smtp_configured": bool(await get_global_setting(db, "smtp_host") and smtp_password),
         }
         return {
             "settings": {
@@ -130,17 +130,17 @@ async def get_settings(
 class UpdateGlobalSettingsRequest(BaseModel):
     """Update global settings request (super admin only)."""
 
-    app_name: Optional[str] = None
-    magic_link_expiry_days: Optional[str] = None
-    cancelled_event_retention_days: Optional[str] = None
+    app_name: str | None = None
+    magic_link_expiry_days: str | None = None
+    cancelled_event_retention_days: str | None = None
     # SMTP settings
-    smtp_host: Optional[str] = None
-    smtp_port: Optional[str] = None
-    smtp_username: Optional[str] = None
-    smtp_password: Optional[str] = None
-    smtp_from_email: Optional[str] = None
-    smtp_from_name: Optional[str] = None
-    smtp_use_tls: Optional[str] = None  # "true" or "false"
+    smtp_host: str | None = None
+    smtp_port: str | None = None
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_from_name: str | None = None
+    smtp_use_tls: str | None = None  # "true" or "false"
 
 
 @router.put("/global")
@@ -158,7 +158,9 @@ async def update_global_settings(
     if request.magic_link_expiry_days:
         await set_global_setting(db, "magic_link_expiry_days", request.magic_link_expiry_days)
     if request.cancelled_event_retention_days:
-        await set_global_setting(db, "cancelled_event_retention_days", request.cancelled_event_retention_days)
+        await set_global_setting(
+            db, "cancelled_event_retention_days", request.cancelled_event_retention_days
+        )
 
     # SMTP settings
     if request.smtp_host is not None:
@@ -183,7 +185,7 @@ async def update_global_settings(
 class UpdateFamilySettingsRequest(BaseModel):
     """Update family settings request."""
 
-    theme_color: Optional[str] = None
+    theme_color: str | None = None
 
 
 @router.put("/family")
@@ -213,9 +215,7 @@ async def get_family_code(
     if not is_admin:
         raise HTTPException(status_code=403, detail="Only family admins can view the family code")
 
-    result = await db.execute(
-        select(Family).where(Family.id == user.current_family_id)
-    )
+    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
@@ -231,17 +231,19 @@ async def regenerate_family_code(
     """Regenerate the family join code (family admin only)."""
     is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
     if not is_admin:
-        raise HTTPException(status_code=403, detail="Only family admins can regenerate the family code")
+        raise HTTPException(
+            status_code=403, detail="Only family admins can regenerate the family code"
+        )
 
-    result = await db.execute(
-        select(Family).where(Family.id == user.current_family_id)
-    )
+    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
 
     # Generate new code
-    new_code = "".join(random.choices(string.ascii_uppercase, k=6)) + "-" + str(random.randint(10, 99))
+    new_code = (
+        "".join(random.choices(string.ascii_uppercase, k=6)) + "-" + str(random.randint(10, 99))
+    )
     family.family_code = new_code
     await db.commit()
 
@@ -260,8 +262,8 @@ async def get_user_preferences(user: User = Depends(get_current_user)):
 class UserPreferencesRequest(BaseModel):
     """User preferences update."""
 
-    theme: Optional[str] = None
-    big_mode: Optional[bool] = None
+    theme: str | None = None
+    big_mode: bool | None = None
 
 
 @router.put("/user-preferences")
@@ -273,7 +275,9 @@ async def update_user_preferences(
     """Update current user's preferences."""
     if request.theme is not None:
         if request.theme not in ("light", "dark", "system"):
-            raise HTTPException(status_code=400, detail="Theme must be 'light', 'dark', or 'system'")
+            raise HTTPException(
+                status_code=400, detail="Theme must be 'light', 'dark', or 'system'"
+            )
         user.theme = request.theme
 
     if request.big_mode is not None:

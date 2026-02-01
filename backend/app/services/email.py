@@ -10,7 +10,6 @@ import logging
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
 
 import aiosmtplib
 from sqlalchemy import select
@@ -42,7 +41,7 @@ class SmtpConfig:
 async def get_smtp_config(db: AsyncSession) -> SmtpConfig:
     """Load SMTP configuration from database settings."""
 
-    async def get_setting(key: str) -> Optional[str]:
+    async def get_setting(key: str) -> str | None:
         result = await db.execute(
             select(Setting).where(Setting.key == key, Setting.family_id.is_(None))
         )
@@ -74,7 +73,7 @@ async def send_email(
     to_email: str,
     subject: str,
     body_html: str,
-    body_text: Optional[str] = None,
+    body_text: str | None = None,
 ) -> bool:
     """
     Send an email using configured SMTP settings.
@@ -342,7 +341,7 @@ async def send_event_cancelled_email(
     recipient_name: str,
     event_title: str,
     event_date: str,
-    cancellation_reason: Optional[str],
+    cancellation_reason: str | None,
     cancelled_by: str,
 ) -> bool:
     """Send event cancellation notification."""

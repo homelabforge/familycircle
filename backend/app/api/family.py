@@ -1,19 +1,16 @@
 """Family members API endpoints - multi-family aware."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
+from app.api.auth import require_family_admin, require_family_context
 from app.db import get_db_session
-from app.models import User, Family, FamilyMembership, FamilyRole, UserProfile, ProfileVisibility
-from app.api.auth import get_current_user, require_family_context, require_family_admin
+from app.models import FamilyMembership, FamilyRole, ProfileVisibility, User, UserProfile
 from app.services import auth as auth_service
+from app.services.email import get_smtp_config, send_family_invitation_email
 from app.services.permissions import permissions
-from app.services.email import send_family_invitation_email, get_smtp_config
 
 router = APIRouter()
 
@@ -23,11 +20,11 @@ class MemberResponse(BaseModel):
 
     user_id: str
     display_name: str
-    email: Optional[str] = None  # Only shown if visibility allows
+    email: str | None = None  # Only shown if visibility allows
     role: str
     # Profile fields (shown based on visibility)
-    phone: Optional[str] = None
-    address: Optional[str] = None
+    phone: str | None = None
+    address: str | None = None
 
     class Config:
         from_attributes = True
@@ -56,9 +53,7 @@ async def get_member_with_visibility(
     visibility = visibility_result.scalar_one_or_none()
 
     # Get user email
-    user_result = await db.execute(
-        select(User).where(User.id == membership.user_id)
-    )
+    user_result = await db.execute(select(User).where(User.id == membership.user_id))
     user = user_result.scalar_one_or_none()
 
     result = {
@@ -162,9 +157,7 @@ async def get_address_book(
 
     members = []
     for membership in memberships:
-        member_data = await get_member_with_visibility(
-            db, membership, user, include_contact=True
-        )
+        member_data = await get_member_with_visibility(db, membership, user, include_contact=True)
         members.append(member_data)
 
     return {"members": members}
@@ -201,9 +194,7 @@ async def invite_member(
 
         # Add existing user to family
         family = await auth_service.get_family_by_id(db, admin.current_family_id)
-        await auth_service.add_user_to_family(
-            db, existing_user, family, request.display_name
-        )
+        await auth_service.add_user_to_family(db, existing_user, family, request.display_name)
 
         return {
             "message": f"{request.display_name} has been added to the family",
@@ -398,9 +389,7 @@ async def update_display_name(
 
     # Can only update own name, or if admin
     if user.id != user_id:
-        is_admin = await permissions.is_family_admin(
-            db, user, user.current_family_id
-        )
+        is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
         if not is_admin:
             raise HTTPException(
                 status_code=403,

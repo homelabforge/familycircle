@@ -1,6 +1,6 @@
 """User profile model - extended personal information."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,23 +17,27 @@ class UserProfile(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "user_profiles"
 
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
     )
 
     # Contact information
-    phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-    address_line1: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    address_line2: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    state: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    zip_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    address_line1: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    address_line2: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    zip_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Health/medical information
-    allergies: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    dietary_restrictions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    medical_needs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    mobility_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dietary_restrictions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    medical_needs: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mobility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Privacy settings - whether to share health info anonymously with event organizers
     share_health_info: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

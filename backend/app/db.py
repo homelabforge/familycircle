@@ -3,34 +3,31 @@
 import logging
 import secrets
 import traceback
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import DATABASE_PATH
-from app.models.base import Base
-
-logger = logging.getLogger(__name__)
-
-# Import all models so they're registered with Base.metadata
 from app.models import (  # noqa: F401
-    User,
-    Family,
-    FamilyMembership,
-    UserProfile,
-    ProfileVisibility,
     Event,
     EventRSVP,
+    Family,
+    FamilyMembership,
+    PotluckItem,
+    ProfileVisibility,
     SecretSantaAssignment,
     SecretSantaExclusion,
     SecretSantaMessage,
-    PotluckItem,
-    WishlistItem,
     Setting,
+    User,
+    UserProfile,
+    WishlistItem,
 )
+from app.models.base import Base
 
+logger = logging.getLogger(__name__)
 
 # Create async engine
 engine = create_async_engine(
@@ -63,6 +60,7 @@ async def init_db() -> None:
     try:
         database_url = f"sqlite:///{DATABASE_PATH}"
         from app.migrations.runner import run_migrations
+
         migrations_dir = Path(__file__).parent / "migrations"
         run_migrations(database_url, migrations_dir)
     except Exception as e:
@@ -92,7 +90,7 @@ async def init_default_settings() -> None:
 
 
 @asynccontextmanager
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     """Get database session as async context manager."""
     async with async_session_maker() as session:
         try:
@@ -103,7 +101,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession]:
     """Dependency for FastAPI routes."""
     async with async_session_maker() as session:
         try:

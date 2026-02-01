@@ -1,6 +1,5 @@
 """Wishlist schemas."""
 
-from typing import Optional
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -10,16 +9,16 @@ class WishlistItemCreate(BaseModel):
     """Create wishlist item."""
 
     name: str
-    link: Optional[str] = None
-    notes: Optional[str] = None
+    link: str | None = None
+    notes: str | None = None
 
 
 class WishlistItemUpdate(BaseModel):
     """Update wishlist item."""
 
-    name: Optional[str] = None
-    link: Optional[str] = None
-    notes: Optional[str] = None
+    name: str | None = None
+    link: str | None = None
+    notes: str | None = None
 
 
 class WishlistItemResponse(BaseModel):
@@ -27,8 +26,8 @@ class WishlistItemResponse(BaseModel):
 
     id: str
     name: str
-    link: Optional[str]
-    notes: Optional[str]
+    link: str | None
+    notes: str | None
     created_at: datetime
 
     class Config:

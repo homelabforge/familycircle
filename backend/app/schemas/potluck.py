@@ -1,6 +1,5 @@
 """Potluck schemas."""
 
-from typing import Optional
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -10,8 +9,8 @@ class PotluckItemCreate(BaseModel):
     """Create potluck item."""
 
     name: str
-    dietary_info: Optional[str] = None
-    notes: Optional[str] = None
+    dietary_info: str | None = None
+    notes: str | None = None
 
 
 class PotluckItemResponse(BaseModel):
@@ -20,10 +19,10 @@ class PotluckItemResponse(BaseModel):
     id: str
     event_id: str
     name: str
-    dietary_info: Optional[str]
-    notes: Optional[str]
-    claimed_by_id: Optional[str]
-    claimed_by_name: Optional[str] = None
+    dietary_info: str | None
+    notes: str | None
+    claimed_by_id: str | None
+    claimed_by_name: str | None = None
     created_at: datetime
 
     class Config:

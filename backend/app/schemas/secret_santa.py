@@ -1,6 +1,5 @@
 """Secret Santa schemas."""
 
-from typing import Optional, List
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -11,7 +10,7 @@ class SecretSantaStatus(BaseModel):
 
     event_id: str
     is_assigned: bool
-    assigned_at: Optional[datetime]
+    assigned_at: datetime | None
     participant_count: int
 
 
@@ -20,7 +19,7 @@ class AssignmentResponse(BaseModel):
 
     receiver_id: str
     receiver_name: str
-    receiver_wishlist: List["WishlistItemResponse"]
+    receiver_wishlist: list["WishlistItemResponse"]
 
 
 class ExclusionCreate(BaseModel):

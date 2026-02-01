@@ -5,9 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import require_family_context
 from app.db import get_db_session
-from app.models import User, WishlistItem, Event, FamilyMembership
-from app.api.auth import get_current_user, require_family_context
+from app.models import Event, FamilyMembership, User, WishlistItem
 from app.services import secret_santa as ss_service
 from app.services.permissions import permissions
 
@@ -23,9 +23,7 @@ class SecretSantaStatus(BaseModel):
     has_assignment: bool
 
 
-async def get_user_display_name(
-    db: AsyncSession, user_id: str, family_id: str
-) -> str:
+async def get_user_display_name(db: AsyncSession, user_id: str, family_id: str) -> str:
     """Get user's display name in family context."""
     result = await db.execute(
         select(FamilyMembership).where(
@@ -99,9 +97,7 @@ async def get_assignment(
         return {"giftee_id": None, "giftee_name": None, "wishlist": []}
 
     # Get giftee's display name in this family
-    giftee_name = await get_user_display_name(
-        db, assignment.receiver_id, user.current_family_id
-    )
+    giftee_name = await get_user_display_name(db, assignment.receiver_id, user.current_family_id)
 
     # Get giftee's wishlist
     wishlist_result = await db.execute(
@@ -205,13 +201,15 @@ async def list_exclusions(
         giver_name = await get_user_display_name(db, ex.giver_id, user.current_family_id)
         receiver_name = await get_user_display_name(db, ex.receiver_id, user.current_family_id)
 
-        result.append({
-            "id": str(ex.id),
-            "user1_id": str(ex.giver_id),
-            "user1_name": giver_name,
-            "user2_id": str(ex.receiver_id),
-            "user2_name": receiver_name,
-        })
+        result.append(
+            {
+                "id": str(ex.id),
+                "user1_id": str(ex.giver_id),
+                "user1_name": giver_name,
+                "user2_id": str(ex.receiver_id),
+                "user2_name": receiver_name,
+            }
+        )
 
     return {"exclusions": result}
 
@@ -266,9 +264,7 @@ async def add_exclusion(
                 detail=f"User {uid} is not a member of this family",
             )
 
-    exclusion = await ss_service.add_exclusion(
-        db, event_id, request.user1_id, request.user2_id
-    )
+    exclusion = await ss_service.add_exclusion(db, event_id, request.user1_id, request.user2_id)
 
     return {"message": "Exclusion added", "id": str(exclusion.id)}
 
@@ -302,7 +298,9 @@ async def remove_exclusion(
     success = await ss_service.remove_exclusion(db, exclusion_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="Exclusion rule not found. It may have already been removed.")
+        raise HTTPException(
+            status_code=404, detail="Exclusion rule not found. It may have already been removed."
+        )
 
     return {"message": "Exclusion removed"}
 
@@ -335,7 +333,9 @@ async def send_anonymous_message(
     assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
 
     if not assignment:
-        raise HTTPException(status_code=400, detail="You don't have a Secret Santa assignment for this event yet")
+        raise HTTPException(
+            status_code=400, detail="You don't have a Secret Santa assignment for this event yet"
+        )
 
     await ss_service.send_message(
         db, event_id, str(user.id), str(assignment.receiver_id), request.content

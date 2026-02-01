@@ -8,8 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from app.models.family_membership import FamilyMembership
     from app.models.event import Event
+    from app.models.family_membership import FamilyMembership
     from app.models.profile_visibility import ProfileVisibility
 
 

@@ -1,24 +1,24 @@
 """Authentication endpoints - login, register, password management."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db_session
-from app.models import User, FamilyRole
+from app.models import FamilyRole, User
 from app.schemas.auth import (
+    AdminResetPasswordRequest,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     RegisterRequest,
-    ForgotPasswordRequest,
     ResetPasswordRequest,
-    SwitchFamilyRequest,
     SetupRequest,
-    ChangePasswordRequest,
-    AdminResetPasswordRequest,
+    SwitchFamilyRequest,
     UserWithFamilyContext,
 )
 from app.services import auth as auth_service
-from app.services.email import send_password_reset_email, get_smtp_config
+from app.services.email import get_smtp_config, send_password_reset_email
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
@@ -73,9 +73,7 @@ async def require_family_admin(
     if user.is_super_admin:
         return user
 
-    membership = await auth_service.get_user_membership(
-        db, user.id, user.current_family_id
-    )
+    membership = await auth_service.get_user_membership(db, user.id, user.current_family_id)
     if not membership or membership.role != FamilyRole.ADMIN:
         raise HTTPException(
             status_code=403,
@@ -379,9 +377,7 @@ async def create_family(
     family = await auth_service.create_family(db, name)
 
     # Add the creator as admin of the new family
-    await auth_service.add_user_to_family(
-        db, admin, family, display_name, FamilyRole.ADMIN
-    )
+    await auth_service.add_user_to_family(db, admin, family, display_name, FamilyRole.ADMIN)
 
     return {
         "message": f"Family '{name}' created successfully",
@@ -400,6 +396,7 @@ async def list_families(
 ):
     """List all families (super admin only)."""
     from sqlalchemy import select
+
     from app.models import Family
 
     result = await db.execute(select(Family).order_by(Family.name))
@@ -459,6 +456,7 @@ async def regenerate_family_code(
 
 
 # ============ Backwards Compatibility ============
+
 
 # Keep old endpoint for magic link (now used for password recovery)
 @router.post("/magic-link")

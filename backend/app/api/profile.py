@@ -1,15 +1,13 @@
 """User profile API endpoints."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import get_current_user
 from app.db import get_db_session
-from app.models import User, UserProfile, ProfileVisibility
-from app.api.auth import get_current_user, require_family_context
+from app.models import ProfileVisibility, User, UserProfile
 
 router = APIRouter()
 
@@ -17,17 +15,17 @@ router = APIRouter()
 class ProfileResponse(BaseModel):
     """User profile response."""
 
-    phone: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    country: Optional[str] = None
-    allergies: Optional[str] = None
-    dietary_restrictions: Optional[str] = None
-    medical_needs: Optional[str] = None
-    mobility_notes: Optional[str] = None
+    phone: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    zip_code: str | None = None
+    country: str | None = None
+    allergies: str | None = None
+    dietary_restrictions: str | None = None
+    medical_needs: str | None = None
+    mobility_notes: str | None = None
     share_health_info: bool = False
 
     class Config:
@@ -37,18 +35,18 @@ class ProfileResponse(BaseModel):
 class ProfileUpdate(BaseModel):
     """Update profile request."""
 
-    phone: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    country: Optional[str] = None
-    allergies: Optional[str] = None
-    dietary_restrictions: Optional[str] = None
-    medical_needs: Optional[str] = None
-    mobility_notes: Optional[str] = None
-    share_health_info: Optional[bool] = None
+    phone: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    zip_code: str | None = None
+    country: str | None = None
+    allergies: str | None = None
+    dietary_restrictions: str | None = None
+    medical_needs: str | None = None
+    mobility_notes: str | None = None
+    share_health_info: bool | None = None
 
 
 class VisibilityResponse(BaseModel):
@@ -65,9 +63,9 @@ class VisibilityResponse(BaseModel):
 class VisibilityUpdate(BaseModel):
     """Update visibility settings."""
 
-    show_email: Optional[bool] = None
-    show_phone: Optional[bool] = None
-    show_address: Optional[bool] = None
+    show_email: bool | None = None
+    show_phone: bool | None = None
+    show_address: bool | None = None
 
 
 @router.get("")
@@ -76,9 +74,7 @@ async def get_profile(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get current user's profile."""
-    result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user.id)
-    )
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user.id))
     profile = result.scalar_one_or_none()
 
     if not profile:
@@ -98,9 +94,7 @@ async def update_profile(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update current user's profile."""
-    result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user.id)
-    )
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user.id))
     profile = result.scalar_one_or_none()
 
     if not profile:
@@ -170,6 +164,7 @@ async def update_visibility(
     """Update visibility settings for a specific family."""
     # Verify user is in this family
     from app.services import auth as auth_service
+
     membership = await auth_service.get_user_membership(db, user.id, family_id)
     if not membership:
         raise HTTPException(
@@ -210,9 +205,7 @@ async def get_health_info(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get health-related profile info (allergies, medical needs)."""
-    result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user.id)
-    )
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user.id))
     profile = result.scalar_one_or_none()
 
     if not profile:

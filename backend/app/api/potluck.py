@@ -1,15 +1,13 @@
 """Potluck contributions API endpoints - multi-family aware."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import require_family_context
 from app.db import get_db_session
-from app.models import Event, PotluckItem, User, FamilyMembership
-from app.api.auth import get_current_user, require_family_context
+from app.models import Event, FamilyMembership, PotluckItem, User
 from app.services.permissions import permissions
 
 router = APIRouter()
@@ -19,25 +17,25 @@ class PotluckItemCreate(BaseModel):
     """Create potluck item request."""
 
     name: str
-    category: Optional[str] = None  # appetizer, main, side, dessert, drink, other
-    description: Optional[str] = None
-    serves: Optional[int] = None
-    dietary_info: Optional[str] = None  # e.g., "vegetarian, gluten-free"
-    allergens: Optional[str] = None  # e.g., "nuts, dairy"
+    category: str | None = None  # appetizer, main, side, dessert, drink, other
+    description: str | None = None
+    serves: int | None = None
+    dietary_info: str | None = None  # e.g., "vegetarian, gluten-free"
+    allergens: str | None = None  # e.g., "nuts, dairy"
 
 
 class PotluckItemUpdate(BaseModel):
     """Update potluck item request."""
 
-    name: Optional[str] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    serves: Optional[int] = None
-    dietary_info: Optional[str] = None
-    allergens: Optional[str] = None
+    name: str | None = None
+    category: str | None = None
+    description: str | None = None
+    serves: int | None = None
+    dietary_info: str | None = None
+    allergens: str | None = None
 
 
-def item_to_dict(item: PotluckItem, claimer_name: Optional[str] = None) -> dict:
+def item_to_dict(item: PotluckItem, claimer_name: str | None = None) -> dict:
     """Convert potluck item to response dict."""
     return {
         "id": str(item.id),
@@ -53,9 +51,7 @@ def item_to_dict(item: PotluckItem, claimer_name: Optional[str] = None) -> dict:
     }
 
 
-async def get_claimer_display_name(
-    db: AsyncSession, user_id: str, family_id: str
-) -> Optional[str]:
+async def get_claimer_display_name(db: AsyncSession, user_id: str, family_id: str) -> str | None:
     """Get the display name for a user in a family context."""
     result = await db.execute(
         select(FamilyMembership).where(
@@ -143,9 +139,7 @@ async def list_items(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    result = await db.execute(
-        select(PotluckItem).where(PotluckItem.event_id == event_id)
-    )
+    result = await db.execute(select(PotluckItem).where(PotluckItem.event_id == event_id))
     items = result.scalars().all()
 
     # Get claimer names
@@ -260,7 +254,9 @@ async def update_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Potluck item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Potluck item not found. It may have been deleted."
+        )
 
     if request.name is not None:
         item.name = request.name
@@ -318,7 +314,9 @@ async def delete_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Potluck item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Potluck item not found. It may have been deleted."
+        )
 
     await db.delete(item)
     await db.commit()
@@ -353,10 +351,14 @@ async def claim_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Potluck item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Potluck item not found. It may have been deleted."
+        )
 
     if item.claimed_by_id and str(item.claimed_by_id) != str(user.id):
-        raise HTTPException(status_code=400, detail="This item has already been claimed by someone else")
+        raise HTTPException(
+            status_code=400, detail="This item has already been claimed by someone else"
+        )
 
     item.claimed_by_id = str(user.id)
     await db.commit()
@@ -392,14 +394,18 @@ async def unclaim_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Potluck item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Potluck item not found. It may have been deleted."
+        )
 
     # Can only unclaim your own items (or admin/event creator can unclaim any)
     is_own_claim = item.claimed_by_id and str(item.claimed_by_id) == str(user.id)
     can_manage = await permissions.can_manage_event(db, user, event)
 
     if not is_own_claim and not can_manage:
-        raise HTTPException(status_code=403, detail="You can only unclaim items you've claimed yourself")
+        raise HTTPException(
+            status_code=403, detail="You can only unclaim items you've claimed yourself"
+        )
 
     item.claimed_by_id = None
     await db.commit()
@@ -435,6 +441,4 @@ async def get_my_items(
     # Get user's display name in this family
     display_name = await get_claimer_display_name(db, str(user.id), user.current_family_id)
 
-    return {
-        "items": [item_to_dict(item, display_name) for item in items]
-    }
+    return {"items": [item_to_dict(item, display_name) for item in items]}

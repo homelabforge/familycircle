@@ -1,15 +1,13 @@
 """Wishlist API endpoints - multi-family aware."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db_session
-from app.models import WishlistItem, User, SecretSantaAssignment, FamilyMembership
 from app.api.auth import get_current_user, require_family_context
+from app.db import get_db_session
+from app.models import FamilyMembership, SecretSantaAssignment, User, WishlistItem
 from app.services.permissions import permissions
 
 router = APIRouter()
@@ -19,20 +17,20 @@ class WishlistItemCreate(BaseModel):
     """Create wishlist item request."""
 
     name: str
-    description: Optional[str] = None
-    url: Optional[str] = None
-    price_range: Optional[str] = None  # $, $$, $$$
-    priority: Optional[int] = 1  # 1-5, 1 = most wanted
+    description: str | None = None
+    url: str | None = None
+    price_range: str | None = None  # $, $$, $$$
+    priority: int | None = 1  # 1-5, 1 = most wanted
 
 
 class WishlistItemUpdate(BaseModel):
     """Update wishlist item request."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    url: Optional[str] = None
-    price_range: Optional[str] = None
-    priority: Optional[int] = None
+    name: str | None = None
+    description: str | None = None
+    url: str | None = None
+    price_range: str | None = None
+    priority: int | None = None
 
 
 def item_to_dict(item: WishlistItem) -> dict:
@@ -103,7 +101,9 @@ async def update_wishlist_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Wishlist item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Wishlist item not found. It may have been deleted."
+        )
 
     if request.name is not None:
         item.name = request.name
@@ -137,7 +137,9 @@ async def delete_wishlist_item(
     item = result.scalar_one_or_none()
 
     if not item:
-        raise HTTPException(status_code=404, detail="Wishlist item not found. It may have been deleted.")
+        raise HTTPException(
+            status_code=404, detail="Wishlist item not found. It may have been deleted."
+        )
 
     await db.delete(item)
     await db.commit()

@@ -3,8 +3,7 @@
 import random
 import secrets
 import string
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -13,13 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import (
-    User,
     Family,
     FamilyMembership,
     FamilyRole,
-    UserProfile,
     ProfileVisibility,
     Setting,
+    User,
+    UserProfile,
 )
 
 ph = PasswordHasher()
@@ -35,9 +34,7 @@ def generate_family_code() -> str:
 # ============ Settings ============
 
 
-async def get_setting(
-    session: AsyncSession, key: str, family_id: Optional[str] = None
-) -> Optional[str]:
+async def get_setting(session: AsyncSession, key: str, family_id: str | None = None) -> str | None:
     """Get a setting value (global or per-family)."""
     result = await session.execute(
         select(Setting).where(Setting.key == key, Setting.family_id == family_id)
@@ -47,7 +44,7 @@ async def get_setting(
 
 
 async def set_setting(
-    session: AsyncSession, key: str, value: str, family_id: Optional[str] = None
+    session: AsyncSession, key: str, value: str, family_id: str | None = None
 ) -> None:
     """Set a setting value (global or per-family)."""
     result = await session.execute(
@@ -64,7 +61,7 @@ async def set_setting(
 # ============ User Lookups ============
 
 
-async def get_user_by_email(session: AsyncSession, email: str) -> Optional[User]:
+async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
     """Get user by email."""
     result = await session.execute(
         select(User)
@@ -74,7 +71,7 @@ async def get_user_by_email(session: AsyncSession, email: str) -> Optional[User]
     return result.scalar_one_or_none()
 
 
-async def get_user_by_id(session: AsyncSession, user_id: str) -> Optional[User]:
+async def get_user_by_id(session: AsyncSession, user_id: str) -> User | None:
     """Get user by ID."""
     result = await session.execute(
         select(User)
@@ -84,27 +81,27 @@ async def get_user_by_id(session: AsyncSession, user_id: str) -> Optional[User]:
     return result.scalar_one_or_none()
 
 
-async def get_user_by_session(session: AsyncSession, token: str) -> Optional[User]:
+async def get_user_by_session(session: AsyncSession, token: str) -> User | None:
     """Get user by session token."""
     result = await session.execute(
         select(User)
         .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
         .where(
             User.session_token == token,
-            User.session_expires > datetime.now(timezone.utc),
+            User.session_expires > datetime.now(UTC),
         )
     )
     return result.scalar_one_or_none()
 
 
-async def get_user_by_magic_token(session: AsyncSession, token: str) -> Optional[User]:
+async def get_user_by_magic_token(session: AsyncSession, token: str) -> User | None:
     """Get user by magic link token (for password recovery)."""
     result = await session.execute(
         select(User)
         .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
         .where(
             User.magic_token == token,
-            User.magic_token_expires > datetime.now(timezone.utc),
+            User.magic_token_expires > datetime.now(UTC),
         )
     )
     return result.scalar_one_or_none()
@@ -113,15 +110,13 @@ async def get_user_by_magic_token(session: AsyncSession, token: str) -> Optional
 # ============ Family Lookups ============
 
 
-async def get_family_by_code(session: AsyncSession, code: str) -> Optional[Family]:
+async def get_family_by_code(session: AsyncSession, code: str) -> Family | None:
     """Get family by its join code."""
-    result = await session.execute(
-        select(Family).where(Family.family_code == code.upper())
-    )
+    result = await session.execute(select(Family).where(Family.family_code == code.upper()))
     return result.scalar_one_or_none()
 
 
-async def get_family_by_id(session: AsyncSession, family_id: str) -> Optional[Family]:
+async def get_family_by_id(session: AsyncSession, family_id: str) -> Family | None:
     """Get family by ID."""
     result = await session.execute(select(Family).where(Family.id == family_id))
     return result.scalar_one_or_none()
@@ -129,7 +124,7 @@ async def get_family_by_id(session: AsyncSession, family_id: str) -> Optional[Fa
 
 async def get_user_membership(
     session: AsyncSession, user_id: str, family_id: str
-) -> Optional[FamilyMembership]:
+) -> FamilyMembership | None:
     """Get user's membership in a specific family."""
     result = await session.execute(
         select(FamilyMembership)
@@ -148,7 +143,7 @@ async def get_user_membership(
 async def create_session(user: User, session: AsyncSession) -> str:
     """Create a new session for a user."""
     user.session_token = secrets.token_urlsafe(32)
-    user.session_expires = datetime.now(timezone.utc) + timedelta(days=30)
+    user.session_expires = datetime.now(UTC) + timedelta(days=30)
     await session.commit()
     return user.session_token
 
@@ -163,9 +158,7 @@ async def logout(session: AsyncSession, user: User) -> None:
 # ============ Password Management ============
 
 
-async def verify_password(
-    session: AsyncSession, email: str, password: str
-) -> Optional[User]:
+async def verify_password(session: AsyncSession, email: str, password: str) -> User | None:
     """Verify email + password login."""
     user = await get_user_by_email(session, email)
     if not user or not user.password_hash:
@@ -205,7 +198,7 @@ async def change_password(
 # ============ Magic Link (Password Recovery) ============
 
 
-async def create_magic_link(session: AsyncSession, email: str) -> Optional[str]:
+async def create_magic_link(session: AsyncSession, email: str) -> str | None:
     """Create a magic link token for password recovery."""
     user = await get_user_by_email(session, email)
     if not user:
@@ -217,7 +210,7 @@ async def create_magic_link(session: AsyncSession, email: str) -> Optional[str]:
     # Generate token
     token = secrets.token_urlsafe(32)
     user.magic_token = token
-    user.magic_token_expires = datetime.now(timezone.utc) + timedelta(days=expiry_days)
+    user.magic_token_expires = datetime.now(UTC) + timedelta(days=expiry_days)
 
     await session.commit()
     return token
@@ -225,7 +218,7 @@ async def create_magic_link(session: AsyncSession, email: str) -> Optional[str]:
 
 async def verify_magic_token_and_reset_password(
     session: AsyncSession, token: str, new_password: str
-) -> Optional[User]:
+) -> User | None:
     """Verify magic token and reset password."""
     user = await get_user_by_magic_token(session, token)
     if not user:
@@ -240,7 +233,7 @@ async def verify_magic_token_and_reset_password(
 
     # Create session for immediate login
     user.session_token = secrets.token_urlsafe(32)
-    user.session_expires = datetime.now(timezone.utc) + timedelta(days=30)
+    user.session_expires = datetime.now(UTC) + timedelta(days=30)
 
     await session.commit()
     return user
@@ -325,7 +318,7 @@ async def register_with_family_code(
     email: str,
     password: str,
     display_name: str,
-) -> tuple[Optional[User], Optional[str]]:
+) -> tuple[User | None, str | None]:
     """
     Register a new user or add existing user to a family.
     Returns (user, error_message).
@@ -371,7 +364,7 @@ async def register_with_family_code(
 
 async def switch_family(
     session: AsyncSession, user: User, family_id: str
-) -> Optional[FamilyMembership]:
+) -> FamilyMembership | None:
     """Switch user's active family context."""
     membership = await get_user_membership(session, user.id, family_id)
     if not membership:
@@ -439,12 +432,14 @@ def get_user_families_info(user: User) -> list[dict]:
     """Get list of families for a user with their role."""
     families = []
     for membership in user.family_memberships:
-        families.append({
-            "id": membership.family.id,
-            "name": membership.family.name,
-            "family_code": membership.family.family_code,
-            "role": membership.role.value,
-        })
+        families.append(
+            {
+                "id": membership.family.id,
+                "name": membership.family.name,
+                "family_code": membership.family.family_code,
+                "role": membership.role.value,
+            }
+        )
     return families
 
 

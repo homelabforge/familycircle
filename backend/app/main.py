@@ -5,12 +5,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
-from app.db import init_db
 from app.api import auth, events, family, health, potluck, profile, secret_santa, settings, wishlist
+from app.db import init_db
 
 
 @asynccontextmanager

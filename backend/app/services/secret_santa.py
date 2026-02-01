@@ -1,22 +1,21 @@
 """Secret Santa service - assignment algorithm and management (multi-family aware)."""
 
 import random
-from typing import Optional
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
-    User,
     Event,
     FamilyMembership,
     SecretSantaAssignment,
     SecretSantaExclusion,
     SecretSantaMessage,
+    User,
 )
 
 
-async def get_event(session: AsyncSession, event_id: str) -> Optional[Event]:
+async def get_event(session: AsyncSession, event_id: str) -> Event | None:
     """Get an event by ID."""
     result = await session.execute(select(Event).where(Event.id == event_id))
     return result.scalar_one_or_none()
@@ -84,7 +83,7 @@ async def get_assignments(session: AsyncSession, event_id: str) -> list[SecretSa
 
 async def get_user_assignment(
     session: AsyncSession, event_id: str, giver_id: str
-) -> Optional[SecretSantaAssignment]:
+) -> SecretSantaAssignment | None:
     """Get a specific user's assignment (who they give to)."""
     result = await session.execute(
         select(SecretSantaAssignment).where(
@@ -123,7 +122,7 @@ def generate_assignments(
     participants: list[tuple[User, FamilyMembership]],
     exclusions: set[tuple[str, str]],
     max_attempts: int = 100,
-) -> Optional[dict[str, str]]:
+) -> dict[str, str] | None:
     """
     Generate Secret Santa assignments using a derangement algorithm.
 
@@ -232,12 +231,14 @@ async def get_received_messages(
 ) -> list[SecretSantaMessage]:
     """Get messages received by a participant (from their Secret Santa)."""
     result = await session.execute(
-        select(SecretSantaMessage).where(
+        select(SecretSantaMessage)
+        .where(
             and_(
                 SecretSantaMessage.event_id == event_id,
                 SecretSantaMessage.recipient_id == recipient_id,
             )
-        ).order_by(SecretSantaMessage.created_at.desc())
+        )
+        .order_by(SecretSantaMessage.created_at.desc())
     )
     return list(result.scalars().all())
 
@@ -247,11 +248,13 @@ async def get_sent_messages(
 ) -> list[SecretSantaMessage]:
     """Get messages sent by a participant (to their giftee)."""
     result = await session.execute(
-        select(SecretSantaMessage).where(
+        select(SecretSantaMessage)
+        .where(
             and_(
                 SecretSantaMessage.event_id == event_id,
                 SecretSantaMessage.sender_id == sender_id,
             )
-        ).order_by(SecretSantaMessage.created_at.desc())
+        )
+        .order_by(SecretSantaMessage.created_at.desc())
     )
     return list(result.scalars().all())

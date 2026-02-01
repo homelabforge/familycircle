@@ -22,26 +22,24 @@ class User(Base, UUIDMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
 
     # Auth
-    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Platform role
     is_super_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Magic link token (for password recovery)
-    magic_token: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
-    magic_token_expires: Mapped[Optional[datetime]] = mapped_column(
+    magic_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    magic_token_expires: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
     # Session token (after successful auth)
-    session_token: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
-    session_expires: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    session_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    session_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Current active family context (set after login/switch)
-    current_family_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    current_family_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
     # User preferences
     theme: Mapped[str] = mapped_column(String(20), default="system", nullable=False)
