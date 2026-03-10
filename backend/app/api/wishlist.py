@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user, require_family_context
 from app.db import get_db_session
-from app.models import FamilyMembership, SecretSantaAssignment, User, WishlistItem
+from app.models import FamilyMembership, User, WishlistItem
+from app.models.gift_exchange import GiftExchangeAssignment
 from app.services.permissions import permissions
 
 router = APIRouter()
@@ -158,7 +159,7 @@ async def get_user_wishlist(
     Only allowed if:
     1. You're viewing your own wishlist
     2. You're a family admin
-    3. You're assigned to give a gift to this user (Secret Santa)
+    3. You're assigned to give a gift to this user (Gift Exchange)
     4. Target user is in the same family
     """
     # Check if viewing own wishlist
@@ -202,11 +203,11 @@ async def get_user_wishlist(
             "items": [item_to_dict(item) for item in items],
         }
 
-    # Check if assigned to this user in any Secret Santa
+    # Check if assigned to this user in any Gift Exchange
     assignment_result = await db.execute(
-        select(SecretSantaAssignment).where(
-            SecretSantaAssignment.giver_id == user.id,
-            SecretSantaAssignment.receiver_id == user_id,
+        select(GiftExchangeAssignment).where(
+            GiftExchangeAssignment.giver_id == user.id,
+            GiftExchangeAssignment.receiver_id == user_id,
         )
     )
     assignment = assignment_result.scalar_one_or_none()
@@ -214,7 +215,7 @@ async def get_user_wishlist(
     if not assignment:
         raise HTTPException(
             status_code=403,
-            detail="You can only view another member's wishlist if they're your Secret Santa assignment",
+            detail="You can only view another member's wishlist if they're your Gift Exchange assignment",
         )
 
     # Get wishlist for assigned user

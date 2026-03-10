@@ -9,6 +9,8 @@ from app.models import (
     FamilyRole,
     User,
 )
+from app.models.wedding_detail import WeddingPartyMember
+from app.models.wedding_party_permission import WeddingPartyPermission
 
 
 class PermissionService:
@@ -78,11 +80,6 @@ class PermissionService:
             return True
 
         return False
-
-    @staticmethod
-    async def can_view_event(session: AsyncSession, user: User, event: Event) -> bool:
-        """Check if user can view an event."""
-        return await PermissionService.is_family_member(session, user, event.family_id)
 
     @staticmethod
     async def can_view_health_summary(session: AsyncSession, user: User, event: Event) -> bool:
@@ -167,6 +164,72 @@ class PermissionService:
         )
         membership = result.scalar_one_or_none()
         return membership.role.value if membership else None
+
+    @staticmethod
+    async def can_manage_wedding_sub_events(
+        session: AsyncSession, user: User, event: Event
+    ) -> bool:
+        """Check if user can manage sub-events for a wedding.
+
+        Allowed for: super admin, family admin, event creator,
+        or wedding party members with can_manage_sub_events permission.
+        """
+        if await PermissionService.can_manage_event(session, user, event):
+            return True
+
+        # Check wedding party permissions
+        result = await session.execute(
+            select(WeddingPartyPermission)
+            .join(WeddingPartyMember)
+            .where(
+                WeddingPartyMember.event_id == event.id,
+                WeddingPartyMember.user_id == user.id,
+                WeddingPartyPermission.can_manage_sub_events.is_(True),
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def can_view_wedding_rsvps(session: AsyncSession, user: User, event: Event) -> bool:
+        """Check if user can view RSVP details for a wedding.
+
+        Allowed for: super admin, family admin, event creator,
+        or wedding party members with can_view_rsvps permission.
+        """
+        if await PermissionService.can_manage_event(session, user, event):
+            return True
+
+        result = await session.execute(
+            select(WeddingPartyPermission)
+            .join(WeddingPartyMember)
+            .where(
+                WeddingPartyMember.event_id == event.id,
+                WeddingPartyMember.user_id == user.id,
+                WeddingPartyPermission.can_view_rsvps.is_(True),
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def can_post_wedding_updates(session: AsyncSession, user: User, event: Event) -> bool:
+        """Check if user can post updates for a wedding.
+
+        Allowed for: super admin, family admin, event creator,
+        or wedding party members with can_post_updates permission.
+        """
+        if await PermissionService.can_manage_event(session, user, event):
+            return True
+
+        result = await session.execute(
+            select(WeddingPartyPermission)
+            .join(WeddingPartyMember)
+            .where(
+                WeddingPartyMember.event_id == event.id,
+                WeddingPartyMember.user_id == user.id,
+                WeddingPartyPermission.can_post_updates.is_(True),
+            )
+        )
+        return result.scalar_one_or_none() is not None
 
 
 # Singleton instance for convenience

@@ -6,8 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import require_family_context
+from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import Event, FamilyMembership, PotluckItem, User
+from app.models import FamilyMembership, PotluckItem, User
 from app.services.permissions import permissions
 
 router = APIRouter()
@@ -70,16 +71,7 @@ async def get_potluck(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get potluck info for an event."""
-    result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
+    event = await resolve_event_or_404(db, event_id, user)
 
     if not event.has_potluck:
         raise HTTPException(status_code=400, detail="This event does not have a potluck")
@@ -90,7 +82,7 @@ async def get_potluck(
         claimer_name = None
         if item.claimed_by_id:
             claimer_name = await get_claimer_display_name(
-                db, item.claimed_by_id, user.current_family_id
+                db, item.claimed_by_id, user.active_family_id
             )
         items.append(item_to_dict(item, claimer_name))
 
@@ -128,16 +120,7 @@ async def list_items(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List all potluck items for an event."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    await resolve_event_or_404(db, event_id, user)
 
     result = await db.execute(select(PotluckItem).where(PotluckItem.event_id == event_id))
     items = result.scalars().all()
@@ -148,7 +131,7 @@ async def list_items(
         claimer_name = None
         if item.claimed_by_id:
             claimer_name = await get_claimer_display_name(
-                db, item.claimed_by_id, user.current_family_id
+                db, item.claimed_by_id, user.active_family_id
             )
         response_items.append(item_to_dict(item, claimer_name))
 
@@ -163,20 +146,7 @@ async def add_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a potluck item. Permissions vary by potluck mode."""
-    # Super admin can access any event, others only their current family
-    if user.is_super_admin:
-        result = await db.execute(select(Event).where(Event.id == event_id))
-    else:
-        result = await db.execute(
-            select(Event).where(
-                Event.id == event_id,
-                Event.family_id == user.current_family_id,
-            )
-        )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
+    event = await resolve_event_or_404(db, event_id, user)
 
     # Get potluck mode (default to organized for old events)
     potluck_mode = event.potluck_mode or "organized"
@@ -224,19 +194,7 @@ async def update_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update a potluck item (family admin or event creator only)."""
-    # Super admin can access any event, others only their current family
-    if user.is_super_admin:
-        event_result = await db.execute(select(Event).where(Event.id == event_id))
-    else:
-        event_result = await db.execute(
-            select(Event).where(
-                Event.id == event_id,
-                Event.family_id == user.current_family_id,
-            )
-        )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -284,19 +242,7 @@ async def delete_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete a potluck item (family admin or event creator only)."""
-    # Super admin can access any event, others only their current family
-    if user.is_super_admin:
-        event_result = await db.execute(select(Event).where(Event.id == event_id))
-    else:
-        event_result = await db.execute(
-            select(Event).where(
-                Event.id == event_id,
-                Event.family_id == user.current_family_id,
-            )
-        )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -332,15 +278,7 @@ async def claim_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Claim a potluck item."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    await resolve_event_or_404(db, event_id, user)
 
     result = await db.execute(
         select(PotluckItem).where(
@@ -374,16 +312,7 @@ async def unclaim_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Unclaim a potluck item."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     result = await db.execute(
         select(PotluckItem).where(
@@ -420,15 +349,7 @@ async def get_my_items(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get items claimed by current user."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    await resolve_event_or_404(db, event_id, user)
 
     result = await db.execute(
         select(PotluckItem).where(
@@ -439,6 +360,6 @@ async def get_my_items(
     items = result.scalars().all()
 
     # Get user's display name in this family
-    display_name = await get_claimer_display_name(db, str(user.id), user.current_family_id)
+    display_name = await get_claimer_display_name(db, str(user.id), user.active_family_id)
 
     return {"items": [item_to_dict(item, display_name) for item in items]}

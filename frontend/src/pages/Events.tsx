@@ -1,32 +1,96 @@
 import { useEffect, useState } from 'react'
-import { Calendar, ChevronRight, Loader2 } from 'lucide-react'
+import { Calendar, ChevronRight, Loader2, TreePine, Cake, Baby, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BackButton from '@/components/BackButton'
+import SubEventBadge from '@/components/events/SubEventBadge'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, type Event } from '@/lib/api'
+import { eventsApi, type Event, type EventType } from '@/lib/api'
+
+const TYPE_FILTERS: { value: EventType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'general', label: 'General' },
+  { value: 'holiday', label: 'Holiday' },
+  { value: 'birthday', label: 'Birthday' },
+  { value: 'baby_shower', label: 'Baby Shower' },
+  { value: 'wedding', label: 'Wedding' },
+]
+
+function EventTypeBadge({ event }: { event: Event }) {
+  if (event.event_type === 'holiday') {
+    return (
+      <span className="flex items-center gap-1 text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full font-medium">
+        <TreePine className="w-3 h-3" />
+        Holiday
+      </span>
+    )
+  }
+  if (event.event_type === 'birthday') {
+    return (
+      <span className="flex items-center gap-1 text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full font-medium">
+        <Cake className="w-3 h-3" />
+        Birthday
+      </span>
+    )
+  }
+  if (event.event_type === 'baby_shower') {
+    return (
+      <span className="flex items-center gap-1 text-xs bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded-full font-medium">
+        <Baby className="w-3 h-3" />
+        Baby Shower
+      </span>
+    )
+  }
+  if (event.event_type === 'wedding') {
+    return (
+      <span className="flex items-center gap-1 text-xs bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-full font-medium">
+        <Heart className="w-3 h-3" />
+        Wedding
+      </span>
+    )
+  }
+  return null
+}
+
+function getEventSubtitle(event: Event): string | null {
+  if (event.event_type === 'holiday' && event.holiday_detail) {
+    return event.holiday_detail.display_name
+  }
+  if (event.event_type === 'birthday' && event.birthday_detail) {
+    const name = event.birthday_detail.birthday_person_name
+    const age = event.birthday_detail.age_turning
+    return age ? `${name} turns ${age}` : `${name}'s birthday`
+  }
+  if (event.event_type === 'baby_shower' && event.baby_shower_detail) {
+    return event.baby_shower_detail.display_parents
+  }
+  if (event.event_type === 'wedding' && event.wedding_detail) {
+    return event.wedding_detail.display_couple
+  }
+  return null
+}
 
 export default function Events() {
   const { bigMode } = useBigMode()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all')
 
   useEffect(() => {
-    loadEvents()
-  }, [])
-
-  const loadEvents = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await eventsApi.list()
-      setEvents(response.events)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load events')
-    } finally {
-      setLoading(false)
+    const loadEvents = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await eventsApi.list(typeFilter === 'all' ? undefined : typeFilter)
+        setEvents(response.events)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load events')
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+    loadEvents()
+  }, [typeFilter])
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -64,13 +128,32 @@ export default function Events() {
       <div className="mt-4">
         <h1
           className={`
-            flex items-center gap-3 font-bold text-fc-text mb-6
+            flex items-center gap-3 font-bold text-fc-text mb-4
             ${bigMode ? 'text-3xl' : 'text-2xl'}
           `}
         >
           <Calendar className={bigMode ? 'w-9 h-9' : 'w-7 h-7'} />
           Family Events
         </h1>
+
+        {/* Type Filter Pills */}
+        <div className="flex gap-2 mb-6 overflow-x-auto">
+          {TYPE_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setTypeFilter(f.value)}
+              className={`
+                px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+                ${typeFilter === f.value
+                  ? 'bg-primary text-white'
+                  : 'bg-fc-surface border border-fc-border text-fc-text-muted hover:text-fc-text'
+                }
+              `}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
         {error && (
           <div className="bg-error/10 text-error px-4 py-3 rounded-xl mb-6">
@@ -111,7 +194,7 @@ export default function Events() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h2
                       className={`
                         font-semibold
@@ -121,12 +204,24 @@ export default function Events() {
                     >
                       {event.title}
                     </h2>
+                    <EventTypeBadge event={event} />
+                    {(event.sub_event_count ?? 0) > 0 && (
+                      <SubEventBadge count={event.sub_event_count!} />
+                    )}
                     {event.is_cancelled && (
                       <span className="text-xs bg-error/10 text-error px-2 py-1 rounded-full font-medium">
                         Cancelled
                       </span>
                     )}
                   </div>
+                  {(() => {
+                    const subtitle = getEventSubtitle(event)
+                    return subtitle ? (
+                      <p className={`text-fc-text-muted ${bigMode ? 'text-base' : 'text-sm'} ${event.is_cancelled ? 'line-through' : ''} mb-1`}>
+                        {subtitle}
+                      </p>
+                    ) : null
+                  })()}
                   <p className={`text-fc-text-muted ${bigMode ? 'text-base' : 'text-sm'} ${event.is_cancelled ? 'line-through' : ''}`}>
                     {formatDate(event.event_date)} @ {formatTime(event.event_date)}
                   </p>
@@ -140,7 +235,7 @@ export default function Events() {
                     <div className="flex gap-2 mt-3">
                       {event.has_secret_santa && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          Secret Santa
+                          Gift Exchange
                         </span>
                       )}
                       {event.has_potluck && (

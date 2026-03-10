@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Edit, Trash2, X, Loader2, TreePine, Utensils } from 'lucide-react'
+import { Calendar, Plus, Edit, Trash2, X, Loader2, TreePine, Utensils, Cake, Baby, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { eventsApi, type Event } from '@/lib/api'
@@ -354,6 +354,26 @@ export default function ManageEventsModal({ isOpen, onClose }: ManageEventsModal
                           <h3 className={`font-medium text-fc-text ${bigMode ? 'text-base' : 'text-sm'}`}>
                             {event.title}
                           </h3>
+                          {event.event_type === 'holiday' && (
+                            <span className="flex items-center gap-1 text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full">
+                              <TreePine className="w-3 h-3" />
+                            </span>
+                          )}
+                          {event.event_type === 'birthday' && (
+                            <span className="flex items-center gap-1 text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">
+                              <Cake className="w-3 h-3" />
+                            </span>
+                          )}
+                          {event.event_type === 'baby_shower' && (
+                            <span className="flex items-center gap-1 text-xs bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded-full">
+                              <Baby className="w-3 h-3" />
+                            </span>
+                          )}
+                          {event.event_type === 'wedding' && (
+                            <span className="flex items-center gap-1 text-xs bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-full">
+                              <Heart className="w-3 h-3" />
+                            </span>
+                          )}
                           {event.has_secret_santa && (
                             <span className="flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
                               <TreePine className="w-3 h-3" />

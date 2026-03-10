@@ -6,13 +6,14 @@ import {
   Wrench,
   User,
   Plus,
+  BarChart3,
 } from 'lucide-react'
 import DashboardCard from '@/components/DashboardCard'
 import CreateEventModal from '@/components/CreateEventModal'
 import UpcomingEvents from '@/components/UpcomingEvents'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, familyApi } from '@/lib/api'
+import { eventsApi, familyApi, type EventType } from '@/lib/api'
 
 interface UpcomingEvent {
   id: string
@@ -20,6 +21,8 @@ interface UpcomingEvent {
   date: string
   time: string
   rsvpStatus: 'yes' | 'no' | 'maybe' | null
+  isCancelled?: boolean
+  eventType?: EventType
 }
 
 export default function Dashboard() {
@@ -48,6 +51,7 @@ export default function Dashboard() {
         }),
         rsvpStatus: e.user_rsvp as 'yes' | 'no' | 'maybe' | null,
         isCancelled: e.is_cancelled,
+        eventType: e.event_type,
       }))
 
       setUpcomingEvents(formatted)
@@ -81,6 +85,13 @@ export default function Dashboard() {
       icon: Users,
       title: 'Family',
       badge: memberCount > 0 ? String(memberCount) : undefined,
+      badgeColor: 'primary' as const,
+    },
+    {
+      to: '/polls',
+      icon: BarChart3,
+      title: 'Polls',
+      badge: undefined,
       badgeColor: 'primary' as const,
     },
     {

@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Clock, Check, X, HelpCircle, Loader2, TreePine, UtensilsCrossed, AlertTriangle, Ban, Heart, ChevronDown, ChevronUp } from 'lucide-react'
+import { Calendar, MapPin, Clock, Check, X, HelpCircle, Loader2, TreePine, UtensilsCrossed, AlertTriangle, Ban, Heart, ChevronDown, ChevronUp, Cake, EyeOff, Baby, ExternalLink, Users, BarChart3, Plus, SearchX, Repeat } from 'lucide-react'
 import BackButton from '@/components/BackButton'
+import PollCard from '@/components/PollCard'
+import CreatePollModal from '@/components/CreatePollModal'
+import CommentThread from '@/components/CommentThread'
+import PhotoGallery from '@/components/events/PhotoGallery'
+import PhotoUpload from '@/components/events/PhotoUpload'
+import CalendarExportButton from '@/components/events/CalendarExportButton'
+import BabyShowerTimeline from '@/components/events/BabyShowerTimeline'
+import RegistryList from '@/components/events/RegistryList'
+import SaveTemplateButton from '@/components/events/SaveTemplateButton'
+import HeadcountBadge from '@/components/rsvp/HeadcountBadge'
+import RSVPGuestForm from '@/components/rsvp/RSVPGuestForm'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, type EventDetail as EventDetailType } from '@/lib/api'
+import { eventsApi, pollsApi, type EventDetail as EventDetailType, type Poll } from '@/lib/api'
 
 // Cancel confirmation modal
 function CancelEventModal({
@@ -244,10 +255,15 @@ export default function EventDetail() {
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+  const [polls, setPolls] = useState<Poll[]>([])
+  const [showCreatePoll, setShowCreatePoll] = useState(false)
+  const [photoRefreshKey, setPhotoRefreshKey] = useState(0)
 
   useEffect(() => {
     if (id) {
       loadEvent()
+      loadPolls()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -256,12 +272,28 @@ export default function EventDetail() {
     try {
       setLoading(true)
       setError(null)
+      setNotFound(false)
       const data = await eventsApi.get(id!)
       setEvent(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load event')
+      const message = err instanceof Error ? err.message : 'Failed to load event'
+      if (message.toLowerCase().includes('not found')) {
+        setNotFound(true)
+      } else {
+        setError(message)
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPolls = async () => {
+    if (!id) return
+    try {
+      const data = await pollsApi.list(id)
+      setPolls(data.polls)
+    } catch {
+      // Non-critical — don't block the page
     }
   }
 
@@ -327,12 +359,42 @@ export default function EventDetail() {
     )
   }
 
+  if (notFound) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <BackButton to="/events" label="Back to Events" />
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="bg-fc-surface border border-fc-border rounded-2xl p-8 max-w-md w-full text-center">
+            <SearchX className="w-12 h-12 text-fc-text-muted mx-auto mb-4" />
+            <h2 className={`font-bold text-fc-text mb-2 ${bigMode ? 'text-2xl' : 'text-xl'}`}>
+              Event Not Found
+            </h2>
+            <p className={`text-fc-text-muted mb-6 ${bigMode ? 'text-base' : 'text-sm'}`}>
+              This event doesn't exist or is no longer available. It may have been deleted or you may not have access to it.
+            </p>
+            <Link
+              to="/events"
+              className={`
+                inline-flex items-center gap-2 bg-primary text-white rounded-xl
+                hover:bg-primary/90 transition-colors
+                ${bigMode ? 'px-6 py-3 text-lg' : 'px-5 py-2.5'}
+              `}
+            >
+              <Calendar className="w-4 h-4" />
+              View All Events
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (error || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
         <BackButton to="/events" label="Back to Events" />
         <div className="bg-error/10 text-error px-4 py-3 rounded-xl mt-4">
-          {error || 'Event not found'}
+          {error || 'Failed to load event'}
         </div>
       </div>
     )
@@ -399,6 +461,7 @@ export default function EventDetail() {
             <div className="flex items-center gap-3 text-fc-text">
               <Calendar className="w-5 h-5 text-primary" />
               <span>{formatDate(event.event_date)}</span>
+              <CalendarExportButton eventId={event.id} />
             </div>
             <div className="flex items-center gap-3 text-fc-text">
               <Clock className="w-5 h-5 text-primary" />
@@ -434,6 +497,12 @@ export default function EventDetail() {
                 Potluck
               </span>
             )}
+            {event.is_recurring && event.recurrence && (
+              <span className="text-sm bg-violet-500/10 text-violet-400 px-3 py-1 rounded-full inline-flex items-center gap-1">
+                <Repeat className="w-3.5 h-3.5" />
+                Repeats {event.recurrence.recurrence_type}
+              </span>
+            )}
           </div>
 
           {/* Feature Links */}
@@ -467,7 +536,301 @@ export default function EventDetail() {
               )}
             </div>
           )}
+
+          {/* Save as Template — managers only */}
+          {event.can_manage && !event.is_cancelled && (
+            <div className="mt-4 pt-4 border-t border-fc-border">
+              <SaveTemplateButton event={event} />
+            </div>
+          )}
         </div>
+
+        {/* Holiday Info Card */}
+        {event.event_type === 'holiday' && event.holiday_detail && (
+          <div className={`bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <TreePine className="w-5 h-5 text-emerald-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Holiday Info
+              </h2>
+            </div>
+            <div className="space-y-2 text-fc-text">
+              <p>
+                <span className="text-fc-text-muted">Holiday:</span>{' '}
+                <span className="font-medium">{event.holiday_detail.display_name}</span>
+              </p>
+              {event.holiday_detail.year && (
+                <p>
+                  <span className="text-fc-text-muted">Year:</span>{' '}
+                  <span className="font-medium">{event.holiday_detail.year}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Birthday Info Card */}
+        {event.event_type === 'birthday' && event.birthday_detail && (
+          <div className={`bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <Cake className="w-5 h-5 text-amber-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Birthday Info
+              </h2>
+              {event.birthday_detail.is_secret && event.can_manage && (
+                <span className="flex items-center gap-1 text-xs bg-amber-500/10 text-amber-600 px-2 py-1 rounded-full">
+                  <EyeOff className="w-3 h-3" />
+                  Surprise
+                </span>
+              )}
+            </div>
+            <div className="space-y-2 text-fc-text">
+              <p>
+                <span className="text-fc-text-muted">Celebrating:</span>{' '}
+                <span className="font-medium">{event.birthday_detail.birthday_person_name}</span>
+              </p>
+              {event.birthday_detail.age_turning && (
+                <p>
+                  <span className="text-fc-text-muted">Turning:</span>{' '}
+                  <span className="font-medium">{event.birthday_detail.age_turning}</span>
+                </p>
+              )}
+              {event.birthday_detail.theme && (
+                <p>
+                  <span className="text-fc-text-muted">Theme:</span>{' '}
+                  <span className="font-medium">{event.birthday_detail.theme}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Baby Shower Info Card */}
+        {event.event_type === 'baby_shower' && event.baby_shower_detail && (
+          <div className={`bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <Baby className="w-5 h-5 text-rose-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Baby Shower Info
+              </h2>
+              {event.baby_shower_detail.is_gender_reveal && (
+                <span className="text-xs bg-rose-500/10 text-rose-600 px-2 py-1 rounded-full font-medium">
+                  Gender Reveal
+                </span>
+              )}
+            </div>
+            <div className="space-y-2 text-fc-text">
+              <p>
+                <span className="text-fc-text-muted">Parents:</span>{' '}
+                <span className="font-medium">{event.baby_shower_detail.display_parents}</span>
+              </p>
+              {event.baby_shower_detail.baby_name && (
+                <p>
+                  <span className="text-fc-text-muted">Baby Name:</span>{' '}
+                  <span className="font-medium">{event.baby_shower_detail.baby_name}</span>
+                </p>
+              )}
+              {event.baby_shower_detail.gender && event.baby_shower_detail.gender !== 'unknown' && (
+                <p>
+                  <span className="text-fc-text-muted">Gender:</span>{' '}
+                  <span className="font-medium capitalize">
+                    {event.baby_shower_detail.gender === 'surprise' ? "It's a Surprise!" : event.baby_shower_detail.gender}
+                  </span>
+                </p>
+              )}
+              {event.baby_shower_detail.due_date && (
+                <p>
+                  <span className="text-fc-text-muted">Due Date:</span>{' '}
+                  <span className="font-medium">
+                    {new Date(event.baby_shower_detail.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </p>
+              )}
+              {event.baby_shower_detail.registry_url && (
+                <p>
+                  <a
+                    href={event.baby_shower_detail.registry_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View Registry
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Wedding Info Card */}
+        {event.event_type === 'wedding' && event.wedding_detail && (
+          <div className={`bg-violet-500/5 border border-violet-500/20 rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <Heart className="w-5 h-5 text-violet-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Wedding Info
+              </h2>
+            </div>
+            <div className="space-y-2 text-fc-text">
+              <p>
+                <span className="text-fc-text-muted">Couple:</span>{' '}
+                <span className="font-medium">{event.wedding_detail.display_couple}</span>
+              </p>
+              {event.wedding_detail.wedding_date && (
+                <p>
+                  <span className="text-fc-text-muted">Wedding Date:</span>{' '}
+                  <span className="font-medium">
+                    {new Date(event.wedding_detail.wedding_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </p>
+              )}
+              {event.wedding_detail.venue_name && (
+                <p>
+                  <span className="text-fc-text-muted">Venue:</span>{' '}
+                  <span className="font-medium">{event.wedding_detail.venue_name}</span>
+                </p>
+              )}
+              {event.wedding_detail.color_theme && (
+                <p>
+                  <span className="text-fc-text-muted">Colors:</span>{' '}
+                  <span className="font-medium">{event.wedding_detail.color_theme}</span>
+                </p>
+              )}
+              {event.wedding_detail.registry_url && (
+                <p>
+                  <a
+                    href={event.wedding_detail.registry_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View Registry
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Wedding Party Section */}
+        {event.event_type === 'wedding' && event.wedding_party && event.wedding_party.length > 0 && (
+          <div className={`bg-fc-surface border border-fc-border rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="w-5 h-5 text-violet-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Wedding Party
+              </h2>
+            </div>
+            <div className="space-y-4">
+              {['partner1', 'partner2', 'shared'].map((side) => {
+                const members = event.wedding_party?.filter((m) => (m.side || 'shared') === side) ?? []
+                if (members.length === 0) return null
+                const sideLabel = side === 'partner1'
+                  ? event.wedding_detail?.partner1_name + "'s Side"
+                  : side === 'partner2'
+                    ? event.wedding_detail?.partner2_name + "'s Side"
+                    : 'Shared'
+                return (
+                  <div key={side}>
+                    <h3 className="text-sm font-medium text-fc-text-muted mb-2">{sideLabel}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {members.map((member) => (
+                        <div key={member.id} className="flex items-center gap-2 bg-fc-bg rounded-xl px-3 py-2">
+                          <span className="font-medium text-fc-text text-sm">{member.name}</span>
+                          <span className="text-xs text-fc-text-muted">{member.display_role}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sub-events Section */}
+        {event.sub_events && event.sub_events.length > 0 && (
+          <div className={`bg-fc-surface border border-fc-border rounded-2xl p-6 mb-6 ${bigMode ? 'text-lg' : ''}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <Calendar className="w-5 h-5 text-violet-600" />
+              <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                Related Events
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {event.sub_events.map((sub) => (
+                <Link
+                  key={sub.id}
+                  to={`/event/${sub.id}`}
+                  className={`
+                    flex items-center justify-between bg-fc-bg rounded-xl px-4 py-3
+                    hover:bg-fc-surface-hover transition-colors
+                    ${sub.is_cancelled ? 'opacity-50' : ''}
+                  `}
+                >
+                  <div>
+                    <span className={`font-medium text-fc-text text-sm ${sub.is_cancelled ? 'line-through' : ''}`}>
+                      {sub.title}
+                    </span>
+                    {sub.is_cancelled && (
+                      <span className="ml-2 text-xs text-error">Cancelled</span>
+                    )}
+                  </div>
+                  {sub.event_date && (
+                    <span className="text-xs text-fc-text-muted">
+                      {new Date(sub.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Polls Section */}
+        {(polls.length > 0 || (event.can_manage && !event.is_cancelled)) && (
+          <div className="bg-fc-surface border border-fc-border rounded-2xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <BarChart3 className={`text-primary ${bigMode ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                <h2 className={`font-semibold text-fc-text ${bigMode ? 'text-xl' : 'text-lg'}`}>
+                  Polls {polls.length > 0 && `(${polls.length})`}
+                </h2>
+              </div>
+              {event.can_manage && !event.is_cancelled && (
+                <button
+                  onClick={() => setShowCreatePoll(true)}
+                  className={`
+                    flex items-center gap-1 text-primary hover:text-primary/80 transition-colors
+                    ${bigMode ? 'text-base' : 'text-sm'}
+                  `}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Poll
+                </button>
+              )}
+            </div>
+            {polls.length > 0 ? (
+              <div className="space-y-4">
+                {polls.map((poll) => (
+                  <PollCard
+                    key={poll.id}
+                    poll={poll}
+                    onUpdated={(updated) => {
+                      setPolls((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className={`text-fc-text-muted ${bigMode ? 'text-base' : 'text-sm'}`}>
+                No polls yet. Create one to get the group's opinion!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* RSVP Section - Hide if cancelled */}
         {!event.is_cancelled && (
@@ -528,7 +891,24 @@ export default function EventDetail() {
               No
             </button>
           </div>
-        </div>
+
+            {/* Headcount badge */}
+            {(event.headcount ?? 0) > 0 && (
+              <div className="mt-4">
+                <HeadcountBadge
+                  headcount={event.headcount ?? 0}
+                  rsvpYes={event.rsvp_counts.yes}
+                />
+              </div>
+            )}
+
+            {/* Additional guests form — shown when user has RSVPed */}
+            {event.user_rsvp === 'yes' && (
+              <div className="mt-4 pt-4 border-t border-fc-border">
+                <RSVPGuestForm eventId={event.id} hasRsvp={true} />
+              </div>
+            )}
+          </div>
         )}
 
         {/* Attendees */}
@@ -574,6 +954,43 @@ export default function EventDetail() {
           canManage={event.can_manage}
           bigMode={bigMode}
         />
+
+        {/* Baby Shower Timeline */}
+        {event.event_type === 'baby_shower' && (
+          <BabyShowerTimeline
+            eventId={event.id}
+            canManage={event.can_manage}
+            isCancelled={event.is_cancelled}
+          />
+        )}
+
+        {/* Registry (baby showers and weddings) */}
+        {(event.event_type === 'baby_shower' || event.event_type === 'wedding') && (
+          <RegistryList
+            eventId={event.id}
+            canManage={event.can_manage}
+            isCancelled={event.is_cancelled}
+          />
+        )}
+
+        {/* Photo Gallery */}
+        <PhotoGallery
+          key={photoRefreshKey}
+          eventId={event.id}
+          canManage={event.can_manage}
+          isCancelled={event.is_cancelled}
+        />
+
+        {/* Photo Upload - only if not cancelled */}
+        {!event.is_cancelled && (
+          <PhotoUpload
+            eventId={event.id}
+            onUploaded={() => setPhotoRefreshKey((k) => k + 1)}
+          />
+        )}
+
+        {/* Comments */}
+        <CommentThread eventId={event.id} isCancelled={event.is_cancelled} canPin={event.can_manage} />
       </div>
 
       {/* Cancel Event Modal */}
@@ -582,6 +999,17 @@ export default function EventDetail() {
         onClose={() => setShowCancelModal(false)}
         onConfirm={handleCancelEvent}
         loading={cancelLoading}
+      />
+
+      {/* Create Poll Modal */}
+      <CreatePollModal
+        isOpen={showCreatePoll}
+        onClose={() => setShowCreatePoll(false)}
+        eventId={event.id}
+        onCreated={() => {
+          setShowCreatePoll(false)
+          loadPolls()
+        }}
       />
     </div>
   )

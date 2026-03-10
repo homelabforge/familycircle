@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "familycircle"
-version = "2.1.0"
+version = "3.0.0"
 description = "Family event coordination platform"
 requires-python = ">=3.13"
 license = "MIT"
@@ -12,10 +12,10 @@ authors = [
     { name = "HomeLabForge", email = "contact@homelabforge.io" }
 ]
 dependencies = [
-    "fastapi>=0.121.0",
-    "granian>=2.6.0",
-    "sqlalchemy>=2.0.44",
-    "aiosqlite>=0.21.0",
+    "fastapi>=0.134.0",
+    "granian>=2.7.2",
+    "sqlalchemy>=2.0.47",
+    "aiosqlite>=0.22.1",
     "pydantic[email]>=2.12.0",
     "pydantic-settings>=2.6.0",
     "python-multipart>=0.0.18",
@@ -24,13 +24,17 @@ dependencies = [
     "aiosmtplib>=4.0.0",
     "jinja2>=3.1.5",
     "httpx>=0.28.0",
+    "apscheduler>=3.11.2",
+    "python-magic>=0.4.27",
+    "icalendar>=7.0.0",
+    "python-dateutil>=2.9.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
-    "ruff>=0.14.14",
+    "ruff>=0.15.4",
 ]
 
 [tool.hatch.build.targets.wheel]

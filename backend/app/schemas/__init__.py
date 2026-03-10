@@ -7,6 +7,14 @@ from app.schemas.auth import (
     MemberResponse,
     OrganizerLogin,
 )
+from app.schemas.baby_shower import (
+    BabyShowerDetailCreate,
+    BabyShowerDetailResponse,
+)
+from app.schemas.birthday import (
+    BirthdayDetailCreate,
+    BirthdayDetailResponse,
+)
 from app.schemas.event import (
     EventCreate,
     EventResponse,
@@ -14,16 +22,38 @@ from app.schemas.event import (
     RSVPRequest,
     RSVPResponse,
 )
+from app.schemas.event_comment import (
+    EventCommentCreate,
+    EventCommentResponse,
+    EventCommentUpdate,
+)
+from app.schemas.gift_exchange import (
+    AssignmentResponse,
+    ExclusionCreate,
+    GiftExchangeStatus,
+    MessageCreate,
+    MessageResponse,
+)
+from app.schemas.holiday import (
+    HolidayDetailCreate,
+    HolidayDetailResponse,
+)
+from app.schemas.poll import (
+    PollCreate,
+    PollOptionCreate,
+    PollOptionResponse,
+    PollResponse,
+    PollVoteRequest,
+)
 from app.schemas.potluck import (
     PotluckItemCreate,
     PotluckItemResponse,
 )
-from app.schemas.secret_santa import (
-    AssignmentResponse,
-    ExclusionCreate,
-    MessageCreate,
-    MessageResponse,
-    SecretSantaStatus,
+from app.schemas.wedding import (
+    WeddingDetailCreate,
+    WeddingDetailResponse,
+    WeddingPartyMemberCreate,
+    WeddingPartyMemberResponse,
 )
 from app.schemas.wishlist import (
     WishlistItemCreate,
@@ -42,14 +72,34 @@ __all__ = [
     "EventResponse",
     "RSVPRequest",
     "RSVPResponse",
+    "BirthdayDetailCreate",
+    "BirthdayDetailResponse",
+    "BabyShowerDetailCreate",
+    "BabyShowerDetailResponse",
+    "HolidayDetailCreate",
+    "HolidayDetailResponse",
+    "WeddingDetailCreate",
+    "WeddingDetailResponse",
+    "WeddingPartyMemberCreate",
+    "WeddingPartyMemberResponse",
     "WishlistItemCreate",
     "WishlistItemUpdate",
     "WishlistItemResponse",
     "PotluckItemCreate",
     "PotluckItemResponse",
-    "SecretSantaStatus",
+    "GiftExchangeStatus",
     "AssignmentResponse",
     "ExclusionCreate",
     "MessageCreate",
     "MessageResponse",
+    # Polls
+    "PollCreate",
+    "PollOptionCreate",
+    "PollOptionResponse",
+    "PollResponse",
+    "PollVoteRequest",
+    # Event Comments
+    "EventCommentCreate",
+    "EventCommentUpdate",
+    "EventCommentResponse",
 ]

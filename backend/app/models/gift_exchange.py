@@ -1,4 +1,4 @@
-"""Secret Santa models."""
+"""Gift Exchange models."""
 
 from typing import TYPE_CHECKING
 
@@ -11,13 +11,13 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 
-class SecretSantaAssignment(Base, UUIDMixin, TimestampMixin):
-    """Secret Santa assignment - who gives to whom."""
+class GiftExchangeAssignment(Base, UUIDMixin, TimestampMixin):
+    """Gift Exchange assignment - who gives to whom."""
 
     __tablename__ = "secret_santa_assignments"
 
-    # event_id is a string identifier for the Secret Santa round
-    # Links to the Event.id when Secret Santa is part of an event
+    # event_id is a string identifier for the Gift Exchange round
+    # Links to the Event.id when Gift Exchange is part of an event
     event_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     giver_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
@@ -31,10 +31,10 @@ class SecretSantaAssignment(Base, UUIDMixin, TimestampMixin):
     receiver: Mapped["User"] = relationship(foreign_keys=[receiver_id])
 
     def __repr__(self) -> str:
-        return f"<SecretSantaAssignment {self.giver_id} -> {self.receiver_id}>"
+        return f"<GiftExchangeAssignment {self.giver_id} -> {self.receiver_id}>"
 
 
-class SecretSantaExclusion(Base, UUIDMixin, TimestampMixin):
+class GiftExchangeExclusion(Base, UUIDMixin, TimestampMixin):
     """Exclusion rule - two people who should not be paired."""
 
     __tablename__ = "secret_santa_exclusions"
@@ -52,11 +52,11 @@ class SecretSantaExclusion(Base, UUIDMixin, TimestampMixin):
     receiver: Mapped["User"] = relationship(foreign_keys=[receiver_id])
 
     def __repr__(self) -> str:
-        return f"<SecretSantaExclusion {self.giver_id} <-> {self.receiver_id}>"
+        return f"<GiftExchangeExclusion {self.giver_id} <-> {self.receiver_id}>"
 
 
-class SecretSantaMessage(Base, UUIDMixin, TimestampMixin):
-    """Anonymous message between Secret Santa pairs."""
+class GiftExchangeMessage(Base, UUIDMixin, TimestampMixin):
+    """Anonymous message between Gift Exchange pairs."""
 
     __tablename__ = "secret_santa_messages"
 
@@ -74,4 +74,4 @@ class SecretSantaMessage(Base, UUIDMixin, TimestampMixin):
     recipient: Mapped["User"] = relationship(foreign_keys=[recipient_id])
 
     def __repr__(self) -> str:
-        return f"<SecretSantaMessage {self.sender_id} -> {self.recipient_id}>"
+        return f"<GiftExchangeMessage {self.sender_id} -> {self.recipient_id}>"

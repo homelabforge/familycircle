@@ -85,7 +85,7 @@ export default function Wishlist() {
         </h1>
 
         <p className={`text-fc-text-muted mb-6 ${bigMode ? 'text-lg' : ''}`}>
-          Add items you'd like to receive. Your Secret Santa will see this list!
+          Add items you'd like to receive. Your Gift Exchange match will see this list!
         </p>
 
         {error && (

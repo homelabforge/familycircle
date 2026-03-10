@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Frontend Builder
 # ==============================================================================
-FROM oven/bun:1.3.8-alpine AS frontend-builder
+FROM oven/bun:1.3.10-alpine AS frontend-builder
 
 WORKDIR /build
 
@@ -48,9 +48,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy backend requirements
 COPY backend/pyproject.toml ./
 
-# Create virtual environment and install dependencies
+# Create virtual environment and upgrade pip
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip
 
 # Install the package and dependencies
 COPY backend/ ./
@@ -61,22 +62,18 @@ RUN pip install --no-cache-dir .
 # ==============================================================================
 FROM python:3.14-slim AS production
 
-# HTTP server metadata
-LABEL http.server.name="granian"
-LABEL http.server.version="2.6.1"
-LABEL http.server.type="asgi"
 LABEL org.opencontainers.image.frontend.builder="bun-1.3.5"
 
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install runtime dependencies, create non-root user, and set up directories
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user
-RUN groupadd --gid 1000 appuser \
-    && useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 1000 appuser \
+    && useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser \
+    && mkdir -p /data
 
 # Copy virtual environment from builder
 COPY --from=backend-builder /opt/venv /opt/venv
@@ -88,8 +85,8 @@ COPY --from=backend-builder /build/app /app/app
 # Copy frontend build
 COPY --from=frontend-builder /build/dist /app/static
 
-# Create data directory
-RUN mkdir -p /data && chown -R appuser:appuser /data /app
+# Set ownership and permissions
+RUN chown -R appuser:appuser /data /app
 
 # Switch to non-root user
 USER appuser

@@ -18,6 +18,8 @@ const GiftExchange = lazy(() => import('@/pages/GiftExchange'))
 const Potluck = lazy(() => import('@/pages/Potluck'))
 const Events = lazy(() => import('@/pages/Events'))
 const EventDetail = lazy(() => import('@/pages/EventDetail'))
+const Polls = lazy(() => import('@/pages/Polls'))
+const PollDetail = lazy(() => import('@/pages/PollDetail'))
 const Wishlist = lazy(() => import('@/pages/Wishlist'))
 const Family = lazy(() => import('@/pages/Family'))
 const Messages = lazy(() => import('@/pages/Messages'))
@@ -175,6 +177,8 @@ function AppRoutes() {
           <Route path="potluck/:eventId" element={<Potluck />} />
           <Route path="events" element={<Events />} />
           <Route path="event/:id" element={<EventDetail />} />
+          <Route path="polls" element={<Polls />} />
+          <Route path="polls/:id" element={<PollDetail />} />
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="family" element={<Family />} />
           <Route path="messages" element={<Messages />} />

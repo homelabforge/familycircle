@@ -5,14 +5,14 @@ import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
 import {
   eventsApi,
-  secretSantaApi,
+  giftExchangeApi,
   type Event,
-  type SecretSantaMessage,
+  type GiftExchangeMessage,
 } from '@/lib/api'
 
 interface EventMessages {
   event: Event
-  messages: SecretSantaMessage[]
+  messages: GiftExchangeMessage[]
   hasAssignment: boolean
 }
 
@@ -33,15 +33,15 @@ export default function Messages() {
       setLoading(true)
       const eventsRes = await eventsApi.list()
 
-      // Filter to events with Secret Santa
+      // Filter to events with Gift Exchange
       const ssEvents = eventsRes.events.filter((e) => e.has_secret_santa)
 
       // Load messages for each event
       const messagesPromises = ssEvents.map(async (event) => {
         try {
           const [statusRes, messagesRes] = await Promise.all([
-            secretSantaApi.getStatus(event.id),
-            secretSantaApi.getMessages(event.id),
+            giftExchangeApi.getStatus(event.id),
+            giftExchangeApi.getMessages(event.id),
           ])
           return {
             event,
@@ -78,7 +78,7 @@ export default function Messages() {
 
     try {
       setSending(eventId)
-      await secretSantaApi.sendMessage(eventId, content)
+      await giftExchangeApi.sendMessage(eventId, content)
       toast.success('Message sent!')
       setNewMessages((prev) => ({ ...prev, [eventId]: '' }))
       await loadData()
@@ -118,10 +118,10 @@ export default function Messages() {
         <div className="mt-4 text-center py-12">
           <MessageCircle className="w-12 h-12 mx-auto mb-4 text-fc-text-muted opacity-50" />
           <p className={`text-fc-text-muted ${bigMode ? 'text-lg' : ''}`}>
-            No Secret Santa events available.
+            No Gift Exchange events available.
           </p>
           <p className={`text-fc-text-muted mt-2 ${bigMode ? 'text-base' : 'text-sm'}`}>
-            Messages will appear here once you're part of a Secret Santa event.
+            Messages will appear here once you're part of a Gift Exchange event.
           </p>
         </div>
       </div>
@@ -140,11 +140,11 @@ export default function Messages() {
           `}
         >
           <MessageCircle className={bigMode ? 'w-9 h-9' : 'w-7 h-7'} />
-          Secret Santa Messages
+          Gift Exchange Messages
         </h1>
 
         <p className={`text-fc-text-muted mb-6 ${bigMode ? 'text-lg' : ''}`}>
-          Send anonymous messages to your Secret Santa match. Your identity stays hidden!
+          Send anonymous messages to your Gift Exchange match. Your identity stays hidden!
         </p>
 
         {/* Event Accordion */}

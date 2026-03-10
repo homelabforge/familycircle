@@ -41,7 +41,7 @@ export default function About() {
             <p className={`text-fc-text-muted ${bigMode ? 'text-lg leading-relaxed' : 'leading-relaxed'}`}>
               FamilyCircle is a family event coordination platform designed specifically for
               elderly users who need simple, password-free access to manage family gatherings,
-              Secret Santa exchanges, and potluck dinners.
+              Gift Exchange events, and potluck dinners.
             </p>
           </div>
 
@@ -62,7 +62,7 @@ export default function About() {
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-primary">•</span>
-                Secret Santa with smart assignment algorithm
+                Gift Exchange with smart assignment algorithm
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-primary">•</span>

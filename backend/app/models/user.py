@@ -53,5 +53,16 @@ class User(Base, UUIDMixin, TimestampMixin):
         back_populates="user", lazy="selectin", uselist=False, cascade="all, delete-orphan"
     )
 
+    @property
+    def active_family_id(self) -> str:
+        """Return current_family_id, narrowed to str.
+
+        Safe to call in endpoints that use require_family_context dependency,
+        which guarantees current_family_id is set.
+        """
+        if self.current_family_id is None:
+            raise RuntimeError("active_family_id accessed without family context")
+        return self.current_family_id
+
     def __repr__(self) -> str:
         return f"<User {self.email}>"

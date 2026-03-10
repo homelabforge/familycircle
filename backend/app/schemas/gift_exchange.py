@@ -1,12 +1,12 @@
-"""Secret Santa schemas."""
+"""Gift Exchange schemas."""
 
 from datetime import datetime
 
 from pydantic import BaseModel
 
 
-class SecretSantaStatus(BaseModel):
-    """Secret Santa status for an event."""
+class GiftExchangeStatus(BaseModel):
+    """Gift Exchange status for an event."""
 
     event_id: str
     is_assigned: bool
@@ -15,7 +15,7 @@ class SecretSantaStatus(BaseModel):
 
 
 class AssignmentResponse(BaseModel):
-    """Your Secret Santa assignment."""
+    """Your Gift Exchange assignment."""
 
     receiver_id: str
     receiver_name: str

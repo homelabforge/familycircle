@@ -24,6 +24,9 @@ class Family(Base, UUIDMixin, TimestampMixin):
     # Unique code for joining this family
     family_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
 
+    # Calendar feed token (for subscribable iCal feed URL)
+    calendar_feed_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     # Relationships
     memberships: Mapped[list["FamilyMembership"]] = relationship(
         back_populates="family", lazy="selectin", cascade="all, delete-orphan"

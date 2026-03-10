@@ -4,11 +4,11 @@ import { TreePine, MessageCircle, Loader2, ExternalLink } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
 import {
-  secretSantaApi,
+  giftExchangeApi,
   wishlistApi,
   eventsApi,
-  type SecretSantaStatus,
-  type SecretSantaAssignment,
+  type GiftExchangeStatus,
+  type GiftExchangeAssignment,
   type WishlistItem,
   type Event,
 } from '@/lib/api'
@@ -16,8 +16,8 @@ import {
 export default function GiftExchange() {
   const { eventId: urlEventId } = useParams()
   const { bigMode } = useBigMode()
-  const [status, setStatus] = useState<SecretSantaStatus | null>(null)
-  const [assignment, setAssignment] = useState<SecretSantaAssignment | null>(null)
+  const [status, setStatus] = useState<GiftExchangeStatus | null>(null)
+  const [assignment, setAssignment] = useState<GiftExchangeAssignment | null>(null)
   const [myWishlist, setMyWishlist] = useState<WishlistItem[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,14 +31,14 @@ export default function GiftExchange() {
   useEffect(() => {
     if (urlEventId) {
       setActiveEventId(urlEventId)
-      loadSecretSanta(urlEventId)
+      loadGiftExchange(urlEventId)
     } else {
-      loadEventsWithSecretSanta()
+      loadEventsWithGiftExchange()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlEventId])
 
-  const loadEventsWithSecretSanta = async () => {
+  const loadEventsWithGiftExchange = async () => {
     try {
       setLoading(true)
       setError(null)
@@ -49,7 +49,7 @@ export default function GiftExchange() {
       // If only one event, load it and set activeEventId
       if (ssEvents.length === 1) {
         setActiveEventId(ssEvents[0].id)
-        await loadSecretSanta(ssEvents[0].id)
+        await loadGiftExchange(ssEvents[0].id)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load events')
@@ -58,14 +58,14 @@ export default function GiftExchange() {
     }
   }
 
-  const loadSecretSanta = async (id: string) => {
+  const loadGiftExchange = async (id: string) => {
     try {
       setLoading(true)
       setError(null)
 
       // Load status and my wishlist in parallel
       const [statusRes, wishlistRes] = await Promise.all([
-        secretSantaApi.getStatus(id),
+        giftExchangeApi.getStatus(id),
         wishlistApi.get(),
       ])
 
@@ -75,7 +75,7 @@ export default function GiftExchange() {
       // If assigned, load assignment
       if (statusRes.status === 'assigned') {
         try {
-          const assignmentRes = await secretSantaApi.getAssignment(id)
+          const assignmentRes = await giftExchangeApi.getAssignment(id)
           setAssignment(assignmentRes)
         } catch {
           // No assignment for this user
@@ -167,7 +167,7 @@ export default function GiftExchange() {
     )
   }
 
-  // No secret santa events
+  // No gift exchange events
   if (!eventId && events.length === 0 && !status) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -207,7 +207,7 @@ export default function GiftExchange() {
           `}
         >
           <TreePine className={bigMode ? 'w-9 h-9' : 'w-7 h-7'} />
-          Secret Santa
+          Gift Exchange
         </h1>
 
         {error && (
@@ -381,7 +381,7 @@ function SendMessageModal({ eventId, onClose, bigMode }: SendMessageModalProps) 
     try {
       setSending(true)
       setError(null)
-      await secretSantaApi.sendMessage(eventId, message.trim())
+      await giftExchangeApi.sendMessage(eventId, message.trim())
       setSuccess(true)
       setTimeout(onClose, 1500)
     } catch (err) {

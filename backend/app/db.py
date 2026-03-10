@@ -11,18 +11,27 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.config import DATABASE_PATH
 from app.models import (  # noqa: F401
+    BabyShowerDetail,
+    BirthdayDetail,
     Event,
+    EventComment,
     EventRSVP,
     Family,
     FamilyMembership,
+    GiftExchangeAssignment,
+    GiftExchangeExclusion,
+    GiftExchangeMessage,
+    HolidayDetail,
+    Poll,
+    PollOption,
+    PollVote,
     PotluckItem,
     ProfileVisibility,
-    SecretSantaAssignment,
-    SecretSantaExclusion,
-    SecretSantaMessage,
     Setting,
     User,
     UserProfile,
+    WeddingDetail,
+    WeddingPartyMember,
     WishlistItem,
 )
 from app.models.base import Base

@@ -4,6 +4,11 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.baby_shower import BabyShowerDetailCreate, BabyShowerDetailResponse
+from app.schemas.birthday import BirthdayDetailCreate, BirthdayDetailResponse
+from app.schemas.holiday import HolidayDetailCreate, HolidayDetailResponse
+from app.schemas.wedding import WeddingDetailCreate, WeddingDetailResponse
+
 
 class EventCreate(BaseModel):
     """Create event request."""
@@ -19,10 +24,21 @@ class EventCreate(BaseModel):
     # Potluck configuration
     potluck_mode: str | None = None  # 'organized' or 'open'
     potluck_host_providing: str | None = None
-    # Secret Santa rules
+    # Gift Exchange rules
     secret_santa_budget_min: int | None = None
     secret_santa_budget_max: int | None = None
     secret_santa_notes: str | None = None
+    # Event type (parent_event_id only set via POST /events/{id}/sub-events)
+    event_type: str = "general"
+    # Recurrence
+    recurrence_type: str | None = None  # yearly, monthly, weekly
+    recurrence_end_date: datetime | None = None
+    recurrence_max_occurrences: int | None = None
+    # Type-specific details
+    holiday_detail: HolidayDetailCreate | None = None
+    birthday_detail: BirthdayDetailCreate | None = None
+    baby_shower_detail: BabyShowerDetailCreate | None = None
+    wedding_detail: WeddingDetailCreate | None = None
 
 
 class EventUpdate(BaseModel):
@@ -39,10 +55,15 @@ class EventUpdate(BaseModel):
     # Potluck configuration
     potluck_mode: str | None = None
     potluck_host_providing: str | None = None
-    # Secret Santa rules
+    # Gift Exchange rules
     secret_santa_budget_min: int | None = None
     secret_santa_budget_max: int | None = None
     secret_santa_notes: str | None = None
+    # Type-specific details (upsert on update)
+    holiday_detail: HolidayDetailCreate | None = None
+    birthday_detail: BirthdayDetailCreate | None = None
+    baby_shower_detail: BabyShowerDetailCreate | None = None
+    wedding_detail: WeddingDetailCreate | None = None
 
 
 class EventResponse(BaseModel):
@@ -61,10 +82,17 @@ class EventResponse(BaseModel):
     potluck_mode: str | None = None
     potluck_host_providing: str | None = None
     secret_santa_assigned: bool
-    # Secret Santa rules
+    # Gift Exchange rules
     secret_santa_budget_min: int | None = None
     secret_santa_budget_max: int | None = None
     secret_santa_notes: str | None = None
+    # Event type
+    event_type: str = "general"
+    parent_event_id: str | None = None
+    holiday_detail: HolidayDetailResponse | None = None
+    birthday_detail: BirthdayDetailResponse | None = None
+    baby_shower_detail: BabyShowerDetailResponse | None = None
+    wedding_detail: WeddingDetailResponse | None = None
     created_at: datetime
 
     class Config:

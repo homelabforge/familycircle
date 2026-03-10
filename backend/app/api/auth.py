@@ -462,10 +462,11 @@ async def regenerate_family_code(
 @router.post("/magic-link")
 async def send_magic_link(
     request: ForgotPasswordRequest,
+    req: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Send a magic link for password recovery (backwards compat)."""
-    return await forgot_password(request, db)
+    return await forgot_password(request, req, db)
 
 
 # Alias for backwards compatibility

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 
-class FamilyRole(str, enum.Enum):
+class FamilyRole(enum.StrEnum):
     """Role within a family."""
 
     ADMIN = "admin"

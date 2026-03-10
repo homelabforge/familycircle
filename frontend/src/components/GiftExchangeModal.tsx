@@ -4,11 +4,11 @@ import { toast } from 'sonner'
 import { useBigMode } from '@/contexts/BigModeContext'
 import {
   eventsApi,
-  secretSantaApi,
+  giftExchangeApi,
   familyApi,
   type Event,
-  type SecretSantaStatus,
-  type SecretSantaExclusion,
+  type GiftExchangeStatus,
+  type GiftExchangeExclusion,
   type FamilyMember,
 } from '@/lib/api'
 
@@ -21,8 +21,8 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
   const { bigMode } = useBigMode()
   const [events, setEvents] = useState<Event[]>([])
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
-  const [status, setStatus] = useState<SecretSantaStatus | null>(null)
-  const [exclusions, setExclusions] = useState<SecretSantaExclusion[]>([])
+  const [status, setStatus] = useState<GiftExchangeStatus | null>(null)
+  const [exclusions, setExclusions] = useState<GiftExchangeExclusion[]>([])
   const [members, setMembers] = useState<FamilyMember[]>([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
@@ -80,7 +80,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
   const loadStatus = async () => {
     if (!selectedEventId) return
     try {
-      const res = await secretSantaApi.getStatus(selectedEventId)
+      const res = await giftExchangeApi.getStatus(selectedEventId)
       setStatus(res)
     } catch (err) {
       console.error('Failed to load status:', err)
@@ -90,7 +90,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
   const loadExclusions = async () => {
     if (!selectedEventId) return
     try {
-      const res = await secretSantaApi.getExclusions(selectedEventId)
+      const res = await giftExchangeApi.getExclusions(selectedEventId)
       setExclusions(res.exclusions)
     } catch (err) {
       console.error('Failed to load exclusions:', err)
@@ -107,7 +107,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
 
     try {
       setRunning(true)
-      const res = await secretSantaApi.runAssignment(selectedEventId)
+      const res = await giftExchangeApi.runAssignment(selectedEventId)
       toast.success(`Assignments created for ${res.assignment_count} participants!`)
       await loadStatus()
     } catch (err) {
@@ -124,7 +124,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
     }
 
     try {
-      await secretSantaApi.addExclusion(selectedEventId, member1, member2)
+      await giftExchangeApi.addExclusion(selectedEventId, member1, member2)
       toast.success('Exclusion added')
       setShowExclusionForm(false)
       setMember1('')
@@ -138,7 +138,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
   const handleRemoveExclusion = async (exclusionId: string) => {
     if (!selectedEventId) return
     try {
-      await secretSantaApi.removeExclusion(selectedEventId, exclusionId)
+      await giftExchangeApi.removeExclusion(selectedEventId, exclusionId)
       toast.success('Exclusion removed')
       await loadExclusions()
     } catch (err) {

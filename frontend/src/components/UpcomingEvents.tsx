@@ -1,6 +1,7 @@
-import { Calendar, CheckCircle, HelpCircle, XCircle, Ban } from 'lucide-react'
+import { Calendar, CheckCircle, HelpCircle, XCircle, Ban, TreePine, Cake, Baby, Heart } from 'lucide-react'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { Link } from 'react-router-dom'
+import type { EventType } from '@/lib/api'
 
 interface UpcomingEvent {
   id: string
@@ -9,6 +10,7 @@ interface UpcomingEvent {
   time: string
   rsvpStatus?: 'yes' | 'no' | 'maybe' | null
   isCancelled?: boolean
+  eventType?: EventType
 }
 
 interface UpcomingEventsProps {
@@ -74,6 +76,18 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
+                  {event.eventType === 'holiday' && (
+                    <TreePine className="w-4 h-4 text-emerald-500 shrink-0" />
+                  )}
+                  {event.eventType === 'birthday' && (
+                    <Cake className="w-4 h-4 text-amber-500 shrink-0" />
+                  )}
+                  {event.eventType === 'baby_shower' && (
+                    <Baby className="w-4 h-4 text-rose-500 shrink-0" />
+                  )}
+                  {event.eventType === 'wedding' && (
+                    <Heart className="w-4 h-4 text-violet-500 shrink-0" />
+                  )}
                   <h3
                     className={`
                       font-medium text-fc-text

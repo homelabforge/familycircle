@@ -1,4 +1,4 @@
-"""Secret Santa API endpoints - multi-family aware."""
+"""Gift Exchange API endpoints - multi-family aware."""
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -6,16 +6,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import require_family_context
+from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import Event, FamilyMembership, User, WishlistItem
-from app.services import secret_santa as ss_service
+from app.models import FamilyMembership, User, WishlistItem
+from app.services import gift_exchange as ss_service
 from app.services.permissions import permissions
 
 router = APIRouter()
 
 
-class SecretSantaStatus(BaseModel):
-    """Secret Santa status response."""
+class GiftExchangeStatus(BaseModel):
+    """Gift Exchange status response."""
 
     event_id: str
     status: str  # not_assigned, assigned, revealed
@@ -36,25 +37,16 @@ async def get_user_display_name(db: AsyncSession, user_id: str, family_id: str) 
 
 
 @router.get("/{event_id}")
-async def get_secret_santa(
+async def get_gift_exchange(
     event_id: str,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Get Secret Santa info for an event."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Get Gift Exchange info for an event."""
+    await resolve_event_or_404(db, event_id, user)
 
     assignments = await ss_service.get_assignments(db, event_id)
-    participants = await ss_service.get_participants(db, event_id, user.current_family_id)
+    participants = await ss_service.get_participants(db, event_id, user.active_family_id)
 
     user_assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
 
@@ -80,16 +72,8 @@ async def get_assignment(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Get current user's Secret Santa assignment (who they give to)."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Get current user's Gift Exchange assignment (who they give to)."""
+    await resolve_event_or_404(db, event_id, user)
 
     assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
 
@@ -97,7 +81,7 @@ async def get_assignment(
         return {"giftee_id": None, "giftee_name": None, "wishlist": []}
 
     # Get giftee's display name in this family
-    giftee_name = await get_user_display_name(db, assignment.receiver_id, user.current_family_id)
+    giftee_name = await get_user_display_name(db, assignment.receiver_id, user.active_family_id)
 
     # Get giftee's wishlist
     wishlist_result = await db.execute(
@@ -128,26 +112,17 @@ async def run_assignment(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Run the Secret Santa assignment algorithm (family admin or event creator only)."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Run the Gift Exchange assignment algorithm (family admin or event creator only)."""
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
         raise HTTPException(
             status_code=403,
-            detail="Only family admins or event creators can run Secret Santa assignments",
+            detail="Only family admins or event creators can run Gift Exchange assignments",
         )
 
-    result = await ss_service.run_assignments(db, event_id, user.current_family_id)
+    result = await ss_service.run_assignments(db, event_id, user.active_family_id)
 
     if result is None:
         raise HTTPException(
@@ -174,17 +149,8 @@ async def list_exclusions(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """List exclusion rules for Secret Santa."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    """List exclusion rules for Gift Exchange."""
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -198,8 +164,8 @@ async def list_exclusions(
     result = []
     for ex in exclusions:
         # Get user display names
-        giver_name = await get_user_display_name(db, ex.giver_id, user.current_family_id)
-        receiver_name = await get_user_display_name(db, ex.receiver_id, user.current_family_id)
+        giver_name = await get_user_display_name(db, ex.giver_id, user.active_family_id)
+        receiver_name = await get_user_display_name(db, ex.receiver_id, user.active_family_id)
 
         result.append(
             {
@@ -229,16 +195,7 @@ async def add_exclusion(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add an exclusion rule (family admin or event creator only)."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -255,7 +212,7 @@ async def add_exclusion(
         membership_result = await db.execute(
             select(FamilyMembership).where(
                 FamilyMembership.user_id == uid,
-                FamilyMembership.family_id == user.current_family_id,
+                FamilyMembership.family_id == user.active_family_id,
             )
         )
         if not membership_result.scalar_one_or_none():
@@ -277,16 +234,7 @@ async def remove_exclusion(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove an exclusion rule (family admin or event creator only)."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    event = event_result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -318,23 +266,15 @@ async def send_anonymous_message(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Send an anonymous message to your Secret Santa giftee."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Send an anonymous message to your Gift Exchange giftee."""
+    await resolve_event_or_404(db, event_id, user)
 
     # Get user's assignment (who they give to)
     assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
 
     if not assignment:
         raise HTTPException(
-            status_code=400, detail="You don't have a Secret Santa assignment for this event yet"
+            status_code=400, detail="You don't have a Gift Exchange assignment for this event yet"
         )
 
     await ss_service.send_message(
@@ -350,16 +290,8 @@ async def get_messages(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Get anonymous messages for Secret Santa (messages received from your Secret Santa)."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Get anonymous messages for Gift Exchange (messages received from your match)."""
+    await resolve_event_or_404(db, event_id, user)
 
     messages = await ss_service.get_received_messages(db, event_id, str(user.id))
 
@@ -381,18 +313,10 @@ async def get_participants(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Get list of participants for Secret Santa."""
-    # Verify event belongs to current family
-    event_result = await db.execute(
-        select(Event).where(
-            Event.id == event_id,
-            Event.family_id == user.current_family_id,
-        )
-    )
-    if not event_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Event not found")
+    """Get list of participants for Gift Exchange."""
+    await resolve_event_or_404(db, event_id, user)
 
-    participants = await ss_service.get_participants(db, event_id, user.current_family_id)
+    participants = await ss_service.get_participants(db, event_id, user.active_family_id)
 
     return {
         "participants": [

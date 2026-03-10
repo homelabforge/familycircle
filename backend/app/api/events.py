@@ -10,47 +10,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
+from app.api.event_helpers import (
+    is_secret_birthday_for_user,
+    resolve_event_or_404,
+    validate_event_type_and_details,
+)
 from app.db import get_db_session
 from app.models import Event, EventRSVP, FamilyMembership, User
-from app.models.event import RSVPStatus
+from app.models.baby_shower_detail import BabyShowerDetail
+from app.models.birthday_detail import BirthdayDetail
+from app.models.event import EventType, RSVPStatus
+from app.models.holiday_detail import HolidayDetail
+from app.models.wedding_detail import WeddingDetail, WeddingPartyMember
+from app.schemas.event import EventCreate, EventUpdate
+from app.schemas.wedding import WeddingPartyMemberCreate
 from app.services.email import get_smtp_config, send_event_cancelled_email
+from app.services.notifications.dispatcher import NotificationDispatcher
 from app.services.permissions import permissions
+from app.services.recurrence import recurrence_to_dict
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-class EventCreate(BaseModel):
-    """Create event request."""
-
-    title: str
-    description: str | None = None
-    event_date: datetime
-    location_name: str | None = None
-    location_address: str | None = None
-    has_secret_santa: bool = False
-    has_potluck: bool = False
-    # Secret Santa rules
-    secret_santa_budget_min: int | None = None
-    secret_santa_budget_max: int | None = None
-    secret_santa_notes: str | None = None
-
-
-class EventUpdate(BaseModel):
-    """Update event request."""
-
-    title: str | None = None
-    description: str | None = None
-    event_date: datetime | None = None
-    location_name: str | None = None
-    location_address: str | None = None
-    has_secret_santa: bool | None = None
-    has_potluck: bool | None = None
-    # Secret Santa rules
-    secret_santa_budget_min: int | None = None
-    secret_santa_budget_max: int | None = None
-    secret_santa_notes: str | None = None
 
 
 class EventCancel(BaseModel):
@@ -83,7 +64,7 @@ def event_to_dict(
     can_manage: bool = False,
 ) -> dict:
     """Convert event to response dict."""
-    return {
+    result = {
         "id": str(event.id),
         "family_id": str(event.family_id),
         "created_by_id": str(event.created_by_id) if event.created_by_id else None,
@@ -99,10 +80,13 @@ def event_to_dict(
         "potluck_mode": event.potluck_mode,
         "potluck_host_providing": event.potluck_host_providing,
         "secret_santa_assigned": event.secret_santa_assigned,
-        # Secret Santa rules
+        # Gift Exchange rules
         "secret_santa_budget_min": event.secret_santa_budget_min,
         "secret_santa_budget_max": event.secret_santa_budget_max,
         "secret_santa_notes": event.secret_santa_notes,
+        # Event type
+        "event_type": event.event_type,
+        "parent_event_id": str(event.parent_event_id) if event.parent_event_id else None,
         # Cancellation
         "is_cancelled": event.is_cancelled,
         "cancelled_at": event.cancelled_at.isoformat() if event.cancelled_at else None,
@@ -113,14 +97,117 @@ def event_to_dict(
             "no": len([r for r in event.rsvps if r.status == RSVPStatus.NO]),
             "maybe": len([r for r in event.rsvps if r.status == RSVPStatus.MAYBE]),
         },
+        # Headcount: attending members + their additional guests
+        "headcount": sum(1 + len(r.guests) for r in event.rsvps if r.status == RSVPStatus.YES),
         "user_rsvp": user_rsvp.status.value if user_rsvp else None,
         "can_manage": can_manage,
+        # Recurrence
+        "is_recurring": event.is_recurring,
+        "recurrence": recurrence_to_dict(event.recurrence),
         "created_at": event.created_at.isoformat() if event.created_at else None,
     }
+
+    # Type-specific details
+    if event.holiday_detail:
+        result["holiday_detail"] = {
+            "holiday_name": event.holiday_detail.holiday_name,
+            "custom_holiday_name": event.holiday_detail.custom_holiday_name,
+            "display_name": event.holiday_detail.display_name,
+            "year": event.holiday_detail.year,
+        }
+    else:
+        result["holiday_detail"] = None
+
+    if event.birthday_detail:
+        result["birthday_detail"] = {
+            "birthday_person_id": event.birthday_detail.birthday_person_id,
+            "birthday_person_name": event.birthday_detail.birthday_person_name,
+            "birth_date": (
+                event.birthday_detail.birth_date.isoformat()
+                if event.birthday_detail.birth_date
+                else None
+            ),
+            "age_turning": event.birthday_detail.age_turning,
+            "is_secret": event.birthday_detail.is_secret,
+            "theme": event.birthday_detail.theme,
+        }
+    else:
+        result["birthday_detail"] = None
+
+    if event.baby_shower_detail:
+        result["baby_shower_detail"] = {
+            "parent1_name": event.baby_shower_detail.parent1_name,
+            "parent2_name": event.baby_shower_detail.parent2_name,
+            "baby_name": event.baby_shower_detail.baby_name,
+            "gender": event.baby_shower_detail.gender,
+            "due_date": (
+                event.baby_shower_detail.due_date.isoformat()
+                if event.baby_shower_detail.due_date
+                else None
+            ),
+            "registry_url": event.baby_shower_detail.registry_url,
+            "is_gender_reveal": event.baby_shower_detail.is_gender_reveal,
+            "display_parents": event.baby_shower_detail.display_parents,
+        }
+    else:
+        result["baby_shower_detail"] = None
+
+    if event.wedding_detail:
+        result["wedding_detail"] = {
+            "partner1_name": event.wedding_detail.partner1_name,
+            "partner2_name": event.wedding_detail.partner2_name,
+            "wedding_date": (
+                event.wedding_detail.wedding_date.isoformat()
+                if event.wedding_detail.wedding_date
+                else None
+            ),
+            "venue_name": event.wedding_detail.venue_name,
+            "registry_url": event.wedding_detail.registry_url,
+            "color_theme": event.wedding_detail.color_theme,
+            "display_couple": event.wedding_detail.display_couple,
+        }
+    else:
+        result["wedding_detail"] = None
+
+    # Sub-events (for wedding or any parent event)
+    active_sub_events = [s for s in event.sub_events if not s.is_cancelled]
+    result["sub_event_count"] = len(active_sub_events)
+    if event.sub_events:
+        result["sub_events"] = [
+            {
+                "id": str(sub.id),
+                "title": sub.title,
+                "event_date": sub.event_date.isoformat() if sub.event_date else None,
+                "event_type": sub.event_type,
+                "is_cancelled": sub.is_cancelled,
+            }
+            for sub in event.sub_events
+        ]
+    else:
+        result["sub_events"] = []
+
+    # Wedding party members
+    if event.wedding_party_members:
+        result["wedding_party"] = [
+            {
+                "id": str(m.id),
+                "name": m.name,
+                "role": m.role,
+                "side": m.side,
+                "user_id": str(m.user_id) if m.user_id else None,
+                "display_role": m.display_role,
+            }
+            for m in event.wedding_party_members
+        ]
+    else:
+        result["wedding_party"] = []
+
+    return result
 
 
 @router.get("")
 async def list_events(
+    event_type: str | None = None,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -137,7 +224,7 @@ async def list_events(
     # Calculate cutoff date for cancelled events
     cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
-    result = await db.execute(
+    query = (
         select(Event)
         .where(
             Event.family_id == user.current_family_id,
@@ -148,8 +235,20 @@ async def list_events(
             ),
         )
         .order_by(Event.event_date.desc())
+        .options(selectinload(Event.sub_events))
     )
+
+    # Optional event type filter
+    if event_type:
+        query = query.where(Event.event_type == event_type)
+
+    result = await db.execute(query)
     events = result.scalars().all()
+
+    # Filter out secret birthday events for the birthday person
+    events = [
+        e for e in events if not is_secret_birthday_for_user(e, str(user.id), user.is_super_admin)
+    ]
 
     # Get user's RSVPs
     rsvp_result = await db.execute(select(EventRSVP).where(EventRSVP.user_id == user.id))
@@ -180,8 +279,14 @@ async def list_upcoming_events(
         )
         .order_by(Event.event_date.asc())
         .limit(limit)
+        .options(selectinload(Event.sub_events))
     )
     events = result.scalars().all()
+
+    # Filter out secret birthday events for the birthday person
+    events = [
+        e for e in events if not is_secret_birthday_for_user(e, str(user.id), user.is_super_admin)
+    ]
 
     # Get user's RSVPs
     rsvp_result = await db.execute(select(EventRSVP).where(EventRSVP.user_id == user.id))
@@ -195,6 +300,14 @@ async def list_upcoming_events(
     return {"events": events_data}
 
 
+@router.get("/holidays")
+async def list_predefined_holidays():
+    """Get list of predefined holidays for the holiday picker."""
+    from app.models.holiday_detail import PREDEFINED_HOLIDAYS
+
+    return {"holidays": PREDEFINED_HOLIDAYS}
+
+
 @router.get("/{event_id}")
 async def get_event(
     event_id: str,
@@ -202,17 +315,9 @@ async def get_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get a specific event."""
-    result = await db.execute(
-        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
+    event = await resolve_event_or_404(
+        db, event_id, user, options=[selectinload(Event.rsvps), selectinload(Event.sub_events)]
     )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
-
-    # Verify user can view this event
-    if not await permissions.can_view_event(db, user, event):
-        raise HTTPException(status_code=403, detail="You don't have access to this event")
 
     # Get user's RSVP
     rsvp_result = await db.execute(
@@ -249,7 +354,8 @@ async def create_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Create a new event in current family."""
-    # Any member can create an event (they become the event creator)
+    validate_event_type_and_details(request)
+
     event = Event(
         family_id=user.current_family_id,
         created_by_id=user.id,
@@ -266,10 +372,109 @@ async def create_event(
         secret_santa_budget_min=request.secret_santa_budget_min,
         secret_santa_budget_max=request.secret_santa_budget_max,
         secret_santa_notes=request.secret_santa_notes,
+        event_type=request.event_type,
     )
     db.add(event)
+    await db.flush()  # Get event.id before adding detail rows
+
+    # Create type-specific details
+    if request.event_type == EventType.HOLIDAY.value and request.holiday_detail:
+        detail = HolidayDetail(
+            event_id=event.id,
+            holiday_name=request.holiday_detail.holiday_name,
+            custom_holiday_name=request.holiday_detail.custom_holiday_name,
+            year=request.holiday_detail.year,
+        )
+        db.add(detail)
+
+    if request.event_type == EventType.BIRTHDAY.value and request.birthday_detail:
+        detail = BirthdayDetail(
+            event_id=event.id,
+            birthday_person_id=request.birthday_detail.birthday_person_id,
+            birthday_person_name=request.birthday_detail.birthday_person_name,
+            birth_date=request.birthday_detail.birth_date,
+            age_turning=request.birthday_detail.age_turning,
+            is_secret=request.birthday_detail.is_secret,
+            theme=request.birthday_detail.theme,
+        )
+        db.add(detail)
+
+    if request.event_type == EventType.BABY_SHOWER.value and request.baby_shower_detail:
+        detail = BabyShowerDetail(
+            event_id=event.id,
+            parent1_name=request.baby_shower_detail.parent1_name,
+            parent2_name=request.baby_shower_detail.parent2_name,
+            baby_name=request.baby_shower_detail.baby_name,
+            gender=request.baby_shower_detail.gender,
+            due_date=request.baby_shower_detail.due_date,
+            registry_url=request.baby_shower_detail.registry_url,
+            is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
+        )
+        db.add(detail)
+
+    if request.event_type == EventType.WEDDING.value and request.wedding_detail:
+        sub_event_template = request.wedding_detail.sub_event_template
+        detail = WeddingDetail(
+            event_id=event.id,
+            partner1_name=request.wedding_detail.partner1_name,
+            partner2_name=request.wedding_detail.partner2_name,
+            wedding_date=request.wedding_detail.wedding_date,
+            venue_name=request.wedding_detail.venue_name,
+            registry_url=request.wedding_detail.registry_url,
+            color_theme=request.wedding_detail.color_theme,
+            sub_event_template=sub_event_template,
+        )
+        db.add(detail)
+
+        # Auto-create sub-events from template
+        if sub_event_template:
+            await db.flush()  # Ensure event.id is available
+            from app.services.wedding_templates import create_sub_events_from_template
+
+            await create_sub_events_from_template(db, event, sub_event_template)
+
+    # Set up recurrence if requested
+    if request.recurrence_type:
+        from app.models.event_recurrence import RECURRENCE_TYPES
+        from app.services.recurrence import setup_recurrence
+
+        if request.recurrence_type not in RECURRENCE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid recurrence type. Must be one of: {', '.join(RECURRENCE_TYPES)}",
+            )
+        await db.flush()
+        await setup_recurrence(
+            db,
+            event,
+            recurrence_type=request.recurrence_type,
+            end_date=request.recurrence_end_date,
+            max_occurrences=request.recurrence_max_occurrences,
+        )
+
     await db.commit()
     await db.refresh(event)
+
+    # Fire notification (non-blocking, errors logged)
+    try:
+        family_id = user.current_family_id or ""
+        creator_name = await get_member_display_name(db, user.id, family_id)
+        from app.models import Family
+
+        family_result = await db.execute(select(Family).where(Family.id == family_id))
+        family = family_result.scalar_one_or_none()
+        family_name = family.name if family else "your family"
+        event_date_str = event.event_date.strftime("%B %d, %Y") if event.event_date else "TBD"
+
+        dispatcher = NotificationDispatcher(db)
+        await dispatcher.notify_event_created(
+            event_title=event.title,
+            family_name=family_name,
+            creator_name=creator_name,
+            event_date=event_date_str,
+        )
+    except Exception as e:
+        logger.error("Failed to send event_created notification: %s", e)
 
     return {"message": "Event created", "id": str(event.id)}
 
@@ -282,11 +487,7 @@ async def update_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update an event (creator or admin only)."""
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
+    event = await resolve_event_or_404(db, event_id, user)
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(status_code=403, detail="You don't have permission to edit this event")
@@ -308,12 +509,101 @@ async def update_event(
         event.has_secret_santa = request.has_secret_santa
     if request.has_potluck is not None:
         event.has_potluck = request.has_potluck
+    if request.has_rsvp is not None:
+        event.has_rsvp = request.has_rsvp
+    if request.potluck_mode is not None:
+        event.potluck_mode = request.potluck_mode
+    if request.potluck_host_providing is not None:
+        event.potluck_host_providing = request.potluck_host_providing
     if request.secret_santa_budget_min is not None:
         event.secret_santa_budget_min = request.secret_santa_budget_min
     if request.secret_santa_budget_max is not None:
         event.secret_santa_budget_max = request.secret_santa_budget_max
     if request.secret_santa_notes is not None:
         event.secret_santa_notes = request.secret_santa_notes
+
+    # Update type-specific details (upsert pattern)
+    if request.holiday_detail is not None and event.event_type == EventType.HOLIDAY.value:
+        if event.holiday_detail:
+            event.holiday_detail.holiday_name = request.holiday_detail.holiday_name
+            event.holiday_detail.custom_holiday_name = request.holiday_detail.custom_holiday_name
+            event.holiday_detail.year = request.holiday_detail.year
+        else:
+            db.add(
+                HolidayDetail(
+                    event_id=event.id,
+                    holiday_name=request.holiday_detail.holiday_name,
+                    custom_holiday_name=request.holiday_detail.custom_holiday_name,
+                    year=request.holiday_detail.year,
+                )
+            )
+
+    if request.birthday_detail is not None and event.event_type == EventType.BIRTHDAY.value:
+        if event.birthday_detail:
+            event.birthday_detail.birthday_person_id = request.birthday_detail.birthday_person_id
+            event.birthday_detail.birthday_person_name = (
+                request.birthday_detail.birthday_person_name
+            )
+            event.birthday_detail.birth_date = request.birthday_detail.birth_date
+            event.birthday_detail.age_turning = request.birthday_detail.age_turning
+            event.birthday_detail.is_secret = request.birthday_detail.is_secret
+            event.birthday_detail.theme = request.birthday_detail.theme
+        else:
+            db.add(
+                BirthdayDetail(
+                    event_id=event.id,
+                    birthday_person_id=request.birthday_detail.birthday_person_id,
+                    birthday_person_name=request.birthday_detail.birthday_person_name,
+                    birth_date=request.birthday_detail.birth_date,
+                    age_turning=request.birthday_detail.age_turning,
+                    is_secret=request.birthday_detail.is_secret,
+                    theme=request.birthday_detail.theme,
+                )
+            )
+
+    if request.baby_shower_detail is not None and event.event_type == EventType.BABY_SHOWER.value:
+        if event.baby_shower_detail:
+            event.baby_shower_detail.parent1_name = request.baby_shower_detail.parent1_name
+            event.baby_shower_detail.parent2_name = request.baby_shower_detail.parent2_name
+            event.baby_shower_detail.baby_name = request.baby_shower_detail.baby_name
+            event.baby_shower_detail.gender = request.baby_shower_detail.gender
+            event.baby_shower_detail.due_date = request.baby_shower_detail.due_date
+            event.baby_shower_detail.registry_url = request.baby_shower_detail.registry_url
+            event.baby_shower_detail.is_gender_reveal = request.baby_shower_detail.is_gender_reveal
+        else:
+            db.add(
+                BabyShowerDetail(
+                    event_id=event.id,
+                    parent1_name=request.baby_shower_detail.parent1_name,
+                    parent2_name=request.baby_shower_detail.parent2_name,
+                    baby_name=request.baby_shower_detail.baby_name,
+                    gender=request.baby_shower_detail.gender,
+                    due_date=request.baby_shower_detail.due_date,
+                    registry_url=request.baby_shower_detail.registry_url,
+                    is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
+                )
+            )
+
+    if request.wedding_detail is not None and event.event_type == EventType.WEDDING.value:
+        if event.wedding_detail:
+            event.wedding_detail.partner1_name = request.wedding_detail.partner1_name
+            event.wedding_detail.partner2_name = request.wedding_detail.partner2_name
+            event.wedding_detail.wedding_date = request.wedding_detail.wedding_date
+            event.wedding_detail.venue_name = request.wedding_detail.venue_name
+            event.wedding_detail.registry_url = request.wedding_detail.registry_url
+            event.wedding_detail.color_theme = request.wedding_detail.color_theme
+        else:
+            db.add(
+                WeddingDetail(
+                    event_id=event.id,
+                    partner1_name=request.wedding_detail.partner1_name,
+                    partner2_name=request.wedding_detail.partner2_name,
+                    wedding_date=request.wedding_detail.wedding_date,
+                    venue_name=request.wedding_detail.venue_name,
+                    registry_url=request.wedding_detail.registry_url,
+                    color_theme=request.wedding_detail.color_theme,
+                )
+            )
 
     await db.commit()
 
@@ -328,18 +618,15 @@ async def cancel_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Cancel an event (creator or admin only)."""
-    result = await db.execute(
-        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
-    )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
+    event = await resolve_event_or_404(db, event_id, user)
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="You don't have permission to cancel this event"
         )
+
+    # Load rsvps for notification emails
+    await db.refresh(event, ["rsvps"])
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Event is already cancelled")
@@ -388,6 +675,18 @@ async def cancel_event(
                 except Exception as e:
                     logger.error(f"Failed to send cancellation email to {attendee_id}: {e}")
 
+    # Fire notification via dispatcher
+    try:
+        canceller_name = await get_member_display_name(db, user.id, user.current_family_id or "")
+        dispatcher = NotificationDispatcher(db)
+        await dispatcher.notify_event_cancelled(
+            event_title=event.title,
+            cancelled_by=canceller_name,
+            reason=request.reason,
+        )
+    except Exception as e:
+        logger.error("Failed to send event_cancelled notification: %s", e)
+
     return {"message": "Event cancelled"}
 
 
@@ -398,18 +697,15 @@ async def delete_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete an event (creator or admin only)."""
-    result = await db.execute(
-        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
-    )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
+    event = await resolve_event_or_404(db, event_id, user)
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="You don't have permission to delete this event"
         )
+
+    # Load rsvps to check for YES responses
+    await db.refresh(event, ["rsvps"])
 
     # Only allow deletion if cancelled or no RSVPs
     has_rsvps = any(r.status == RSVPStatus.YES for r in event.rsvps)
@@ -439,24 +735,16 @@ async def rsvp_to_event(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid RSVP status. Use yes, no, or maybe.")
 
-    # Check event exists and user can access it
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found. It may have been deleted.")
-
-    if not await permissions.can_view_event(db, user, event):
-        raise HTTPException(status_code=403, detail="You don't have access to this event")
+    # Check event exists and user can access it (family + secret birthday → 404)
+    event = await resolve_event_or_404(db, event_id, user)
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Cannot RSVP to a cancelled event")
 
     # Check for event conflicts (same day, across all families)
+    conflict_warning = None
     if status == RSVPStatus.YES:
         conflicts = await check_event_conflicts(db, user.id, event)
-        # Return conflict info but don't block
-        conflict_warning = None
         if conflicts:
             conflict_warning = [
                 {
@@ -488,7 +776,19 @@ async def rsvp_to_event(
 
     await db.commit()
 
-    response = {"message": f"RSVP updated to {status.value}"}
+    # Fire notification for RSVP
+    try:
+        member_name = await get_member_display_name(db, user.id, user.current_family_id or "")
+        dispatcher = NotificationDispatcher(db)
+        await dispatcher.notify_rsvp_received(
+            event_title=event.title,
+            member_name=member_name,
+            status=status.value,
+        )
+    except Exception as e:
+        logger.error("Failed to send rsvp_received notification: %s", e)
+
+    response: dict = {"message": f"RSVP updated to {status.value}"}
     if status == RSVPStatus.YES and conflict_warning:
         response["conflicts"] = conflict_warning
 
@@ -502,6 +802,8 @@ async def remove_rsvp(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove RSVP from an event."""
+    await resolve_event_or_404(db, event_id, user)
+
     result = await db.execute(
         select(EventRSVP).where(
             EventRSVP.event_id == event_id,
@@ -518,10 +820,7 @@ async def remove_rsvp(
 
 
 async def check_event_conflicts(db: AsyncSession, user_id: str, target_event: Event) -> list[dict]:
-    """
-    Check for events on the same day that user has RSVPed yes to.
-    Returns list of conflicting events.
-    """
+    """Check for events on the same day that user has RSVPed yes to."""
     # Get the date of the target event
     event_date = target_event.event_date.date()
 
@@ -538,7 +837,7 @@ async def check_event_conflicts(db: AsyncSession, user_id: str, target_event: Ev
     )
 
     conflicts = []
-    for event, rsvp in result.all():
+    for event, _rsvp in result.all():
         if event.event_date.date() == event_date:
             # Get family name
             from app.models import Family
@@ -563,8 +862,7 @@ async def get_event_health_summary(
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """
-    Get anonymous health information for event attendees.
+    """Get anonymous health information for event attendees.
 
     Only returns health info from users who:
     1. Have RSVPed 'yes' to this event
@@ -575,20 +873,16 @@ async def get_event_health_summary(
     """
     from app.models import UserProfile
 
-    # Get the event
-    result = await db.execute(
-        select(Event).options(selectinload(Event.rsvps)).where(Event.id == event_id)
-    )
-    event = result.scalar_one_or_none()
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await resolve_event_or_404(db, event_id, user)
 
     # Check user has permission to view health summary
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="Only event organizers can view health information"
         )
+
+    # Load rsvps for attendee check
+    await db.refresh(event, ["rsvps"])
 
     # Get user IDs who RSVPed yes
     attending_user_ids = [rsvp.user_id for rsvp in event.rsvps if rsvp.status == RSVPStatus.YES]
@@ -597,6 +891,7 @@ async def get_event_health_summary(
         return {
             "event_id": str(event.id),
             "attendee_count": 0,
+            "guest_count": 0,
             "shared_count": 0,
             "allergies": [],
             "dietary_restrictions": [],
@@ -621,7 +916,6 @@ async def get_event_health_summary(
 
     for profile in profiles:
         if profile.allergies:
-            # Split by comma if multiple allergies
             for allergy in profile.allergies.split(","):
                 allergy = allergy.strip()
                 if allergy and allergy not in allergies:
@@ -634,7 +928,6 @@ async def get_event_health_summary(
                     dietary_restrictions.append(restriction)
 
         if profile.medical_needs:
-            # Keep medical needs intact (don't split)
             if profile.medical_needs not in medical_needs:
                 medical_needs.append(profile.medical_needs)
 
@@ -642,12 +935,285 @@ async def get_event_health_summary(
             if profile.mobility_notes not in mobility_notes:
                 mobility_notes.append(profile.mobility_notes)
 
+    # Also collect dietary/allergy info from RSVP additional guests
+    guest_allergies: list[str] = []
+    guest_dietary: list[str] = []
+    guest_count = 0
+    for rsvp in event.rsvps:
+        if rsvp.status == RSVPStatus.YES:
+            for guest in rsvp.guests:
+                guest_count += 1
+                if guest.allergies:
+                    for a in guest.allergies.split(","):
+                        a = a.strip()
+                        if a and a not in allergies and a not in guest_allergies:
+                            guest_allergies.append(a)
+                if guest.dietary_restrictions:
+                    for d in guest.dietary_restrictions.split(","):
+                        d = d.strip()
+                        if d and d not in dietary_restrictions and d not in guest_dietary:
+                            guest_dietary.append(d)
+
     return {
         "event_id": str(event.id),
         "attendee_count": len(attending_user_ids),
+        "guest_count": guest_count,
         "shared_count": len(profiles),
-        "allergies": allergies,
-        "dietary_restrictions": dietary_restrictions,
+        "allergies": allergies + guest_allergies,
+        "dietary_restrictions": dietary_restrictions + guest_dietary,
         "medical_needs": medical_needs,
         "mobility_notes": mobility_notes,
     }
+
+
+# --- Sub-events endpoints ---
+
+
+@router.get("/{event_id}/sub-events")
+async def list_sub_events(
+    event_id: str,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """List sub-events for a parent event."""
+    await resolve_event_or_404(db, event_id, user)
+
+    # Get sub-events
+    result = await db.execute(
+        select(Event)
+        .where(Event.parent_event_id == event_id, Event.cancelled_at.is_(None))
+        .order_by(Event.event_date.asc())
+        .options(selectinload(Event.sub_events))
+    )
+    sub_events = result.scalars().all()
+
+    # Filter secret birthdays
+    sub_events = [
+        e
+        for e in sub_events
+        if not is_secret_birthday_for_user(e, str(user.id), user.is_super_admin)
+    ]
+
+    # Get user RSVPs for sub-events
+    sub_event_ids = [str(e.id) for e in sub_events]
+    rsvp_result = await db.execute(
+        select(EventRSVP).where(
+            EventRSVP.user_id == user.id,
+            EventRSVP.event_id.in_(sub_event_ids),
+        )
+    )
+    user_rsvps = {str(r.event_id): r for r in rsvp_result.scalars().all()}
+
+    events_data = []
+    for e in sub_events:
+        can_manage = await permissions.can_manage_event(db, user, e)
+        events_data.append(event_to_dict(e, user_rsvps.get(str(e.id)), can_manage))
+
+    return {"sub_events": events_data}
+
+
+@router.post("/{event_id}/sub-events")
+async def create_sub_event(
+    event_id: str,
+    request: EventCreate,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Create a sub-event under a parent event."""
+    parent = await resolve_event_or_404(db, event_id, user)
+
+    if not await permissions.can_manage_event(db, user, parent):
+        raise HTTPException(status_code=403, detail="You don't have permission to add sub-events")
+
+    if parent.is_cancelled:
+        raise HTTPException(status_code=400, detail="Cannot add sub-events to a cancelled event")
+
+    # Validate event type and required details
+    validate_event_type_and_details(request)
+
+    # Override parent_event_id and family_id
+    event = Event(
+        family_id=parent.family_id,
+        created_by_id=user.id,
+        title=request.title,
+        description=request.description,
+        event_date=request.event_date,
+        location_name=request.location_name,
+        location_address=request.location_address,
+        has_secret_santa=request.has_secret_santa,
+        has_potluck=request.has_potluck,
+        has_rsvp=request.has_rsvp,
+        potluck_mode=request.potluck_mode,
+        potluck_host_providing=request.potluck_host_providing,
+        secret_santa_budget_min=request.secret_santa_budget_min,
+        secret_santa_budget_max=request.secret_santa_budget_max,
+        secret_santa_notes=request.secret_santa_notes,
+        event_type=request.event_type,
+        parent_event_id=event_id,
+    )
+    db.add(event)
+    await db.flush()
+
+    # Create type-specific details (same as create_event)
+    if request.event_type == EventType.HOLIDAY.value and request.holiday_detail:
+        db.add(
+            HolidayDetail(
+                event_id=event.id,
+                holiday_name=request.holiday_detail.holiday_name,
+                custom_holiday_name=request.holiday_detail.custom_holiday_name,
+                year=request.holiday_detail.year,
+            )
+        )
+
+    if request.event_type == EventType.BIRTHDAY.value and request.birthday_detail:
+        db.add(
+            BirthdayDetail(
+                event_id=event.id,
+                birthday_person_id=request.birthday_detail.birthday_person_id,
+                birthday_person_name=request.birthday_detail.birthday_person_name,
+                birth_date=request.birthday_detail.birth_date,
+                age_turning=request.birthday_detail.age_turning,
+                is_secret=request.birthday_detail.is_secret,
+                theme=request.birthday_detail.theme,
+            )
+        )
+
+    if request.event_type == EventType.BABY_SHOWER.value and request.baby_shower_detail:
+        db.add(
+            BabyShowerDetail(
+                event_id=event.id,
+                parent1_name=request.baby_shower_detail.parent1_name,
+                parent2_name=request.baby_shower_detail.parent2_name,
+                baby_name=request.baby_shower_detail.baby_name,
+                gender=request.baby_shower_detail.gender,
+                due_date=request.baby_shower_detail.due_date,
+                registry_url=request.baby_shower_detail.registry_url,
+                is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
+            )
+        )
+
+    if request.event_type == EventType.WEDDING.value and request.wedding_detail:
+        db.add(
+            WeddingDetail(
+                event_id=event.id,
+                partner1_name=request.wedding_detail.partner1_name,
+                partner2_name=request.wedding_detail.partner2_name,
+                wedding_date=request.wedding_detail.wedding_date,
+                venue_name=request.wedding_detail.venue_name,
+                registry_url=request.wedding_detail.registry_url,
+                color_theme=request.wedding_detail.color_theme,
+            )
+        )
+
+    await db.commit()
+    await db.refresh(event)
+
+    return {"message": "Sub-event created", "id": str(event.id)}
+
+
+# --- Wedding party endpoints ---
+
+
+@router.get("/{event_id}/wedding-party")
+async def list_wedding_party(
+    event_id: str,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """List wedding party members for an event."""
+    await resolve_event_or_404(db, event_id, user)
+
+    result = await db.execute(
+        select(WeddingPartyMember)
+        .where(WeddingPartyMember.event_id == event_id)
+        .order_by(WeddingPartyMember.side, WeddingPartyMember.role)
+    )
+    members = result.scalars().all()
+
+    return {
+        "members": [
+            {
+                "id": str(m.id),
+                "name": m.name,
+                "role": m.role,
+                "side": m.side,
+                "user_id": str(m.user_id) if m.user_id else None,
+                "display_role": m.display_role,
+            }
+            for m in members
+        ]
+    }
+
+
+@router.post("/{event_id}/wedding-party")
+async def add_wedding_party_member(
+    event_id: str,
+    request: WeddingPartyMemberCreate,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Add a wedding party member."""
+    event = await resolve_event_or_404(db, event_id, user)
+
+    if event.event_type != EventType.WEDDING.value:
+        raise HTTPException(status_code=400, detail="Wedding party is only for wedding events")
+
+    if not await permissions.can_manage_event(db, user, event):
+        raise HTTPException(
+            status_code=403, detail="You don't have permission to manage the wedding party"
+        )
+
+    member = WeddingPartyMember(
+        event_id=event_id,
+        user_id=request.user_id,
+        name=request.name,
+        role=request.role,
+        side=request.side,
+    )
+    db.add(member)
+    await db.commit()
+    await db.refresh(member)
+
+    return {
+        "message": "Wedding party member added",
+        "member": {
+            "id": str(member.id),
+            "name": member.name,
+            "role": member.role,
+            "side": member.side,
+            "user_id": str(member.user_id) if member.user_id else None,
+            "display_role": member.display_role,
+        },
+    }
+
+
+@router.delete("/{event_id}/wedding-party/{member_id}")
+async def remove_wedding_party_member(
+    event_id: str,
+    member_id: str,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Remove a wedding party member."""
+    event = await resolve_event_or_404(db, event_id, user)
+
+    if not await permissions.can_manage_event(db, user, event):
+        raise HTTPException(
+            status_code=403, detail="You don't have permission to manage the wedding party"
+        )
+
+    result = await db.execute(
+        select(WeddingPartyMember).where(
+            WeddingPartyMember.id == member_id,
+            WeddingPartyMember.event_id == event_id,
+        )
+    )
+    member = result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(status_code=404, detail="Wedding party member not found")
+
+    await db.delete(member)
+    await db.commit()
+
+    return {"message": "Wedding party member removed"}

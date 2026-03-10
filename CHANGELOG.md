@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-03-10
+
+### Added
+- **Event types**: Specialized support for birthdays, baby showers, weddings, and holidays with type-specific detail models and schemas
+- **Polls and voting**: Create polls on events with multiple choice options, vote tracking, and deadline support
+- **Poll templates**: Reusable poll templates for common event decisions (venue, date, menu, etc.)
+- **Comment threads**: Threaded comments on events with Markdown support via react-markdown
+- **Comment reactions**: Emoji reactions on comments with per-user tracking
+- **@mentions**: Tag family members in comments with mention parsing and notification delivery
+- **Event photos**: Photo uploads with file storage service, per-event galleries, and image validation via python-magic
+- **iCal calendar feeds**: Per-user calendar feed tokens for subscribing to family events in any calendar app via icalendar library
+- **Notification system**: Background scheduler (APScheduler) for event reminders with per-user notification preferences and email delivery
+- **Registry items**: Gift registry for baby showers and weddings with claiming support
+- **RSVP guest management**: Attendees can add plus-ones and named guests to RSVPs
+- **Event recurrences**: Recurring event support with configurable frequency and automatic instance generation via python-dateutil
+- **Event templates**: Save and reuse event configurations as templates
+- **Baby shower updates**: Post updates to baby shower events with timeline tracking
+- **Wedding party permissions**: Role-based access control for wedding event management
+- **Wedding templates**: Pre-built wedding event templates with ceremony/reception structure
+- **Settings page enhancements**: Expanded admin settings with notification configuration and calendar feed management
+- New backend dependencies: `apscheduler`, `python-magic`, `icalendar`, `python-dateutil`
+- 14 new database migrations (004-017) for all feature additions
+
+### Changed
+- **BREAKING**: Renamed "Secret Santa" to "Gift Exchange" throughout the application (API endpoints, models, schemas, services, and UI)
+- **BREAKING**: Removed `/api/secret-santa/*` endpoints; replaced by `/api/gift-exchange/*`
+- Deleted `secret_santa.py` model, schema, service, and API modules; replaced by `gift_exchange.py` equivalents
+- Event creation modal expanded with type-specific fields for each event category
+- Event detail page enhanced with tabbed interface for comments, photos, polls, and registry
+- Events list page updated with type filtering and enhanced card display
+- Dashboard updated with richer upcoming event previews
+- Permissions service expanded for event-type-specific access control
+
+### Fixed
+- Toggle switch knob positioning and off-state color
+- Missing `has_rsvp`, `potluck_mode`, `potluck_host_providing` fields in EventCreate schema causing 500 on event creation
+- MissingGreenlet 500 error on event list/detail endpoints caused by async lazy-load of `sub_events`; added explicit `selectinload` to all `event_to_dict` call paths
+- Broken `/api/auth/magic-link` backwards-compat endpoint passing `db` as `req`, causing AttributeError on password reset for existing users
+
+### HTTP Servers
+- **granian**: 2.7.1 → 2.7.2
+
+### Dev Dependencies
+- **@eslint/js**: 9.39.2 → 10.0.1
+- **@types/react**: 19.2.10 → 19.2.14
+- **@vitejs/plugin-react**: 5.1.2 → 5.1.4
+- **eslint**: 9.39.2 → 10.0.2
+- **eslint-plugin-react-refresh**: 0.4.26 → 0.5.2
+- **jsdom**: 27.4.0 → 28.1.0
+- **ruff**: 0.14.14 → 0.15.4
+- **tailwindcss**: 4.1.18 → 4.2.1
+- **@tailwindcss/vite**: 4.1.18 → 4.2.1
+- **typescript-eslint**: 8.54.0 → 8.56.1
+
+### App Dependencies
+- **@tanstack/react-query**: 5.90.20 → 5.90.21
+- **aiosqlite**: 0.21.0 → 0.22.1
+- **fastapi**: 0.121.0 → 0.134.0
+- **granian**: 2.7.0 → 2.7.2
+- **lucide-react**: 0.563.0 → 0.575.0
+- **react-router-dom**: 7.13.0 → 7.13.1
+- **sqlalchemy**: 2.0.44 → 2.0.47
+
+### Dockerfile Dependencies
+- **oven/bun**: 1.3.8-alpine → 1.3.10-alpine
+
 ## [2.1.0] - 2025-02-01
 
 ### Dev Dependencies

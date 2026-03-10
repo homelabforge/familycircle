@@ -184,12 +184,12 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Secret Santa Note */}
+            {/* Gift Exchange Note */}
             <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/20">
               <div className="flex items-start gap-3">
                 <Gift className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                 <p className={`text-fc-text ${bigMode ? 'text-base' : 'text-sm'}`}>
-                  <strong>Note:</strong> Your address will be shared with your Secret Santa match so they can send you a gift.
+                  <strong>Note:</strong> Your address will be shared with your Gift Exchange match so they can send you a gift.
                 </p>
               </div>
             </div>
@@ -300,12 +300,12 @@ export default function Profile() {
                   onClick={() => handleProfileChange('share_health_info', !profile.share_health_info)}
                   className={`
                     relative w-14 h-8 rounded-full transition-colors flex-shrink-0 ml-4
-                    ${profile.share_health_info ? 'bg-primary' : 'bg-fc-border'}
+                    ${profile.share_health_info ? 'bg-primary' : 'bg-red-500'}
                   `}
                 >
                   <span
                     className={`
-                      absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
+                      absolute left-0 top-1 w-6 h-6 bg-white rounded-full transition-transform
                       ${profile.share_health_info ? 'translate-x-7' : 'translate-x-1'}
                     `}
                   />
@@ -407,12 +407,12 @@ export default function Profile() {
                     onClick={() => handleVisibilityChange('show_email', !visibility.show_email)}
                     className={`
                       relative w-14 h-8 rounded-full transition-colors
-                      ${visibility.show_email ? 'bg-primary' : 'bg-fc-border'}
+                      ${visibility.show_email ? 'bg-primary' : 'bg-red-500'}
                     `}
                   >
                     <span
                       className={`
-                        absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
+                        absolute left-0 top-1 w-6 h-6 bg-white rounded-full transition-transform
                         ${visibility.show_email ? 'translate-x-7' : 'translate-x-1'}
                       `}
                     />
@@ -435,12 +435,12 @@ export default function Profile() {
                     onClick={() => handleVisibilityChange('show_phone', !visibility.show_phone)}
                     className={`
                       relative w-14 h-8 rounded-full transition-colors
-                      ${visibility.show_phone ? 'bg-primary' : 'bg-fc-border'}
+                      ${visibility.show_phone ? 'bg-primary' : 'bg-red-500'}
                     `}
                   >
                     <span
                       className={`
-                        absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
+                        absolute left-0 top-1 w-6 h-6 bg-white rounded-full transition-transform
                         ${visibility.show_phone ? 'translate-x-7' : 'translate-x-1'}
                       `}
                     />
@@ -463,12 +463,12 @@ export default function Profile() {
                     onClick={() => handleVisibilityChange('show_address', !visibility.show_address)}
                     className={`
                       relative w-14 h-8 rounded-full transition-colors
-                      ${visibility.show_address ? 'bg-primary' : 'bg-fc-border'}
+                      ${visibility.show_address ? 'bg-primary' : 'bg-red-500'}
                     `}
                   >
                     <span
                       className={`
-                        absolute top-1 w-6 h-6 bg-white rounded-full transition-transform
+                        absolute left-0 top-1 w-6 h-6 bg-white rounded-full transition-transform
                         ${visibility.show_address ? 'translate-x-7' : 'translate-x-1'}
                       `}
                     />

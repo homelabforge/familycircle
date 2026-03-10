@@ -1,17 +1,15 @@
-"""Secret Santa service - assignment algorithm and management (multi-family aware)."""
+"""Gift Exchange service - assignment algorithm and management (multi-family aware)."""
 
 import random
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import (
-    Event,
-    FamilyMembership,
-    SecretSantaAssignment,
-    SecretSantaExclusion,
-    SecretSantaMessage,
-    User,
+from app.models import Event, FamilyMembership, User
+from app.models.gift_exchange import (
+    GiftExchangeAssignment,
+    GiftExchangeExclusion,
+    GiftExchangeMessage,
 )
 
 
@@ -24,7 +22,7 @@ async def get_event(session: AsyncSession, event_id: str) -> Event | None:
 async def get_participants(
     session: AsyncSession, event_id: str, family_id: str
 ) -> list[tuple[User, FamilyMembership]]:
-    """Get all participants in a Secret Santa event (family members).
+    """Get all participants in a Gift Exchange event (family members).
 
     Returns list of (User, FamilyMembership) tuples for the family.
     """
@@ -37,19 +35,19 @@ async def get_participants(
     return list(result.all())
 
 
-async def get_exclusions(session: AsyncSession, event_id: str) -> list[SecretSantaExclusion]:
+async def get_exclusions(session: AsyncSession, event_id: str) -> list[GiftExchangeExclusion]:
     """Get all exclusion rules for an event."""
     result = await session.execute(
-        select(SecretSantaExclusion).where(SecretSantaExclusion.event_id == event_id)
+        select(GiftExchangeExclusion).where(GiftExchangeExclusion.event_id == event_id)
     )
     return list(result.scalars().all())
 
 
 async def add_exclusion(
     session: AsyncSession, event_id: str, user1_id: str, user2_id: str
-) -> SecretSantaExclusion:
+) -> GiftExchangeExclusion:
     """Add a mutual exclusion rule between two users."""
-    exclusion = SecretSantaExclusion(
+    exclusion = GiftExchangeExclusion(
         event_id=event_id,
         giver_id=user1_id,
         receiver_id=user2_id,
@@ -63,7 +61,7 @@ async def add_exclusion(
 async def remove_exclusion(session: AsyncSession, exclusion_id: str) -> bool:
     """Remove an exclusion rule."""
     result = await session.execute(
-        select(SecretSantaExclusion).where(SecretSantaExclusion.id == exclusion_id)
+        select(GiftExchangeExclusion).where(GiftExchangeExclusion.id == exclusion_id)
     )
     exclusion = result.scalar_one_or_none()
     if exclusion:
@@ -73,23 +71,23 @@ async def remove_exclusion(session: AsyncSession, exclusion_id: str) -> bool:
     return False
 
 
-async def get_assignments(session: AsyncSession, event_id: str) -> list[SecretSantaAssignment]:
+async def get_assignments(session: AsyncSession, event_id: str) -> list[GiftExchangeAssignment]:
     """Get all assignments for an event."""
     result = await session.execute(
-        select(SecretSantaAssignment).where(SecretSantaAssignment.event_id == event_id)
+        select(GiftExchangeAssignment).where(GiftExchangeAssignment.event_id == event_id)
     )
     return list(result.scalars().all())
 
 
 async def get_user_assignment(
     session: AsyncSession, event_id: str, giver_id: str
-) -> SecretSantaAssignment | None:
+) -> GiftExchangeAssignment | None:
     """Get a specific user's assignment (who they give to)."""
     result = await session.execute(
-        select(SecretSantaAssignment).where(
+        select(GiftExchangeAssignment).where(
             and_(
-                SecretSantaAssignment.event_id == event_id,
-                SecretSantaAssignment.giver_id == giver_id,
+                GiftExchangeAssignment.event_id == event_id,
+                GiftExchangeAssignment.giver_id == giver_id,
             )
         )
     )
@@ -108,7 +106,7 @@ async def clear_assignments(session: AsyncSession, event_id: str) -> None:
     await session.commit()
 
 
-def build_exclusion_set(exclusions: list[SecretSantaExclusion]) -> set[tuple[str, str]]:
+def build_exclusion_set(exclusions: list[GiftExchangeExclusion]) -> set[tuple[str, str]]:
     """Build a set of (giver_id, receiver_id) pairs that are not allowed."""
     excluded = set()
     for ex in exclusions:
@@ -124,7 +122,7 @@ def generate_assignments(
     max_attempts: int = 100,
 ) -> dict[str, str] | None:
     """
-    Generate Secret Santa assignments using a derangement algorithm.
+    Generate Gift Exchange assignments using a derangement algorithm.
 
     Uses a randomized algorithm to generate a valid assignment where:
     - No one gets themselves
@@ -175,7 +173,7 @@ async def run_assignments(
     session: AsyncSession, event_id: str, family_id: str
 ) -> dict[str, str] | None:
     """
-    Run the Secret Santa assignment algorithm for an event.
+    Run the Gift Exchange assignment algorithm for an event.
 
     Returns the assignments dict if successful, None if impossible.
     """
@@ -195,7 +193,7 @@ async def run_assignments(
 
     # Save new assignments
     for giver_id, receiver_id in assignments.items():
-        assignment = SecretSantaAssignment(
+        assignment = GiftExchangeAssignment(
             event_id=event_id,
             giver_id=giver_id,
             receiver_id=receiver_id,
@@ -212,9 +210,9 @@ async def send_message(
     sender_id: str,
     recipient_id: str,
     content: str,
-) -> SecretSantaMessage:
-    """Send an anonymous message between Secret Santa participants."""
-    message = SecretSantaMessage(
+) -> GiftExchangeMessage:
+    """Send an anonymous message between Gift Exchange participants."""
+    message = GiftExchangeMessage(
         event_id=event_id,
         sender_id=sender_id,
         recipient_id=recipient_id,
@@ -228,33 +226,33 @@ async def send_message(
 
 async def get_received_messages(
     session: AsyncSession, event_id: str, recipient_id: str
-) -> list[SecretSantaMessage]:
-    """Get messages received by a participant (from their Secret Santa)."""
+) -> list[GiftExchangeMessage]:
+    """Get messages received by a participant (from their Gift Exchange)."""
     result = await session.execute(
-        select(SecretSantaMessage)
+        select(GiftExchangeMessage)
         .where(
             and_(
-                SecretSantaMessage.event_id == event_id,
-                SecretSantaMessage.recipient_id == recipient_id,
+                GiftExchangeMessage.event_id == event_id,
+                GiftExchangeMessage.recipient_id == recipient_id,
             )
         )
-        .order_by(SecretSantaMessage.created_at.desc())
+        .order_by(GiftExchangeMessage.created_at.desc())
     )
     return list(result.scalars().all())
 
 
 async def get_sent_messages(
     session: AsyncSession, event_id: str, sender_id: str
-) -> list[SecretSantaMessage]:
+) -> list[GiftExchangeMessage]:
     """Get messages sent by a participant (to their giftee)."""
     result = await session.execute(
-        select(SecretSantaMessage)
+        select(GiftExchangeMessage)
         .where(
             and_(
-                SecretSantaMessage.event_id == event_id,
-                SecretSantaMessage.sender_id == sender_id,
+                GiftExchangeMessage.event_id == event_id,
+                GiftExchangeMessage.sender_id == sender_id,
             )
         )
-        .order_by(SecretSantaMessage.created_at.desc())
+        .order_by(GiftExchangeMessage.created_at.desc())
     )
     return list(result.scalars().all())
