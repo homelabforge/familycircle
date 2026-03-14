@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Event detail handler registry for pluggable event types
+- Token table with multi-session support (dual-write migration)
+- Typed SettingsService (SmtpConfig, AppConfig, NotificationRetryConfig)
+- Background notification helper via FastAPI BackgroundTasks
+- `notify_family_member_joined` for register and admin invite flows
+- TanStack Query hooks for all data fetching (5 query + 5 mutation modules)
+- Backend test coverage: 98 tests (up from 13)
+- Daily expired token cleanup job
+
+### Changed
+- Event type branching replaced with registry pattern across events, validation, and recurrence
+- Notification dispatch moved from synchronous to BackgroundTasks with own db session
+- Auth token reads from Token table (primary) with User column fallback
+- Frontend pages migrated from manual useState/useEffect to TanStack Query
+- Auth context clears query cache on login/logout/register/switchFamily/resetPassword
+- Merged comment_reactions router into event_comments
+- Extracted RSVP + guest endpoints into dedicated rsvp router
+- Settings API reads use typed SettingsService models
+
+### Fixed
+- Wishlist schema module updated to match live API fields (was stale dead code)
+- Backend password validation now enforces min_length=6 (matching frontend Zod schema)
+
 ## [3.0.0] - 2026-03-10
 
 ### Added
