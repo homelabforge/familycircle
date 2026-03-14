@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Gift,
   Users,
@@ -8,12 +8,15 @@ import {
   Plus,
   BarChart3,
 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import DashboardCard from '@/components/DashboardCard'
 import CreateEventModal from '@/components/CreateEventModal'
 import UpcomingEvents from '@/components/UpcomingEvents'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, familyApi, type EventType } from '@/lib/api'
+import { useUpcomingEvents } from '@/hooks/queries/useEvents'
+import { useFamilyMembers } from '@/hooks/queries/useFamily'
+import { type EventType } from '@/lib/api'
 
 interface UpcomingEvent {
   id: string
@@ -28,42 +31,25 @@ interface UpcomingEvent {
 export default function Dashboard() {
   const { user, isOrganizer } = useAuth()
   const { bigMode } = useBigMode()
-  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
-  const [memberCount, setMemberCount] = useState(0)
+  const queryClient = useQueryClient()
   const [showCreateEventModal, setShowCreateEventModal] = useState(false)
 
-  const loadDashboardData = async () => {
-    try {
-      // Load events and members in parallel
-      const [eventsRes, membersRes] = await Promise.all([
-        eventsApi.listUpcoming(5),
-        familyApi.listMembers(),
-      ])
+  const { data: eventsData } = useUpcomingEvents(5)
+  const { data: membersData } = useFamilyMembers()
 
-      // Format upcoming events for the component
-      const formatted = eventsRes.events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        date: new Date(e.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        time: new Date(e.event_date).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-        }),
-        rsvpStatus: e.user_rsvp as 'yes' | 'no' | 'maybe' | null,
-        isCancelled: e.is_cancelled,
-        eventType: e.event_type,
-      }))
-
-      setUpcomingEvents(formatted)
-      setMemberCount(membersRes.members.length)
-    } catch {
-      // Silently fail - dashboard will show empty state
-    }
-  }
-
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
+  const upcomingEvents: UpcomingEvent[] = (eventsData?.events ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    date: new Date(e.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    time: new Date(e.event_date).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }),
+    rsvpStatus: e.user_rsvp as 'yes' | 'no' | 'maybe' | null,
+    isCancelled: e.is_cancelled,
+    eventType: e.event_type,
+  }))
+  const memberCount = membersData?.members.length ?? 0
 
   const cards = [
     {
@@ -158,7 +144,7 @@ export default function Dashboard() {
       <CreateEventModal
         isOpen={showCreateEventModal}
         onClose={() => setShowCreateEventModal(false)}
-        onEventCreated={loadDashboardData}
+        onEventCreated={() => queryClient.invalidateQueries({ queryKey: ['events'] })}
       />
     </div>
   )

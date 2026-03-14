@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BarChart3, Plus, Loader2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import BackButton from '@/components/BackButton'
 import PollCard from '@/components/PollCard'
 import CreatePollModal from '@/components/CreatePollModal'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { pollsApi, type Poll } from '@/lib/api'
-import { toast } from 'sonner'
+import { usePolls } from '@/hooks/queries/usePolls'
 
 type PollFilter = 'all' | 'open' | 'closed' | 'mine'
 
@@ -20,30 +20,13 @@ const FILTERS: { value: PollFilter; label: string }[] = [
 export default function Polls() {
   const { bigMode } = useBigMode()
   const { user } = useAuth()
-  const [polls, setPolls] = useState<Poll[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data, isLoading: loading } = usePolls()
+  const polls = data?.polls ?? []
   const [filter, setFilter] = useState<PollFilter>('all')
   const [showCreate, setShowCreate] = useState(false)
 
-  const loadPolls = async () => {
-    try {
-      setLoading(true)
-      const res = await pollsApi.list()
-      setPolls(res.polls)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load polls')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadPolls()
-  }, [])
-
-  const handlePollUpdated = (updated: Poll) => {
-    setPolls((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-  }
+  const invalidatePolls = () => queryClient.invalidateQueries({ queryKey: ['polls'] })
 
   const filteredPolls = polls.filter((p) => {
     switch (filter) {
@@ -123,7 +106,7 @@ export default function Polls() {
             <PollCard
               key={poll.id}
               poll={poll}
-              onUpdated={handlePollUpdated}
+              onUpdated={invalidatePolls}
             />
           ))}
         </div>
@@ -133,7 +116,7 @@ export default function Polls() {
       <CreatePollModal
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreated={loadPolls}
+        onCreated={invalidatePolls}
       />
     </div>
   )

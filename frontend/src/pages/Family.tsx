@@ -1,32 +1,13 @@
-import { useEffect, useState } from 'react'
 import { Users, Mail, Crown, Loader2, Phone, MapPin, Lock } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { familyApi, type FamilyMember } from '@/lib/api'
+import { useAddressBook } from '@/hooks/queries/useFamily'
 
 export default function Family() {
   const { bigMode } = useBigMode()
-  const [members, setMembers] = useState<FamilyMember[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadMembers()
-  }, [])
-
-  const loadMembers = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      // Use getAddressBook to get contact info with visibility applied
-      const response = await familyApi.getAddressBook()
-      setMembers(response.members)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load family members')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data, isLoading: loading, error: queryError } = useAddressBook()
+  const members = data?.members ?? []
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Failed to load family members') : null
 
   const getInitials = (name?: string) => {
     if (!name) return '?'

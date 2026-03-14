@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,10 +12,12 @@ from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
 from app.models import FamilyMembership, User
 from app.models.comment_mention import CommentMention
+from app.models.comment_reaction import CommentReaction
 from app.models.event_comment import EventComment
+from app.schemas.comment_reaction import CommentReactionToggle
 from app.schemas.event_comment import EventCommentCreate, EventCommentUpdate
 from app.services.mention_parser import extract_mentions
-from app.services.notifications.dispatcher import NotificationDispatcher
+from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,7 @@ async def list_comments(
 async def create_comment(
     event_id: str,
     data: EventCommentCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -132,23 +135,22 @@ async def create_comment(
 
     await db.flush()
 
-    # Fire notifications
-    try:
-        dispatcher = NotificationDispatcher(db)
-        await dispatcher.notify_comment_added(
+    # Fire notifications in background
+    background_tasks.add_task(
+        send_notification_background,
+        "notify_comment_added",
+        event_title=event.title,
+        commenter_name=user_name,
+    )
+    for mid in mentioned_user_ids:
+        mentioned_name = await _get_display_name(db, mid, event.family_id)
+        background_tasks.add_task(
+            send_notification_background,
+            "notify_comment_mention",
             event_title=event.title,
-            commenter_name=user_name,
+            mentioner_name=user_name,
+            mentioned_name=mentioned_name,
         )
-        # Fire separate mention notifications
-        for mid in mentioned_user_ids:
-            mentioned_name = await _get_display_name(db, mid, event.family_id)
-            await dispatcher.notify_comment_mention(
-                event_title=event.title,
-                mentioner_name=user_name,
-                mentioned_name=mentioned_name,
-            )
-    except Exception as e:
-        logger.error("Failed to send comment notification: %s", e)
 
     await db.refresh(comment, ["reactions", "mentions"])
     return _comment_to_dict(comment, user.id, user_name)
@@ -281,3 +283,59 @@ async def delete_comment(
         raise HTTPException(status_code=403, detail="You can only delete your own comments")
 
     await db.delete(comment)
+
+
+# --- Comment Reactions (merged from comment_reactions.py) ---
+
+
+@router.post("/{event_id}/comments/{comment_id}/reactions")
+async def toggle_reaction(
+    event_id: str,
+    comment_id: str,
+    data: CommentReactionToggle,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Toggle a reaction on a comment. Add if not present, remove if already there."""
+    await resolve_event_or_404(db, event_id, user)
+
+    # Verify comment exists on this event
+    result = await db.execute(
+        select(EventComment).where(
+            EventComment.id == comment_id,
+            EventComment.event_id == event_id,
+        )
+    )
+    comment = result.scalar_one_or_none()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    # Check if reaction already exists
+    result = await db.execute(
+        select(CommentReaction).where(
+            CommentReaction.comment_id == comment_id,
+            CommentReaction.user_id == user.id,
+            CommentReaction.emoji == data.emoji,
+        )
+    )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        await db.delete(existing)
+        action = "removed"
+    else:
+        reaction = CommentReaction(
+            comment_id=comment_id,
+            user_id=user.id,
+            emoji=data.emoji,
+        )
+        db.add(reaction)
+        action = "added"
+
+    await db.flush()
+    await db.refresh(comment, ["reactions"])
+
+    return {
+        "action": action,
+        "reactions": _reactions_summary(comment),
+    }

@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,7 @@ from app.models import (
     User,
     UserProfile,
 )
+from app.models.token import Token, TokenType
 
 ph = PasswordHasher()
 
@@ -82,26 +83,74 @@ async def get_user_by_id(session: AsyncSession, user_id: str) -> User | None:
 
 
 async def get_user_by_session(session: AsyncSession, token: str) -> User | None:
-    """Get user by session token."""
+    """Get user by session token.
+
+    Reads from Token table (primary), falls back to User columns (legacy).
+    """
+    now = datetime.now(UTC)
+
+    # Primary: Token table
+    token_result = await session.execute(
+        select(Token).where(
+            Token.token == token,
+            Token.token_type == TokenType.SESSION,
+            Token.expires_at > now,
+        )
+    )
+    token_row = token_result.scalar_one_or_none()
+
+    if token_row:
+        result = await session.execute(
+            select(User)
+            .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
+            .where(User.id == token_row.user_id)
+        )
+        return result.scalar_one_or_none()
+
+    # Fallback: User columns (legacy, for tokens created before migration)
     result = await session.execute(
         select(User)
         .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
         .where(
             User.session_token == token,
-            User.session_expires > datetime.now(UTC),
+            User.session_expires > now,
         )
     )
     return result.scalar_one_or_none()
 
 
 async def get_user_by_magic_token(session: AsyncSession, token: str) -> User | None:
-    """Get user by magic link token (for password recovery)."""
+    """Get user by magic link token (for password recovery).
+
+    Reads from Token table (primary), falls back to User columns (legacy).
+    """
+    now = datetime.now(UTC)
+
+    # Primary: Token table
+    token_result = await session.execute(
+        select(Token).where(
+            Token.token == token,
+            Token.token_type == TokenType.MAGIC_LINK,
+            Token.expires_at > now,
+        )
+    )
+    token_row = token_result.scalar_one_or_none()
+
+    if token_row:
+        result = await session.execute(
+            select(User)
+            .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
+            .where(User.id == token_row.user_id)
+        )
+        return result.scalar_one_or_none()
+
+    # Fallback: User columns (legacy)
     result = await session.execute(
         select(User)
         .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
         .where(
             User.magic_token == token,
-            User.magic_token_expires > datetime.now(UTC),
+            User.magic_token_expires > now,
         )
     )
     return result.scalar_one_or_none()
@@ -141,15 +190,47 @@ async def get_user_membership(
 
 
 async def create_session(user: User, session: AsyncSession) -> str:
-    """Create a new session for a user."""
-    user.session_token = secrets.token_urlsafe(32)
-    user.session_expires = datetime.now(UTC) + timedelta(days=30)
+    """Create a new session for a user.
+
+    Dual-write: writes to both Token table (primary) and User columns (backwards compat).
+    Multi-session: does NOT invalidate existing sessions.
+    """
+    token_value = secrets.token_urlsafe(32)
+    expires = datetime.now(UTC) + timedelta(days=30)
+
+    # Primary: Token table (multi-session — new row, old sessions stay)
+    session.add(
+        Token(
+            user_id=str(user.id),
+            token=token_value,
+            token_type=TokenType.SESSION,
+            expires_at=expires,
+        )
+    )
+
+    # Backwards compat: User columns (overwritten — single-session legacy)
+    user.session_token = token_value
+    user.session_expires = expires
+
     await session.commit()
-    return user.session_token
+    return token_value
 
 
 async def logout(session: AsyncSession, user: User) -> None:
-    """Clear user session."""
+    """Clear user session.
+
+    Multi-session: deletes only the current session token row.
+    Other sessions (other devices) stay active.
+    """
+    if user.session_token:
+        # Delete from Token table (current session only)
+        await session.execute(
+            delete(Token).where(
+                Token.token == user.session_token,
+                Token.token_type == TokenType.SESSION,
+            )
+        )
+    # Backwards compat: clear User columns
     user.session_token = None
     user.session_expires = None
     await session.commit()
@@ -199,7 +280,11 @@ async def change_password(
 
 
 async def create_magic_link(session: AsyncSession, email: str) -> str | None:
-    """Create a magic link token for password recovery."""
+    """Create a magic link token for password recovery.
+
+    One active magic_link per user — new request overwrites old.
+    Dual-write: Token table + User columns.
+    """
     user = await get_user_by_email(session, email)
     if not user:
         return None
@@ -208,34 +293,58 @@ async def create_magic_link(session: AsyncSession, email: str) -> str | None:
     expiry_days = int(await get_setting(session, "magic_link_expiry_days") or "1")
 
     # Generate token
-    token = secrets.token_urlsafe(32)
-    user.magic_token = token
-    user.magic_token_expires = datetime.now(UTC) + timedelta(days=expiry_days)
+    token_value = secrets.token_urlsafe(32)
+    expires = datetime.now(UTC) + timedelta(days=expiry_days)
+
+    # Primary: Token table — delete old magic_link, create new
+    await session.execute(
+        delete(Token).where(
+            Token.user_id == user.id,
+            Token.token_type == TokenType.MAGIC_LINK,
+        )
+    )
+    session.add(
+        Token(
+            user_id=str(user.id),
+            token=token_value,
+            token_type=TokenType.MAGIC_LINK,
+            expires_at=expires,
+        )
+    )
+
+    # Backwards compat: User columns
+    user.magic_token = token_value
+    user.magic_token_expires = expires
 
     await session.commit()
-    return token
+    return token_value
 
 
 async def verify_magic_token_and_reset_password(
     session: AsyncSession, token: str, new_password: str
 ) -> User | None:
-    """Verify magic token and reset password."""
+    """Verify magic token and reset password.
+
+    Security: invalidates ALL tokens for the user (compromised password means
+    all sessions are suspect), then creates one new session token.
+    """
     user = await get_user_by_magic_token(session, token)
     if not user:
         return None
 
-    # Clear magic token (one-time use)
+    # Delete ALL tokens for this user (sessions + magic links)
+    await session.execute(delete(Token).where(Token.user_id == user.id))
+
+    # Clear legacy User columns
     user.magic_token = None
     user.magic_token_expires = None
 
     # Set new password
     user.password_hash = ph.hash(new_password)
 
-    # Create session for immediate login
-    user.session_token = secrets.token_urlsafe(32)
-    user.session_expires = datetime.now(UTC) + timedelta(days=30)
+    # Create new session (dual-write handles both Token table + User columns)
+    await create_session(user, session)
 
-    await session.commit()
     return user
 
 

@@ -1,92 +1,37 @@
-import { useEffect, useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { TreePine, MessageCircle, Loader2, ExternalLink } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
-import {
-  giftExchangeApi,
-  wishlistApi,
-  eventsApi,
-  type GiftExchangeStatus,
-  type GiftExchangeAssignment,
-  type WishlistItem,
-  type Event,
-} from '@/lib/api'
+import { useEvents } from '@/hooks/queries/useEvents'
+import { useGiftExchangeStatus, useGiftExchangeAssignment } from '@/hooks/queries/useGiftExchange'
+import { useWishlist } from '@/hooks/queries/useWishlist'
+import { giftExchangeApi } from '@/lib/api'
 
 export default function GiftExchange() {
   const { eventId: urlEventId } = useParams()
   const { bigMode } = useBigMode()
-  const [status, setStatus] = useState<GiftExchangeStatus | null>(null)
-  const [assignment, setAssignment] = useState<GiftExchangeAssignment | null>(null)
-  const [myWishlist, setMyWishlist] = useState<WishlistItem[]>([])
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showMessageModal, setShowMessageModal] = useState(false)
-  const [activeEventId, setActiveEventId] = useState<string | null>(null)
 
-  // Use URL eventId if available, otherwise use the auto-loaded activeEventId
-  const eventId = urlEventId || activeEventId
+  // Load all events to find gift exchange ones
+  const { data: eventsData, isLoading: eventsLoading } = useEvents()
+  const giftExchangeEvents = useMemo(
+    () => (eventsData?.events ?? []).filter((e) => e.has_secret_santa),
+    [eventsData]
+  )
 
-  useEffect(() => {
-    if (urlEventId) {
-      setActiveEventId(urlEventId)
-      loadGiftExchange(urlEventId)
-    } else {
-      loadEventsWithGiftExchange()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlEventId])
+  // Auto-select: URL param > single event > null (show picker)
+  const eventId = urlEventId ?? (giftExchangeEvents.length === 1 ? giftExchangeEvents[0].id : null)
 
-  const loadEventsWithGiftExchange = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await eventsApi.list()
-      const ssEvents = response.events.filter((e) => e.has_secret_santa)
-      setEvents(ssEvents)
+  // Conditionally fetch status, assignment, wishlist when eventId is resolved
+  const { data: status, isLoading: statusLoading, error: statusError } = useGiftExchangeStatus(eventId ?? '')
+  const { data: assignment } = useGiftExchangeAssignment(eventId ?? '')
+  const { data: wishlistData } = useWishlist()
 
-      // If only one event, load it and set activeEventId
-      if (ssEvents.length === 1) {
-        setActiveEventId(ssEvents[0].id)
-        await loadGiftExchange(ssEvents[0].id)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load events')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadGiftExchange = async (id: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Load status and my wishlist in parallel
-      const [statusRes, wishlistRes] = await Promise.all([
-        giftExchangeApi.getStatus(id),
-        wishlistApi.get(),
-      ])
-
-      setStatus(statusRes)
-      setMyWishlist(wishlistRes.items)
-
-      // If assigned, load assignment
-      if (statusRes.status === 'assigned') {
-        try {
-          const assignmentRes = await giftExchangeApi.getAssignment(id)
-          setAssignment(assignmentRes)
-        } catch {
-          // No assignment for this user
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load Gift Exchange')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const events = giftExchangeEvents
+  const myWishlist = wishlistData?.items ?? []
+  const loading = eventsLoading || (!!eventId && statusLoading)
+  const error = statusError ? (statusError instanceof Error ? statusError.message : 'Failed to load Gift Exchange') : null
 
   const getInitials = (name: string) => {
     return name

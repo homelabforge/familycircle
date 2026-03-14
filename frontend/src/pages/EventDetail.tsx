@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Clock, Check, X, HelpCircle, Loader2, TreePine, UtensilsCrossed, AlertTriangle, Ban, Heart, ChevronDown, ChevronUp, Cake, EyeOff, Baby, ExternalLink, Users, BarChart3, Plus, SearchX, Repeat } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import BackButton from '@/components/BackButton'
 import PollCard from '@/components/PollCard'
 import CreatePollModal from '@/components/CreatePollModal'
@@ -14,7 +15,9 @@ import SaveTemplateButton from '@/components/events/SaveTemplateButton'
 import HeadcountBadge from '@/components/rsvp/HeadcountBadge'
 import RSVPGuestForm from '@/components/rsvp/RSVPGuestForm'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, pollsApi, type EventDetail as EventDetailType, type Poll } from '@/lib/api'
+import { useEvent } from '@/hooks/queries/useEvents'
+import { usePolls } from '@/hooks/queries/usePolls'
+import { eventsApi } from '@/lib/api'
 
 // Cancel confirmation modal
 function CancelEventModal({
@@ -249,67 +252,45 @@ export default function EventDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { bigMode } = useBigMode()
-  const [event, setEvent] = useState<EventDetailType | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+
+  // Data fetching via TanStack Query
+  const {
+    data: event,
+    isLoading: loading,
+    error: eventError,
+  } = useEvent(id ?? '')
+  const { data: pollsData } = usePolls(id)
+  const polls = pollsData?.polls ?? []
+
+  const error = eventError ? (eventError instanceof Error ? eventError.message : 'Failed to load event') : null
+  const notFound = error?.toLowerCase().includes('not found') ?? false
+
+  // UI state
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
-  const [notFound, setNotFound] = useState(false)
-  const [polls, setPolls] = useState<Poll[]>([])
   const [showCreatePoll, setShowCreatePoll] = useState(false)
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0)
 
-  useEffect(() => {
-    if (id) {
-      loadEvent()
-      loadPolls()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
-
-  const loadEvent = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      setNotFound(false)
-      const data = await eventsApi.get(id!)
-      setEvent(data)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load event'
-      if (message.toLowerCase().includes('not found')) {
-        setNotFound(true)
-      } else {
-        setError(message)
-      }
-    } finally {
-      setLoading(false)
-    }
+  const invalidateEvent = () => {
+    queryClient.invalidateQueries({ queryKey: ['events', id] })
+    queryClient.invalidateQueries({ queryKey: ['events'] })
   }
-
-  const loadPolls = async () => {
-    if (!id) return
-    try {
-      const data = await pollsApi.list(id)
-      setPolls(data.polls)
-    } catch {
-      // Non-critical — don't block the page
-    }
-  }
+  const invalidatePolls = () => queryClient.invalidateQueries({ queryKey: ['polls'] })
 
   const handleRsvp = async (status: 'yes' | 'no' | 'maybe') => {
     if (!event || event.is_cancelled) return
     try {
       setRsvpLoading(true)
-      // If clicking the same status, remove RSVP
       if (event.user_rsvp === status) {
         await eventsApi.removeRsvp(event.id)
       } else {
         await eventsApi.rsvp(event.id, status)
       }
-      await loadEvent() // Reload to get updated counts
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update RSVP')
+      invalidateEvent()
+    } catch {
+      // Error will surface on next refetch
     } finally {
       setRsvpLoading(false)
     }
@@ -321,10 +302,10 @@ export default function EventDetail() {
       setCancelLoading(true)
       await eventsApi.cancel(event.id, reason || undefined)
       setShowCancelModal(false)
-      // Redirect to dashboard after canceling
+      queryClient.invalidateQueries({ queryKey: ['events'] })
       navigate('/')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel event')
+    } catch {
+      // Error handled by UI
     } finally {
       setCancelLoading(false)
     }
@@ -818,9 +799,7 @@ export default function EventDetail() {
                   <PollCard
                     key={poll.id}
                     poll={poll}
-                    onUpdated={(updated) => {
-                      setPolls((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-                    }}
+                    onUpdated={invalidatePolls}
                   />
                 ))}
               </div>
@@ -1008,7 +987,7 @@ export default function EventDetail() {
         eventId={event.id}
         onCreated={() => {
           setShowCreatePoll(false)
-          loadPolls()
+          invalidatePolls()
         }}
       />
     </div>

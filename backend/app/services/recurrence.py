@@ -152,64 +152,11 @@ async def _copy_type_details(
     target: Event,
 ) -> None:
     """Copy type-specific detail rows from source to target event."""
-    from app.models.baby_shower_detail import BabyShowerDetail
-    from app.models.birthday_detail import BirthdayDetail
-    from app.models.holiday_detail import HolidayDetail
-    from app.models.wedding_detail import WeddingDetail
+    from app.services.event_detail_registry import clone_detail
 
-    if source.holiday_detail:
-        d = source.holiday_detail
-        db.add(
-            HolidayDetail(
-                event_id=target.id,
-                holiday_name=d.holiday_name,
-                custom_holiday_name=d.custom_holiday_name,
-                year=d.year + 1 if d.year else None,
-            )
-        )
-
-    if source.birthday_detail:
-        d = source.birthday_detail
-        db.add(
-            BirthdayDetail(
-                event_id=target.id,
-                birthday_person_id=d.birthday_person_id,
-                birthday_person_name=d.birthday_person_name,
-                birth_date=d.birth_date,
-                age_turning=d.age_turning + 1 if d.age_turning else None,
-                is_secret=d.is_secret,
-                theme=d.theme,
-            )
-        )
-
-    if source.baby_shower_detail:
-        d = source.baby_shower_detail
-        db.add(
-            BabyShowerDetail(
-                event_id=target.id,
-                parent1_name=d.parent1_name,
-                parent2_name=d.parent2_name,
-                baby_name=d.baby_name,
-                gender=d.gender,
-                due_date=d.due_date,
-                registry_url=d.registry_url,
-                is_gender_reveal=d.is_gender_reveal,
-            )
-        )
-
-    if source.wedding_detail:
-        d = source.wedding_detail
-        db.add(
-            WeddingDetail(
-                event_id=target.id,
-                partner1_name=d.partner1_name,
-                partner2_name=d.partner2_name,
-                wedding_date=d.wedding_date,
-                venue_name=d.venue_name,
-                registry_url=d.registry_url,
-                color_theme=d.color_theme,
-            )
-        )
+    cloned = clone_detail(source, target.id)
+    if cloned:
+        db.add(cloned)
 
 
 def recurrence_to_dict(recurrence: EventRecurrence | None) -> dict | None:

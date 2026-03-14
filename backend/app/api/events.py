@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,15 +17,12 @@ from app.api.event_helpers import (
 )
 from app.db import get_db_session
 from app.models import Event, EventRSVP, FamilyMembership, User
-from app.models.baby_shower_detail import BabyShowerDetail
-from app.models.birthday_detail import BirthdayDetail
 from app.models.event import EventType, RSVPStatus
-from app.models.holiday_detail import HolidayDetail
-from app.models.wedding_detail import WeddingDetail, WeddingPartyMember
+from app.models.wedding_detail import WeddingPartyMember
 from app.schemas.event import EventCreate, EventUpdate
 from app.schemas.wedding import WeddingPartyMemberCreate
 from app.services.email import get_smtp_config, send_event_cancelled_email
-from app.services.notifications.dispatcher import NotificationDispatcher
+from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 from app.services.recurrence import recurrence_to_dict
 
@@ -38,12 +35,6 @@ class EventCancel(BaseModel):
     """Cancel event request."""
 
     reason: str | None = None
-
-
-class RSVPRequest(BaseModel):
-    """RSVP request."""
-
-    status: str  # yes, no, maybe
 
 
 async def get_member_display_name(db: AsyncSession, user_id: str, family_id: str) -> str:
@@ -107,67 +98,10 @@ def event_to_dict(
         "created_at": event.created_at.isoformat() if event.created_at else None,
     }
 
-    # Type-specific details
-    if event.holiday_detail:
-        result["holiday_detail"] = {
-            "holiday_name": event.holiday_detail.holiday_name,
-            "custom_holiday_name": event.holiday_detail.custom_holiday_name,
-            "display_name": event.holiday_detail.display_name,
-            "year": event.holiday_detail.year,
-        }
-    else:
-        result["holiday_detail"] = None
+    # Type-specific details (via registry)
+    from app.services.event_detail_registry import serialize_all_details
 
-    if event.birthday_detail:
-        result["birthday_detail"] = {
-            "birthday_person_id": event.birthday_detail.birthday_person_id,
-            "birthday_person_name": event.birthday_detail.birthday_person_name,
-            "birth_date": (
-                event.birthday_detail.birth_date.isoformat()
-                if event.birthday_detail.birth_date
-                else None
-            ),
-            "age_turning": event.birthday_detail.age_turning,
-            "is_secret": event.birthday_detail.is_secret,
-            "theme": event.birthday_detail.theme,
-        }
-    else:
-        result["birthday_detail"] = None
-
-    if event.baby_shower_detail:
-        result["baby_shower_detail"] = {
-            "parent1_name": event.baby_shower_detail.parent1_name,
-            "parent2_name": event.baby_shower_detail.parent2_name,
-            "baby_name": event.baby_shower_detail.baby_name,
-            "gender": event.baby_shower_detail.gender,
-            "due_date": (
-                event.baby_shower_detail.due_date.isoformat()
-                if event.baby_shower_detail.due_date
-                else None
-            ),
-            "registry_url": event.baby_shower_detail.registry_url,
-            "is_gender_reveal": event.baby_shower_detail.is_gender_reveal,
-            "display_parents": event.baby_shower_detail.display_parents,
-        }
-    else:
-        result["baby_shower_detail"] = None
-
-    if event.wedding_detail:
-        result["wedding_detail"] = {
-            "partner1_name": event.wedding_detail.partner1_name,
-            "partner2_name": event.wedding_detail.partner2_name,
-            "wedding_date": (
-                event.wedding_detail.wedding_date.isoformat()
-                if event.wedding_detail.wedding_date
-                else None
-            ),
-            "venue_name": event.wedding_detail.venue_name,
-            "registry_url": event.wedding_detail.registry_url,
-            "color_theme": event.wedding_detail.color_theme,
-            "display_couple": event.wedding_detail.display_couple,
-        }
-    else:
-        result["wedding_detail"] = None
+    result.update(serialize_all_details(event))
 
     # Sub-events (for wedding or any parent event)
     active_sub_events = [s for s in event.sub_events if not s.is_cancelled]
@@ -350,6 +284,7 @@ async def get_event(
 @router.post("")
 async def create_event(
     request: EventCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -377,58 +312,18 @@ async def create_event(
     db.add(event)
     await db.flush()  # Get event.id before adding detail rows
 
-    # Create type-specific details
-    if request.event_type == EventType.HOLIDAY.value and request.holiday_detail:
-        detail = HolidayDetail(
-            event_id=event.id,
-            holiday_name=request.holiday_detail.holiday_name,
-            custom_holiday_name=request.holiday_detail.custom_holiday_name,
-            year=request.holiday_detail.year,
-        )
+    # Create type-specific details (via registry)
+    from app.services.event_detail_registry import create_detail_from_request
+
+    detail = create_detail_from_request(event.id, request.event_type, request)
+    if detail:
         db.add(detail)
 
-    if request.event_type == EventType.BIRTHDAY.value and request.birthday_detail:
-        detail = BirthdayDetail(
-            event_id=event.id,
-            birthday_person_id=request.birthday_detail.birthday_person_id,
-            birthday_person_name=request.birthday_detail.birthday_person_name,
-            birth_date=request.birthday_detail.birth_date,
-            age_turning=request.birthday_detail.age_turning,
-            is_secret=request.birthday_detail.is_secret,
-            theme=request.birthday_detail.theme,
-        )
-        db.add(detail)
-
-    if request.event_type == EventType.BABY_SHOWER.value and request.baby_shower_detail:
-        detail = BabyShowerDetail(
-            event_id=event.id,
-            parent1_name=request.baby_shower_detail.parent1_name,
-            parent2_name=request.baby_shower_detail.parent2_name,
-            baby_name=request.baby_shower_detail.baby_name,
-            gender=request.baby_shower_detail.gender,
-            due_date=request.baby_shower_detail.due_date,
-            registry_url=request.baby_shower_detail.registry_url,
-            is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
-        )
-        db.add(detail)
-
+    # Wedding-specific: auto-create sub-events from template
     if request.event_type == EventType.WEDDING.value and request.wedding_detail:
         sub_event_template = request.wedding_detail.sub_event_template
-        detail = WeddingDetail(
-            event_id=event.id,
-            partner1_name=request.wedding_detail.partner1_name,
-            partner2_name=request.wedding_detail.partner2_name,
-            wedding_date=request.wedding_detail.wedding_date,
-            venue_name=request.wedding_detail.venue_name,
-            registry_url=request.wedding_detail.registry_url,
-            color_theme=request.wedding_detail.color_theme,
-            sub_event_template=sub_event_template,
-        )
-        db.add(detail)
-
-        # Auto-create sub-events from template
         if sub_event_template:
-            await db.flush()  # Ensure event.id is available
+            await db.flush()
             from app.services.wedding_templates import create_sub_events_from_template
 
             await create_sub_events_from_template(db, event, sub_event_template)
@@ -455,26 +350,24 @@ async def create_event(
     await db.commit()
     await db.refresh(event)
 
-    # Fire notification (non-blocking, errors logged)
-    try:
-        family_id = user.current_family_id or ""
-        creator_name = await get_member_display_name(db, user.id, family_id)
-        from app.models import Family
+    # Gather notification data before backgrounding (uses request-scoped db)
+    family_id = user.current_family_id or ""
+    creator_name = await get_member_display_name(db, user.id, family_id)
+    from app.models import Family
 
-        family_result = await db.execute(select(Family).where(Family.id == family_id))
-        family = family_result.scalar_one_or_none()
-        family_name = family.name if family else "your family"
-        event_date_str = event.event_date.strftime("%B %d, %Y") if event.event_date else "TBD"
+    family_result = await db.execute(select(Family).where(Family.id == family_id))
+    family = family_result.scalar_one_or_none()
+    family_name = family.name if family else "your family"
+    event_date_str = event.event_date.strftime("%B %d, %Y") if event.event_date else "TBD"
 
-        dispatcher = NotificationDispatcher(db)
-        await dispatcher.notify_event_created(
-            event_title=event.title,
-            family_name=family_name,
-            creator_name=creator_name,
-            event_date=event_date_str,
-        )
-    except Exception as e:
-        logger.error("Failed to send event_created notification: %s", e)
+    background_tasks.add_task(
+        send_notification_background,
+        "notify_event_created",
+        event_title=event.title,
+        family_name=family_name,
+        creator_name=creator_name,
+        event_date=event_date_str,
+    )
 
     return {"message": "Event created", "id": str(event.id)}
 
@@ -522,88 +415,10 @@ async def update_event(
     if request.secret_santa_notes is not None:
         event.secret_santa_notes = request.secret_santa_notes
 
-    # Update type-specific details (upsert pattern)
-    if request.holiday_detail is not None and event.event_type == EventType.HOLIDAY.value:
-        if event.holiday_detail:
-            event.holiday_detail.holiday_name = request.holiday_detail.holiday_name
-            event.holiday_detail.custom_holiday_name = request.holiday_detail.custom_holiday_name
-            event.holiday_detail.year = request.holiday_detail.year
-        else:
-            db.add(
-                HolidayDetail(
-                    event_id=event.id,
-                    holiday_name=request.holiday_detail.holiday_name,
-                    custom_holiday_name=request.holiday_detail.custom_holiday_name,
-                    year=request.holiday_detail.year,
-                )
-            )
+    # Update type-specific details (upsert via registry)
+    from app.services.event_detail_registry import update_detail_from_request
 
-    if request.birthday_detail is not None and event.event_type == EventType.BIRTHDAY.value:
-        if event.birthday_detail:
-            event.birthday_detail.birthday_person_id = request.birthday_detail.birthday_person_id
-            event.birthday_detail.birthday_person_name = (
-                request.birthday_detail.birthday_person_name
-            )
-            event.birthday_detail.birth_date = request.birthday_detail.birth_date
-            event.birthday_detail.age_turning = request.birthday_detail.age_turning
-            event.birthday_detail.is_secret = request.birthday_detail.is_secret
-            event.birthday_detail.theme = request.birthday_detail.theme
-        else:
-            db.add(
-                BirthdayDetail(
-                    event_id=event.id,
-                    birthday_person_id=request.birthday_detail.birthday_person_id,
-                    birthday_person_name=request.birthday_detail.birthday_person_name,
-                    birth_date=request.birthday_detail.birth_date,
-                    age_turning=request.birthday_detail.age_turning,
-                    is_secret=request.birthday_detail.is_secret,
-                    theme=request.birthday_detail.theme,
-                )
-            )
-
-    if request.baby_shower_detail is not None and event.event_type == EventType.BABY_SHOWER.value:
-        if event.baby_shower_detail:
-            event.baby_shower_detail.parent1_name = request.baby_shower_detail.parent1_name
-            event.baby_shower_detail.parent2_name = request.baby_shower_detail.parent2_name
-            event.baby_shower_detail.baby_name = request.baby_shower_detail.baby_name
-            event.baby_shower_detail.gender = request.baby_shower_detail.gender
-            event.baby_shower_detail.due_date = request.baby_shower_detail.due_date
-            event.baby_shower_detail.registry_url = request.baby_shower_detail.registry_url
-            event.baby_shower_detail.is_gender_reveal = request.baby_shower_detail.is_gender_reveal
-        else:
-            db.add(
-                BabyShowerDetail(
-                    event_id=event.id,
-                    parent1_name=request.baby_shower_detail.parent1_name,
-                    parent2_name=request.baby_shower_detail.parent2_name,
-                    baby_name=request.baby_shower_detail.baby_name,
-                    gender=request.baby_shower_detail.gender,
-                    due_date=request.baby_shower_detail.due_date,
-                    registry_url=request.baby_shower_detail.registry_url,
-                    is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
-                )
-            )
-
-    if request.wedding_detail is not None and event.event_type == EventType.WEDDING.value:
-        if event.wedding_detail:
-            event.wedding_detail.partner1_name = request.wedding_detail.partner1_name
-            event.wedding_detail.partner2_name = request.wedding_detail.partner2_name
-            event.wedding_detail.wedding_date = request.wedding_detail.wedding_date
-            event.wedding_detail.venue_name = request.wedding_detail.venue_name
-            event.wedding_detail.registry_url = request.wedding_detail.registry_url
-            event.wedding_detail.color_theme = request.wedding_detail.color_theme
-        else:
-            db.add(
-                WeddingDetail(
-                    event_id=event.id,
-                    partner1_name=request.wedding_detail.partner1_name,
-                    partner2_name=request.wedding_detail.partner2_name,
-                    wedding_date=request.wedding_detail.wedding_date,
-                    venue_name=request.wedding_detail.venue_name,
-                    registry_url=request.wedding_detail.registry_url,
-                    color_theme=request.wedding_detail.color_theme,
-                )
-            )
+    update_detail_from_request(event, event.event_type, request, db)
 
     await db.commit()
 
@@ -614,6 +429,7 @@ async def update_event(
 async def cancel_event(
     event_id: str,
     request: EventCancel,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -675,17 +491,15 @@ async def cancel_event(
                 except Exception as e:
                     logger.error(f"Failed to send cancellation email to {attendee_id}: {e}")
 
-    # Fire notification via dispatcher
-    try:
-        canceller_name = await get_member_display_name(db, user.id, user.current_family_id or "")
-        dispatcher = NotificationDispatcher(db)
-        await dispatcher.notify_event_cancelled(
-            event_title=event.title,
-            cancelled_by=canceller_name,
-            reason=request.reason,
-        )
-    except Exception as e:
-        logger.error("Failed to send event_cancelled notification: %s", e)
+    # Fire notification in background
+    canceller_name = await get_member_display_name(db, user.id, user.current_family_id or "")
+    background_tasks.add_task(
+        send_notification_background,
+        "notify_event_cancelled",
+        event_title=event.title,
+        cancelled_by=canceller_name,
+        reason=request.reason,
+    )
 
     return {"message": "Event cancelled"}
 
@@ -719,141 +533,6 @@ async def delete_event(
     await db.commit()
 
     return {"message": "Event deleted"}
-
-
-@router.post("/{event_id}/rsvp")
-async def rsvp_to_event(
-    event_id: str,
-    request: RSVPRequest,
-    user: User = Depends(require_family_context),
-    db: AsyncSession = Depends(get_db_session),
-):
-    """RSVP to an event (yes/no/maybe)."""
-    # Validate status
-    try:
-        status = RSVPStatus(request.status.lower())
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid RSVP status. Use yes, no, or maybe.")
-
-    # Check event exists and user can access it (family + secret birthday → 404)
-    event = await resolve_event_or_404(db, event_id, user)
-
-    if event.is_cancelled:
-        raise HTTPException(status_code=400, detail="Cannot RSVP to a cancelled event")
-
-    # Check for event conflicts (same day, across all families)
-    conflict_warning = None
-    if status == RSVPStatus.YES:
-        conflicts = await check_event_conflicts(db, user.id, event)
-        if conflicts:
-            conflict_warning = [
-                {
-                    "event_title": c["title"],
-                    "family_name": c["family_name"],
-                    "event_date": c["date"],
-                }
-                for c in conflicts
-            ]
-
-    # Check for existing RSVP
-    rsvp_result = await db.execute(
-        select(EventRSVP).where(
-            EventRSVP.event_id == event_id,
-            EventRSVP.user_id == user.id,
-        )
-    )
-    existing_rsvp = rsvp_result.scalar_one_or_none()
-
-    if existing_rsvp:
-        existing_rsvp.status = status
-    else:
-        rsvp = EventRSVP(
-            event_id=event_id,
-            user_id=str(user.id),
-            status=status,
-        )
-        db.add(rsvp)
-
-    await db.commit()
-
-    # Fire notification for RSVP
-    try:
-        member_name = await get_member_display_name(db, user.id, user.current_family_id or "")
-        dispatcher = NotificationDispatcher(db)
-        await dispatcher.notify_rsvp_received(
-            event_title=event.title,
-            member_name=member_name,
-            status=status.value,
-        )
-    except Exception as e:
-        logger.error("Failed to send rsvp_received notification: %s", e)
-
-    response: dict = {"message": f"RSVP updated to {status.value}"}
-    if status == RSVPStatus.YES and conflict_warning:
-        response["conflicts"] = conflict_warning
-
-    return response
-
-
-@router.delete("/{event_id}/rsvp")
-async def remove_rsvp(
-    event_id: str,
-    user: User = Depends(require_family_context),
-    db: AsyncSession = Depends(get_db_session),
-):
-    """Remove RSVP from an event."""
-    await resolve_event_or_404(db, event_id, user)
-
-    result = await db.execute(
-        select(EventRSVP).where(
-            EventRSVP.event_id == event_id,
-            EventRSVP.user_id == user.id,
-        )
-    )
-    rsvp = result.scalar_one_or_none()
-
-    if rsvp:
-        await db.delete(rsvp)
-        await db.commit()
-
-    return {"message": "RSVP removed"}
-
-
-async def check_event_conflicts(db: AsyncSession, user_id: str, target_event: Event) -> list[dict]:
-    """Check for events on the same day that user has RSVPed yes to."""
-    # Get the date of the target event
-    event_date = target_event.event_date.date()
-
-    # Find all events the user has RSVPed yes to
-    result = await db.execute(
-        select(Event, EventRSVP)
-        .join(EventRSVP, EventRSVP.event_id == Event.id)
-        .where(
-            EventRSVP.user_id == user_id,
-            EventRSVP.status == RSVPStatus.YES,
-            Event.id != target_event.id,
-            Event.cancelled_at.is_(None),
-        )
-    )
-
-    conflicts = []
-    for event, _rsvp in result.all():
-        if event.event_date.date() == event_date:
-            # Get family name
-            from app.models import Family
-
-            family_result = await db.execute(select(Family).where(Family.id == event.family_id))
-            family = family_result.scalar_one_or_none()
-
-            conflicts.append(
-                {
-                    "title": event.title,
-                    "family_name": family.name if family else "Unknown",
-                    "date": event.event_date.isoformat(),
-                }
-            )
-
-    return conflicts
 
 
 @router.get("/{event_id}/health-summary")
@@ -1054,56 +733,12 @@ async def create_sub_event(
     db.add(event)
     await db.flush()
 
-    # Create type-specific details (same as create_event)
-    if request.event_type == EventType.HOLIDAY.value and request.holiday_detail:
-        db.add(
-            HolidayDetail(
-                event_id=event.id,
-                holiday_name=request.holiday_detail.holiday_name,
-                custom_holiday_name=request.holiday_detail.custom_holiday_name,
-                year=request.holiday_detail.year,
-            )
-        )
+    # Create type-specific details (via registry — shared with create_event)
+    from app.services.event_detail_registry import create_detail_from_request
 
-    if request.event_type == EventType.BIRTHDAY.value and request.birthday_detail:
-        db.add(
-            BirthdayDetail(
-                event_id=event.id,
-                birthday_person_id=request.birthday_detail.birthday_person_id,
-                birthday_person_name=request.birthday_detail.birthday_person_name,
-                birth_date=request.birthday_detail.birth_date,
-                age_turning=request.birthday_detail.age_turning,
-                is_secret=request.birthday_detail.is_secret,
-                theme=request.birthday_detail.theme,
-            )
-        )
-
-    if request.event_type == EventType.BABY_SHOWER.value and request.baby_shower_detail:
-        db.add(
-            BabyShowerDetail(
-                event_id=event.id,
-                parent1_name=request.baby_shower_detail.parent1_name,
-                parent2_name=request.baby_shower_detail.parent2_name,
-                baby_name=request.baby_shower_detail.baby_name,
-                gender=request.baby_shower_detail.gender,
-                due_date=request.baby_shower_detail.due_date,
-                registry_url=request.baby_shower_detail.registry_url,
-                is_gender_reveal=request.baby_shower_detail.is_gender_reveal,
-            )
-        )
-
-    if request.event_type == EventType.WEDDING.value and request.wedding_detail:
-        db.add(
-            WeddingDetail(
-                event_id=event.id,
-                partner1_name=request.wedding_detail.partner1_name,
-                partner2_name=request.wedding_detail.partner2_name,
-                wedding_date=request.wedding_detail.wedding_date,
-                venue_name=request.wedding_detail.venue_name,
-                registry_url=request.wedding_detail.registry_url,
-                color_theme=request.wedding_detail.color_theme,
-            )
-        )
+    detail = create_detail_from_request(event.id, request.event_type, request)
+    if detail:
+        db.add(detail)
 
     await db.commit()
     await db.refresh(event)

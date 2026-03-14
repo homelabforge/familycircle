@@ -13,7 +13,6 @@ from app.api import (
     auth,
     baby_shower_updates,
     calendar,
-    comment_reactions,
     event_comments,
     event_photos,
     event_templates,
@@ -27,7 +26,7 @@ from app.api import (
     potluck,
     profile,
     registry,
-    rsvp_guests,
+    rsvp,
     settings,
     wishlist,
 )
@@ -85,14 +84,13 @@ app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 app.include_router(wishlist.router, prefix="/api/wishlist", tags=["wishlist"])
 app.include_router(polls.router, prefix="/api/polls", tags=["polls"])
 app.include_router(event_comments.router, prefix="/api/events", tags=["event-comments"])
-app.include_router(comment_reactions.router, prefix="/api/events", tags=["comment-reactions"])
 app.include_router(event_photos.router, prefix="/api/events", tags=["event-photos"])
 app.include_router(poll_templates.router, prefix="/api/poll-templates", tags=["poll-templates"])
 app.include_router(calendar.router, prefix="/api", tags=["calendar"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(baby_shower_updates.router, prefix="/api/events", tags=["baby-shower-updates"])
 app.include_router(registry.router, prefix="/api/events", tags=["registry"])
-app.include_router(rsvp_guests.router, prefix="/api/events", tags=["rsvp-guests"])
+app.include_router(rsvp.router, prefix="/api/events", tags=["rsvp"])
 app.include_router(event_templates.router, prefix="/api/event-templates", tags=["event-templates"])
 
 # Serve uploaded files (photos)

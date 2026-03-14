@@ -28,6 +28,7 @@ from app.models import (  # noqa: F401
     PotluckItem,
     ProfileVisibility,
     Setting,
+    Token,
     User,
     UserProfile,
     WeddingDetail,

@@ -1,4 +1,9 @@
-"""Wishlist schemas."""
+"""Wishlist schemas — re-exports from api/wishlist.py inline definitions.
+
+The canonical schemas are defined inline in api/wishlist.py.
+This module exists only for backwards compatibility with schemas/__init__.py
+and schemas/gift_exchange.py which import from here.
+"""
 
 from datetime import datetime
 
@@ -6,19 +11,23 @@ from pydantic import BaseModel
 
 
 class WishlistItemCreate(BaseModel):
-    """Create wishlist item."""
+    """Create wishlist item request."""
 
     name: str
-    link: str | None = None
-    notes: str | None = None
+    description: str | None = None
+    url: str | None = None
+    price_range: str | None = None
+    priority: int | None = 1
 
 
 class WishlistItemUpdate(BaseModel):
-    """Update wishlist item."""
+    """Update wishlist item request."""
 
     name: str | None = None
-    link: str | None = None
-    notes: str | None = None
+    description: str | None = None
+    url: str | None = None
+    price_range: str | None = None
+    priority: int | None = None
 
 
 class WishlistItemResponse(BaseModel):
@@ -26,9 +35,11 @@ class WishlistItemResponse(BaseModel):
 
     id: str
     name: str
-    link: str | None
-    notes: str | None
-    created_at: datetime
+    description: str | None = None
+    url: str | None = None
+    price_range: str | None = None
+    priority: int | None = None
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True

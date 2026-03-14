@@ -4,12 +4,14 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import async_session_maker
-from app.models import Event, Setting
+from app.models import Event
+from app.models.token import Token
 from app.services.notifications.dispatcher import NotificationDispatcher
+from app.services.settings_service import SettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +19,8 @@ scheduler = AsyncIOScheduler()
 
 
 async def _get_global_setting(db: AsyncSession, key: str, default: str = "") -> str:
-    """Get a global setting value."""
-    result = await db.execute(
-        select(Setting).where(Setting.key == key, Setting.family_id.is_(None))
-    )
-    setting = result.scalar_one_or_none()
-    return setting.value if setting and setting.value else default
+    """Get a global setting value via SettingsService."""
+    return await SettingsService(db).get_setting(key, default)
 
 
 async def generate_recurring_events() -> None:
@@ -106,6 +104,28 @@ async def check_event_reminders() -> None:
             logger.exception("Error checking event reminders")
 
 
+async def cleanup_expired_tokens() -> None:
+    """Delete expired tokens from the tokens table.
+
+    Runs daily. Prevents table bloat from accumulated expired sessions.
+    Uses Python-generated UTC timestamp (SQLite-safe — raw NOW() is not valid SQLite).
+    """
+    logger.info("Running expired token cleanup...")
+
+    async with async_session_maker() as db:
+        try:
+            now = datetime.now(UTC)
+            result = await db.execute(delete(Token).where(Token.expires_at < now))
+            deleted = result.rowcount
+            await db.commit()
+            if deleted:
+                logger.info("Cleaned up %d expired token(s)", deleted)
+            else:
+                logger.info("No expired tokens to clean up")
+        except Exception:
+            logger.exception("Error cleaning up expired tokens")
+
+
 def start_scheduler() -> None:
     """Start the APScheduler instance with periodic jobs."""
     # Event reminder check — runs daily at 8 AM UTC
@@ -114,8 +134,11 @@ def start_scheduler() -> None:
     # Recurring event generation — runs daily at 2 AM UTC
     scheduler.add_job(generate_recurring_events, "cron", hour=2, minute=0)
 
+    # Expired token cleanup — runs daily at 3 AM UTC
+    scheduler.add_job(cleanup_expired_tokens, "cron", hour=3, minute=0)
+
     scheduler.start()
-    logger.info("Scheduler started with event reminder + recurrence jobs")
+    logger.info("Scheduler started with event reminder + recurrence + token cleanup jobs")
 
 
 def stop_scheduler() -> None:

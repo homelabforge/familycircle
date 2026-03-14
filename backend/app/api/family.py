@@ -1,6 +1,6 @@
 """Family members API endpoints - multi-family aware."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -174,6 +174,7 @@ class InviteRequest(BaseModel):
 async def invite_member(
     request: InviteRequest,
     req: Request,
+    background_tasks: BackgroundTasks,
     admin: User = Depends(require_family_admin),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -195,6 +196,16 @@ async def invite_member(
         # Add existing user to family
         family = await auth_service.get_family_by_id(db, admin.current_family_id)
         await auth_service.add_user_to_family(db, existing_user, family, request.display_name)
+
+        # Notify family that a member was added (admin-initiated)
+        from app.services.notifications.fire import send_notification_background
+
+        background_tasks.add_task(
+            send_notification_background,
+            "notify_family_member_joined",
+            member_name=request.display_name,
+            family_name=family.name if family else "the family",
+        )
 
         return {
             "message": f"{request.display_name} has been added to the family",

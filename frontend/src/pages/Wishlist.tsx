@@ -1,43 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Gift, Plus, Trash2, ExternalLink, Edit2, Loader2, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
+import { useWishlist } from '@/hooks/queries/useWishlist'
 import { wishlistApi, type WishlistItem } from '@/lib/api'
 import { useZodForm, getFieldError } from '@/hooks/useZodForm'
 import { wishlistItemSchema } from '@/lib/schemas'
 
 export default function Wishlist() {
   const { bigMode } = useBigMode()
-  const [items, setItems] = useState<WishlistItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const { data, isLoading: loading, error: queryError } = useWishlist()
+  const items = data?.items ?? []
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Failed to load wishlist') : null
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
-
-  useEffect(() => {
-    loadWishlist()
-  }, [])
-
-  const loadWishlist = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await wishlistApi.get()
-      setItems(response.items)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load wishlist')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Remove this item from your wishlist?')) return
     try {
       await wishlistApi.delete(id)
-      setItems(items.filter((item) => item.id !== id))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete item')
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] })
+    } catch {
+      // Error handled by query refetch
     }
   }
 
@@ -205,7 +191,7 @@ export default function Wishlist() {
             } else {
               await wishlistApi.add(data)
             }
-            await loadWishlist()
+            queryClient.invalidateQueries({ queryKey: ['wishlist'] })
             setShowAddModal(false)
             setEditingItem(null)
           }}

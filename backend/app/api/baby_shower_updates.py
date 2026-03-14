@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +12,7 @@ from app.db import get_db_session
 from app.models import FamilyMembership, User
 from app.models.baby_shower_update import BabyShowerUpdate
 from app.schemas.baby_shower_update import BabyShowerUpdateCreate
-from app.services.notifications.dispatcher import NotificationDispatcher
+from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ async def list_updates(
 async def create_update(
     event_id: str,
     data: BabyShowerUpdateCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -119,14 +120,12 @@ async def create_update(
 
     # Fire notification for major updates
     if data.update_type in ("baby_born", "name_announced", "gender_revealed"):
-        try:
-            dispatcher = NotificationDispatcher(db)
-            await dispatcher.notify_event_updated(
-                event_title=event.title,
-                updater_name=poster_name,
-            )
-        except Exception as e:
-            logger.error("Failed to send baby shower update notification: %s", e)
+        background_tasks.add_task(
+            send_notification_background,
+            "notify_event_updated",
+            event_title=event.title,
+            updater_name=poster_name,
+        )
 
     return _update_to_dict(update, poster_name)
 

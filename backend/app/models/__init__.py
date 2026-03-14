@@ -26,6 +26,7 @@ from app.models.profile_visibility import ProfileVisibility
 from app.models.registry_item import RegistryItem
 from app.models.rsvp_guest import RSVPGuest
 from app.models.settings import Setting
+from app.models.token import Token, TokenType
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.models.wedding_detail import WEDDING_PARTY_ROLES, WeddingDetail, WeddingPartyMember
@@ -87,4 +88,7 @@ __all__ = [
     "PotluckItem",
     "WishlistItem",
     "Setting",
+    # Tokens
+    "Token",
+    "TokenType",
 ]

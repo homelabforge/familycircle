@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +14,7 @@ from app.db import get_db_session
 from app.models import Event, FamilyMembership, User
 from app.models.poll import Poll, PollOption, PollVote
 from app.schemas.poll import PollCreate, PollVoteRequest
-from app.services.notifications.dispatcher import NotificationDispatcher
+from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 from app.services.poll_export import generate_poll_csv
 
@@ -155,6 +155,7 @@ async def list_polls(
 @router.post("", status_code=201)
 async def create_poll(
     data: PollCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -193,15 +194,13 @@ async def create_poll(
 
     creator_name = await _get_display_name(db, user.id, family_id)
 
-    # Fire notification
-    try:
-        dispatcher = NotificationDispatcher(db)
-        await dispatcher.notify_poll_created(
-            poll_question=poll.title,
-            creator_name=creator_name,
-        )
-    except Exception as e:
-        logger.error("Failed to send poll_created notification: %s", e)
+    # Fire notification in background
+    background_tasks.add_task(
+        send_notification_background,
+        "notify_poll_created",
+        poll_question=poll.title,
+        creator_name=creator_name,
+    )
 
     return _poll_to_dict(poll, user.id, creator_name)
 

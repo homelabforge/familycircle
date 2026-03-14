@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Calendar, ChevronRight, Loader2, TreePine, Cake, Baby, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BackButton from '@/components/BackButton'
 import SubEventBadge from '@/components/events/SubEventBadge'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { eventsApi, type Event, type EventType } from '@/lib/api'
+import { useEvents } from '@/hooks/queries/useEvents'
+import { type Event, type EventType } from '@/lib/api'
 
 const TYPE_FILTERS: { value: EventType | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -71,26 +72,12 @@ function getEventSubtitle(event: Event): string | null {
 
 export default function Events() {
   const { bigMode } = useBigMode()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all')
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const response = await eventsApi.list(typeFilter === 'all' ? undefined : typeFilter)
-        setEvents(response.events)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load events')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadEvents()
-  }, [typeFilter])
+  const { data, isLoading: loading, error: queryError } = useEvents(
+    typeFilter === 'all' ? undefined : typeFilter
+  )
+  const events = data?.events ?? []
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Failed to load events') : null
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)

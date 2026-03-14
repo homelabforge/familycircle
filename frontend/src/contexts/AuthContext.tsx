@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { authApi, User, FamilyInfo, setToken, clearToken, getToken } from '@/lib/api'
 
 interface AuthContextType {
@@ -25,9 +26,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null)
+  const prevRoleRef = useRef<string | undefined>(undefined)
 
   const checkAuth = useCallback(async () => {
     try {
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.login({ email, password })
     setToken(response.session_token)
     setUser(response.user)
+    queryClient.clear() // New user context — all cached data is wrong
   }
 
   const register = async (familyCode: string, email: string, password: string, displayName: string) => {
@@ -87,11 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     setToken(response.session_token)
     setUser(response.user)
+    queryClient.clear() // New user context
   }
 
   const switchFamily = async (familyId: string) => {
     const response = await authApi.switchFamily(familyId)
     setUser(response.user)
+    queryClient.clear() // Different family — all family-scoped data is wrong
   }
 
   const createFamily = async (familyName: string, displayName: string) => {
@@ -110,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.resetPassword(token, newPassword)
     setToken(response.session_token)
     setUser(response.user)
+    queryClient.clear() // Security: new session, clear everything
   }
 
   const logout = async () => {
@@ -120,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearToken()
     setUser(null)
+    queryClient.clear() // No user — all cached data must go
   }
 
   const refresh = async () => {
@@ -130,6 +138,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentFamily = user?.families.find(f => f.id === user.current_family_id) ?? null
   const isFamilyAdmin = currentFamily?.role === 'admin' || user?.is_super_admin || false
   const isSuperAdmin = user?.is_super_admin || false
+
+  // Detect role changes from 30s polling and soft-invalidate query cache
+  useEffect(() => {
+    const currentRole = currentFamily?.role
+    if (prevRoleRef.current !== undefined && currentRole !== prevRoleRef.current) {
+      queryClient.invalidateQueries() // Soft invalidate — triggers refetch
+    }
+    prevRoleRef.current = currentRole
+  }, [currentFamily?.role, queryClient])
 
   return (
     <AuthContext.Provider

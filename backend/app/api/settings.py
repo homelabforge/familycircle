@@ -19,6 +19,7 @@ from app.api.auth import get_current_user, get_optional_user, require_family_con
 from app.db import get_db_session
 from app.models import Family, Setting, User
 from app.services.permissions import permissions
+from app.services.settings_service import SettingsService
 
 router = APIRouter()
 
@@ -78,9 +79,13 @@ async def get_settings(
     - Authenticated: family-specific settings
     - Super admin: SMTP and other sensitive global settings
     """
+    # Load typed configs via SettingsService
+    svc = SettingsService(db)
+    app_config = await svc.get_app_config()
+
     # Public settings available to all
     public_settings = {
-        "app_name": await get_global_setting(db, "app_name") or "FamilyCircle",
+        "app_name": app_config.app_name,
     }
 
     if not user:
@@ -98,23 +103,21 @@ async def get_settings(
     # Check if super admin for sensitive settings
     is_super = permissions.is_super_admin(user)
     if is_super:
-        smtp_password = await get_global_setting(db, "smtp_password")
+        smtp = await svc.get_smtp_config()
         admin_settings = {
-            "magic_link_expiry_days": await get_global_setting(db, "magic_link_expiry_days")
-            or "90",
-            "cancelled_event_retention_days": await get_global_setting(
-                db, "cancelled_event_retention_days"
-            )
-            or "7",
+            "magic_link_expiry_days": str(app_config.magic_link_expiry_days),
+            "cancelled_event_retention_days": await svc.get_setting(
+                "cancelled_event_retention_days", "7"
+            ),
             # SMTP settings (password masked)
-            "smtp_host": await get_global_setting(db, "smtp_host") or "",
-            "smtp_port": await get_global_setting(db, "smtp_port") or "587",
-            "smtp_username": await get_global_setting(db, "smtp_username") or "",
-            "smtp_password": "********" if smtp_password else "",
-            "smtp_from_email": await get_global_setting(db, "smtp_from_email") or "",
-            "smtp_from_name": await get_global_setting(db, "smtp_from_name") or "",
-            "smtp_use_tls": await get_global_setting(db, "smtp_use_tls") or "true",
-            "smtp_configured": bool(await get_global_setting(db, "smtp_host") and smtp_password),
+            "smtp_host": smtp.host,
+            "smtp_port": str(smtp.port),
+            "smtp_username": smtp.username,
+            "smtp_password": "********" if smtp.password else "",
+            "smtp_from_email": smtp.from_email,
+            "smtp_from_name": smtp.from_name,
+            "smtp_use_tls": str(smtp.use_tls).lower(),
+            "smtp_configured": smtp.is_configured,
         }
         return {
             "settings": {

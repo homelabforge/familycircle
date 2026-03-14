@@ -7,65 +7,26 @@ Handles sending emails for:
 """
 
 import logging
-from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import aiosmtplib
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Setting
+from app.services.settings_service import SettingsService, SmtpConfig
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class SmtpConfig:
-    """SMTP configuration from database settings."""
-
-    host: str
-    port: int
-    username: str
-    password: str
-    from_email: str
-    from_name: str
-    use_tls: bool
-
-    @property
-    def is_configured(self) -> bool:
-        """Check if SMTP is fully configured."""
-        return bool(self.host and self.password and self.from_email)
-
-
 async def get_smtp_config(db: AsyncSession) -> SmtpConfig:
     """Load SMTP configuration from database settings."""
-
-    async def get_setting(key: str) -> str | None:
-        result = await db.execute(
-            select(Setting).where(Setting.key == key, Setting.family_id.is_(None))
-        )
-        setting = result.scalar_one_or_none()
-        return setting.value if setting else None
-
-    return SmtpConfig(
-        host=await get_setting("smtp_host") or "",
-        port=int(await get_setting("smtp_port") or "587"),
-        username=await get_setting("smtp_username") or "",
-        password=await get_setting("smtp_password") or "",
-        from_email=await get_setting("smtp_from_email") or "",
-        from_name=await get_setting("smtp_from_name") or "FamilyCircle",
-        use_tls=(await get_setting("smtp_use_tls") or "true").lower() == "true",
-    )
+    return await SettingsService(db).get_smtp_config()
 
 
 async def get_app_name(db: AsyncSession) -> str:
     """Get the app name from settings."""
-    result = await db.execute(
-        select(Setting).where(Setting.key == "app_name", Setting.family_id.is_(None))
-    )
-    setting = result.scalar_one_or_none()
-    return setting.value if setting else "FamilyCircle"
+    config = await SettingsService(db).get_app_config()
+    return config.app_name
 
 
 async def send_email(

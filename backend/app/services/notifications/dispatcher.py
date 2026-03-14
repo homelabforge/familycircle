@@ -2,10 +2,8 @@
 
 import logging
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Setting
 from app.services.notifications.base import NotificationService
 from app.services.notifications.discord import DiscordNotificationService
 from app.services.notifications.email_service import EmailNotificationService
@@ -14,6 +12,7 @@ from app.services.notifications.ntfy import NtfyNotificationService
 from app.services.notifications.pushover import PushoverNotificationService
 from app.services.notifications.slack import SlackNotificationService
 from app.services.notifications.telegram import TelegramNotificationService
+from app.services.settings_service import SettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -75,26 +74,19 @@ class NotificationDispatcher:
 
     def __init__(self, db: AsyncSession):
         self.db = db
+        self._settings = SettingsService(db)
 
     async def _get_setting(self, key: str, default: str = "") -> str:
-        """Get a global setting value (family_id is NULL)."""
-        result = await self.db.execute(
-            select(Setting).where(Setting.key == key, Setting.family_id.is_(None))
-        )
-        setting = result.scalar_one_or_none()
-        return setting.value if setting and setting.value else default
+        """Get a global setting value."""
+        return await self._settings.get_setting(key, default)
 
     async def _get_setting_bool(self, key: str, default: bool = False) -> bool:
         """Get a boolean setting value."""
-        value = await self._get_setting(key, str(default).lower())
-        return value.lower() in ("true", "1", "yes")
+        return await self._settings.get_setting_bool(key, default)
 
     async def _get_setting_int(self, key: str, default: int = 0) -> int:
         """Get an integer setting value."""
-        try:
-            return int(await self._get_setting(key, str(default)))
-        except ValueError:
-            return default
+        return await self._settings.get_setting_int(key, default)
 
     async def _is_event_enabled(self, event_type: str) -> bool:
         """Check if an event type is enabled in settings."""

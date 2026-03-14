@@ -1,6 +1,6 @@
 """Authentication endpoints - login, register, password management."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -144,6 +144,7 @@ async def login(
 @router.post("/register")
 async def register(
     request: RegisterRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Register with a family code."""
@@ -157,6 +158,16 @@ async def register(
 
     if error:
         raise HTTPException(status_code=400, detail=error)
+
+    # Notify family that a new member joined (user-initiated join)
+    from app.services.notifications.fire import send_notification_background
+
+    background_tasks.add_task(
+        send_notification_background,
+        "notify_family_member_joined",
+        member_name=request.display_name,
+        family_name=request.family_code,
+    )
 
     return {
         "message": "Welcome to the family!",

@@ -73,18 +73,19 @@ def validate_event_type_and_details(request) -> None:
 
     Used by both create_event and create_sub_event.
     """
+    from app.services.event_detail_registry import get_handler
+
     try:
         EventType(request.event_type)
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid event type: {request.event_type}")
 
-    if request.event_type == EventType.HOLIDAY.value and not request.holiday_detail:
-        raise HTTPException(status_code=400, detail="Holiday detail required for holiday events")
-    if request.event_type == EventType.BIRTHDAY.value and not request.birthday_detail:
-        raise HTTPException(status_code=400, detail="Birthday detail required for birthday events")
-    if request.event_type == EventType.BABY_SHOWER.value and not request.baby_shower_detail:
+    handler = get_handler(request.event_type)
+    if handler and not getattr(request, handler.detail_attr, None):
+        # Map detail_attr to human-readable label, e.g., "holiday_detail" -> "Holiday"
+        # Use capitalize() on first word only to match existing error messages
+        # ("Baby shower detail", not "Baby Shower Detail")
+        label = handler.detail_attr.replace("_detail", "").replace("_", " ").capitalize()
         raise HTTPException(
-            status_code=400, detail="Baby shower detail required for baby shower events"
+            status_code=400, detail=f"{label} detail required for {request.event_type} events"
         )
-    if request.event_type == EventType.WEDDING.value and not request.wedding_detail:
-        raise HTTPException(status_code=400, detail="Wedding detail required for wedding events")

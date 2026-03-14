@@ -1,6 +1,6 @@
 """Auth-related schemas."""
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class FamilyInfo(BaseModel):
@@ -60,7 +60,7 @@ class RegisterRequest(BaseModel):
 
     family_code: str
     email: EmailStr
-    password: str
+    password: str = Field(min_length=6)
     display_name: str
 
 
@@ -74,7 +74,7 @@ class ResetPasswordRequest(BaseModel):
     """Reset password with magic link token."""
 
     token: str
-    new_password: str
+    new_password: str = Field(min_length=6)
 
 
 class SwitchFamilyRequest(BaseModel):
@@ -87,7 +87,7 @@ class SetupRequest(BaseModel):
     """Initial setup - create super admin + first family."""
 
     email: EmailStr
-    password: str
+    password: str = Field(min_length=6)
     display_name: str
     family_name: str
 
@@ -102,14 +102,14 @@ class ChangePasswordRequest(BaseModel):
     """Change password (for logged-in user)."""
 
     current_password: str
-    new_password: str
+    new_password: str = Field(min_length=6)
 
 
 class AdminResetPasswordRequest(BaseModel):
     """Admin resetting another user's password."""
 
     user_id: str
-    new_password: str
+    new_password: str = Field(min_length=6)
 
 
 # Legacy schemas for backwards compatibility during transition
