@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import DashboardCard from '@/components/DashboardCard'
-import CreateEventModal from '@/components/CreateEventModal'
+import CreateEventModal from '@/components/events/create'
 import UpcomingEvents from '@/components/UpcomingEvents'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'

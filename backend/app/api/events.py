@@ -15,6 +15,7 @@ from app.api.event_helpers import (
     resolve_event_or_404,
     validate_event_type_and_details,
 )
+from app.constants import DEFAULT_CANCELLED_EVENT_RETENTION_DAYS
 from app.db import get_db_session
 from app.models import Event, EventRSVP, FamilyMembership, User
 from app.models.event import EventType, RSVPStatus
@@ -29,6 +30,26 @@ from app.services.recurrence import recurrence_to_dict
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# Common selectinload option sets for Event queries (H1 fix).
+# event_to_dict() needs: rsvps+guests, sub_events, recurrence,
+# wedding_party_members, and all detail types.
+EVENT_DICT_OPTIONS = [
+    selectinload(Event.rsvps).selectinload(EventRSVP.guests),
+    selectinload(Event.sub_events),
+    selectinload(Event.recurrence),
+    selectinload(Event.wedding_party_members),
+    selectinload(Event.holiday_detail),
+    selectinload(Event.birthday_detail),
+    selectinload(Event.baby_shower_detail),
+    selectinload(Event.wedding_detail),
+]
+
+# Minimal options for resolve_event_or_404 (secret birthday check needs birthday_detail)
+EVENT_MINIMAL_OPTIONS = [
+    selectinload(Event.birthday_detail),
+]
 
 
 class EventCancel(BaseModel):
@@ -64,17 +85,17 @@ def event_to_dict(
         "event_date": event.event_date.isoformat() if event.event_date else None,
         "location_name": event.location_name,
         "location_address": event.location_address,
-        "has_secret_santa": event.has_secret_santa,
+        "has_gift_exchange": event.has_gift_exchange,
         "has_potluck": event.has_potluck,
         "has_rsvp": event.has_rsvp,
         # Potluck configuration
         "potluck_mode": event.potluck_mode,
         "potluck_host_providing": event.potluck_host_providing,
-        "secret_santa_assigned": event.secret_santa_assigned,
+        "gift_exchange_assigned": event.gift_exchange_assigned,
         # Gift Exchange rules
-        "secret_santa_budget_min": event.secret_santa_budget_min,
-        "secret_santa_budget_max": event.secret_santa_budget_max,
-        "secret_santa_notes": event.secret_santa_notes,
+        "gift_exchange_budget_min": event.gift_exchange_budget_min,
+        "gift_exchange_budget_max": event.gift_exchange_budget_max,
+        "gift_exchange_notes": event.gift_exchange_notes,
         # Event type
         "event_type": event.event_type,
         "parent_event_id": str(event.parent_event_id) if event.parent_event_id else None,
@@ -149,11 +170,13 @@ async def list_events(
     from app.api.settings import get_global_setting
 
     # Get cancelled event retention setting (default 7 days)
-    retention_days_str = await get_global_setting(db, "cancelled_event_retention_days") or "7"
+    retention_days_str = await get_global_setting(db, "cancelled_event_retention_days") or str(
+        DEFAULT_CANCELLED_EVENT_RETENTION_DAYS
+    )
     try:
         retention_days = int(retention_days_str)
     except ValueError:
-        retention_days = 7
+        retention_days = DEFAULT_CANCELLED_EVENT_RETENTION_DAYS
 
     # Calculate cutoff date for cancelled events
     cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
@@ -169,7 +192,7 @@ async def list_events(
             ),
         )
         .order_by(Event.event_date.desc())
-        .options(selectinload(Event.sub_events))
+        .options(*EVENT_DICT_OPTIONS)
     )
 
     # Optional event type filter
@@ -213,7 +236,7 @@ async def list_upcoming_events(
         )
         .order_by(Event.event_date.asc())
         .limit(limit)
-        .options(selectinload(Event.sub_events))
+        .options(*EVENT_DICT_OPTIONS)
     )
     events = result.scalars().all()
 
@@ -249,9 +272,7 @@ async def get_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get a specific event."""
-    event = await resolve_event_or_404(
-        db, event_id, user, options=[selectinload(Event.rsvps), selectinload(Event.sub_events)]
-    )
+    event = await resolve_event_or_404(db, event_id, user, options=EVENT_DICT_OPTIONS)
 
     # Get user's RSVP
     rsvp_result = await db.execute(
@@ -299,14 +320,14 @@ async def create_event(
         event_date=request.event_date,
         location_name=request.location_name,
         location_address=request.location_address,
-        has_secret_santa=request.has_secret_santa,
+        has_gift_exchange=request.has_gift_exchange,
         has_potluck=request.has_potluck,
         has_rsvp=request.has_rsvp,
         potluck_mode=request.potluck_mode,
         potluck_host_providing=request.potluck_host_providing,
-        secret_santa_budget_min=request.secret_santa_budget_min,
-        secret_santa_budget_max=request.secret_santa_budget_max,
-        secret_santa_notes=request.secret_santa_notes,
+        gift_exchange_budget_min=request.gift_exchange_budget_min,
+        gift_exchange_budget_max=request.gift_exchange_budget_max,
+        gift_exchange_notes=request.gift_exchange_notes,
         event_type=request.event_type,
     )
     db.add(event)
@@ -380,7 +401,7 @@ async def update_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update an event (creator or admin only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(status_code=403, detail="You don't have permission to edit this event")
@@ -398,8 +419,8 @@ async def update_event(
         event.location_name = request.location_name
     if request.location_address is not None:
         event.location_address = request.location_address
-    if request.has_secret_santa is not None:
-        event.has_secret_santa = request.has_secret_santa
+    if request.has_gift_exchange is not None:
+        event.has_gift_exchange = request.has_gift_exchange
     if request.has_potluck is not None:
         event.has_potluck = request.has_potluck
     if request.has_rsvp is not None:
@@ -408,12 +429,12 @@ async def update_event(
         event.potluck_mode = request.potluck_mode
     if request.potluck_host_providing is not None:
         event.potluck_host_providing = request.potluck_host_providing
-    if request.secret_santa_budget_min is not None:
-        event.secret_santa_budget_min = request.secret_santa_budget_min
-    if request.secret_santa_budget_max is not None:
-        event.secret_santa_budget_max = request.secret_santa_budget_max
-    if request.secret_santa_notes is not None:
-        event.secret_santa_notes = request.secret_santa_notes
+    if request.gift_exchange_budget_min is not None:
+        event.gift_exchange_budget_min = request.gift_exchange_budget_min
+    if request.gift_exchange_budget_max is not None:
+        event.gift_exchange_budget_max = request.gift_exchange_budget_max
+    if request.gift_exchange_notes is not None:
+        event.gift_exchange_notes = request.gift_exchange_notes
 
     # Update type-specific details (upsert via registry)
     from app.services.event_detail_registry import update_detail_from_request
@@ -434,15 +455,20 @@ async def cancel_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Cancel an event (creator or admin only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[
+            *EVENT_MINIMAL_OPTIONS,
+            selectinload(Event.rsvps),
+        ],
+    )
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="You don't have permission to cancel this event"
         )
-
-    # Load rsvps for notification emails
-    await db.refresh(event, ["rsvps"])
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Event is already cancelled")
@@ -511,15 +537,17 @@ async def delete_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete an event (creator or admin only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[*EVENT_MINIMAL_OPTIONS, selectinload(Event.rsvps)],
+    )
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="You don't have permission to delete this event"
         )
-
-    # Load rsvps to check for YES responses
-    await db.refresh(event, ["rsvps"])
 
     # Only allow deletion if cancelled or no RSVPs
     has_rsvps = any(r.status == RSVPStatus.YES for r in event.rsvps)
@@ -552,16 +580,21 @@ async def get_event_health_summary(
     """
     from app.models import UserProfile
 
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[
+            *EVENT_MINIMAL_OPTIONS,
+            selectinload(Event.rsvps).selectinload(EventRSVP.guests),
+        ],
+    )
 
     # Check user has permission to view health summary
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(
             status_code=403, detail="Only event organizers can view health information"
         )
-
-    # Load rsvps for attendee check
-    await db.refresh(event, ["rsvps"])
 
     # Get user IDs who RSVPed yes
     attending_user_ids = [rsvp.user_id for rsvp in event.rsvps if rsvp.status == RSVPStatus.YES]
@@ -655,14 +688,14 @@ async def list_sub_events(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List sub-events for a parent event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
-    # Get sub-events
+    # Get sub-events with full dict options for event_to_dict()
     result = await db.execute(
         select(Event)
         .where(Event.parent_event_id == event_id, Event.cancelled_at.is_(None))
         .order_by(Event.event_date.asc())
-        .options(selectinload(Event.sub_events))
+        .options(*EVENT_DICT_OPTIONS)
     )
     sub_events = result.scalars().all()
 
@@ -699,7 +732,7 @@ async def create_sub_event(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Create a sub-event under a parent event."""
-    parent = await resolve_event_or_404(db, event_id, user)
+    parent = await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
     if not await permissions.can_manage_event(db, user, parent):
         raise HTTPException(status_code=403, detail="You don't have permission to add sub-events")
@@ -719,14 +752,14 @@ async def create_sub_event(
         event_date=request.event_date,
         location_name=request.location_name,
         location_address=request.location_address,
-        has_secret_santa=request.has_secret_santa,
+        has_gift_exchange=request.has_gift_exchange,
         has_potluck=request.has_potluck,
         has_rsvp=request.has_rsvp,
         potluck_mode=request.potluck_mode,
         potluck_host_providing=request.potluck_host_providing,
-        secret_santa_budget_min=request.secret_santa_budget_min,
-        secret_santa_budget_max=request.secret_santa_budget_max,
-        secret_santa_notes=request.secret_santa_notes,
+        gift_exchange_budget_min=request.gift_exchange_budget_min,
+        gift_exchange_budget_max=request.gift_exchange_budget_max,
+        gift_exchange_notes=request.gift_exchange_notes,
         event_type=request.event_type,
         parent_event_id=event_id,
     )
@@ -756,7 +789,7 @@ async def list_wedding_party(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List wedding party members for an event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
     result = await db.execute(
         select(WeddingPartyMember)
@@ -788,7 +821,7 @@ async def add_wedding_party_member(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a wedding party member."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
     if event.event_type != EventType.WEDDING.value:
         raise HTTPException(status_code=400, detail="Wedding party is only for wedding events")
@@ -830,7 +863,7 @@ async def remove_wedding_party_member(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove a wedding party member."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(db, event_id, user, options=EVENT_MINIMAL_OPTIONS)
 
     if not await permissions.can_manage_event(db, user, event):
         raise HTTPException(

@@ -5,11 +5,12 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, User
+from app.models import Event, FamilyMembership, User
 from app.models.event_photo import EventPhoto
 from app.schemas.event_photo import EventPhotoReorder
 from app.services.file_storage import (
@@ -63,7 +64,12 @@ async def list_photos(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """List photos for an event, ordered by display_order."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventPhoto)
@@ -93,7 +99,12 @@ async def upload_photo(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Upload a photo to an event."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Cannot upload photos to a cancelled event")
@@ -139,7 +150,12 @@ async def delete_photo(
     db: AsyncSession = Depends(get_db_session),
 ) -> None:
     """Delete a photo. Uploader or admin can delete."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventPhoto).where(
@@ -170,7 +186,12 @@ async def reorder_photos(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Reorder photos for an event. Event creator or admin only."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     is_admin = await permissions.is_family_admin(db, user, event.family_id)
     if event.created_by_id != user.id and not is_admin:

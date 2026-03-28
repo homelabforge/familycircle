@@ -1,6 +1,5 @@
 import { Calendar, Download } from 'lucide-react'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { getToken } from '@/lib/api'
 
 interface CalendarExportButtonProps {
   eventId: string
@@ -10,9 +9,8 @@ export default function CalendarExportButton({ eventId }: CalendarExportButtonPr
   const { bigMode } = useBigMode()
 
   const handleDownload = async () => {
-    const token = getToken()
     const response = await fetch(`/api/events/${eventId}/calendar.ics`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: 'include',
     })
 
     if (!response.ok) {

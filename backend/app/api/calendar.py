@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
@@ -29,7 +30,12 @@ async def download_event_ics(
     db: AsyncSession = Depends(get_db_session),
 ) -> Response:
     """Download a single event as an .ics file."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     ics_data = generate_single_event_ics(event)
     filename = f"{event.title.replace(' ', '_')}.ics"
@@ -54,7 +60,10 @@ async def family_calendar_feed(
 
     # Get all non-cancelled events for this family
     result = await db.execute(
-        select(Event).where(Event.family_id == family.id).order_by(Event.event_date.asc())
+        select(Event)
+        .where(Event.family_id == family.id)
+        .options(selectinload(Event.birthday_detail))
+        .order_by(Event.event_date.asc())
     )
     events = list(result.scalars().all())
 

@@ -7,7 +7,7 @@ and schemas/gift_exchange.py which import from here.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WishlistItemCreate(BaseModel):
@@ -41,5 +41,4 @@ class WishlistItemResponse(BaseModel):
     priority: int | None = None
     created_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

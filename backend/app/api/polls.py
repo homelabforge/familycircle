@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import is_secret_birthday_for_user, resolve_event_or_404
@@ -51,7 +52,12 @@ async def _resolve_poll_or_404(db: AsyncSession, poll_id: str, user: User) -> Po
 
     # If event-scoped, enforce event visibility (secret birthday check)
     if poll.event_id:
-        await resolve_event_or_404(db, str(poll.event_id), user)
+        await resolve_event_or_404(
+            db,
+            str(poll.event_id),
+            user,
+            options=[selectinload(Event.birthday_detail)],
+        )
 
     return poll
 
@@ -117,7 +123,12 @@ async def list_polls(
 
     # If filtering by event, enforce event access first
     if event_id:
-        await resolve_event_or_404(db, event_id, user)
+        await resolve_event_or_404(
+            db,
+            event_id,
+            user,
+            options=[selectinload(Event.birthday_detail)],
+        )
 
     query = select(Poll).where(Poll.family_id == family_id)
     if event_id:
@@ -164,7 +175,12 @@ async def create_poll(
 
     # If event-scoped, verify event access (membership + secret birthday)
     if data.event_id:
-        await resolve_event_or_404(db, data.event_id, user)
+        await resolve_event_or_404(
+            db,
+            data.event_id,
+            user,
+            options=[selectinload(Event.birthday_detail)],
+        )
 
     poll = Poll(
         family_id=family_id,

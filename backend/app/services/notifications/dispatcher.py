@@ -1,6 +1,7 @@
 """Notification dispatcher for routing to enabled services."""
 
 import logging
+from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,46 +17,68 @@ from app.services.settings_service import SettingsService
 
 logger = logging.getLogger(__name__)
 
-# FamilyCircle notification event types → settings key for per-event toggle
-EVENT_SETTINGS_MAP: dict[str, str] = {
-    "event_created": "notify_event_created",
-    "event_updated": "notify_event_updated",
-    "event_cancelled": "notify_event_cancelled",
-    "event_reminder": "notify_event_reminder",
-    "rsvp_received": "notify_rsvp_received",
-    "poll_created": "notify_poll_created",
-    "poll_closing_soon": "notify_poll_closing_soon",
-    "comment_added": "notify_comment_added",
-    "comment_mention": "notify_comment_mention",
-    "family_member_joined": "notify_family_member_joined",
-}
 
-# Priority mapping for different event types
-EVENT_PRIORITY_MAP: dict[str, str] = {
-    "event_created": "default",
-    "event_updated": "low",
-    "event_cancelled": "high",
-    "event_reminder": "default",
-    "rsvp_received": "low",
-    "poll_created": "default",
-    "poll_closing_soon": "default",
-    "comment_added": "low",
-    "comment_mention": "default",
-    "family_member_joined": "default",
-}
+@dataclass(frozen=True, slots=True)
+class NotificationCategory:
+    """Bundles the setting key, priority, and tags for a notification event type."""
 
-# Tags mapping for different event types (emoji names for ntfy)
-EVENT_TAGS_MAP: dict[str, list[str]] = {
-    "event_created": ["calendar", "family"],
-    "event_updated": ["pencil", "calendar"],
-    "event_cancelled": ["warning", "calendar"],
-    "event_reminder": ["bell", "calendar"],
-    "rsvp_received": ["white_check_mark"],
-    "poll_created": ["bar_chart"],
-    "poll_closing_soon": ["hourglass"],
-    "comment_added": ["speech_balloon"],
-    "comment_mention": ["mega", "speech_balloon"],
-    "family_member_joined": ["tada", "family"],
+    setting_key: str
+    priority: str = "default"
+    tags: list[str] = field(default_factory=list)
+
+
+# Unified mapping of event types to their notification metadata
+NOTIFICATION_CATEGORIES: dict[str, NotificationCategory] = {
+    "event_created": NotificationCategory(
+        setting_key="notify_event_created",
+        priority="default",
+        tags=["calendar", "family"],
+    ),
+    "event_updated": NotificationCategory(
+        setting_key="notify_event_updated",
+        priority="low",
+        tags=["pencil", "calendar"],
+    ),
+    "event_cancelled": NotificationCategory(
+        setting_key="notify_event_cancelled",
+        priority="high",
+        tags=["warning", "calendar"],
+    ),
+    "event_reminder": NotificationCategory(
+        setting_key="notify_event_reminder",
+        priority="default",
+        tags=["bell", "calendar"],
+    ),
+    "rsvp_received": NotificationCategory(
+        setting_key="notify_rsvp_received",
+        priority="low",
+        tags=["white_check_mark"],
+    ),
+    "poll_created": NotificationCategory(
+        setting_key="notify_poll_created",
+        priority="default",
+        tags=["bar_chart"],
+    ),
+    "poll_closing_soon": NotificationCategory(
+        setting_key="notify_poll_closing_soon",
+        priority="default",
+        tags=["hourglass"],
+    ),
+    "comment_added": NotificationCategory(
+        setting_key="notify_comment_added",
+        priority="low",
+        tags=["speech_balloon"],
+    ),
+    "comment_mention": NotificationCategory(
+        setting_key="notify_comment_mention",
+        priority="default",
+        tags=["mega", "speech_balloon"],
+    ),
+    "family_member_joined": NotificationCategory(
+        setting_key="notify_family_member_joined",
+        priority="default",
+        tags=["tada", "family"],
+    ),
 }
 
 
@@ -90,17 +113,16 @@ class NotificationDispatcher:
 
     async def _is_event_enabled(self, event_type: str) -> bool:
         """Check if an event type is enabled in settings."""
-        if event_type not in EVENT_SETTINGS_MAP:
+        category = NOTIFICATION_CATEGORIES.get(event_type)
+        if category is None:
             return True
-
-        event_key = EVENT_SETTINGS_MAP[event_type]
 
         # Check if any notification service is enabled at all
         if not await self._has_any_service_enabled():
             return False
 
         # Check specific event toggle
-        return await self._get_setting_bool(event_key, default=True)
+        return await self._get_setting_bool(category.setting_key, default=True)
 
     async def _has_any_service_enabled(self) -> bool:
         """Check if at least one notification service is enabled."""
@@ -220,8 +242,9 @@ class NotificationDispatcher:
             logger.debug("No notification services enabled")
             return results
 
-        final_priority = priority or EVENT_PRIORITY_MAP.get(event_type, "default")
-        final_tags = tags or EVENT_TAGS_MAP.get(event_type, [])
+        category = NOTIFICATION_CATEGORIES.get(event_type)
+        final_priority = priority or (category.priority if category else "default")
+        final_tags = tags or (category.tags if category else [])
 
         max_attempts = await self._get_setting_int("notification_retry_attempts", default=3)
         base_delay = float(await self._get_setting("notification_retry_delay", default="2.0"))

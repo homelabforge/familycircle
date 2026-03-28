@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class GiftExchangeStatus(BaseModel):
@@ -38,8 +38,7 @@ class ExclusionResponse(BaseModel):
     member2_id: str
     member2_name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MessageCreate(BaseModel):
@@ -56,8 +55,7 @@ class MessageResponse(BaseModel):
     is_from_me: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Import for forward reference

@@ -220,7 +220,7 @@ export default function Events() {
 
                   {!event.is_cancelled && (
                     <div className="flex gap-2 mt-3">
-                      {event.has_secret_santa && (
+                      {event.has_gift_exchange && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                           Gift Exchange
                         </span>

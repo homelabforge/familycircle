@@ -1,5 +1,6 @@
 """FamilyCircle - Main FastAPI application."""
 
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -63,10 +64,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware for development
+# CORS middleware — configurable via CORS_ORIGINS env var (comma-separated)
+_default_origins = "http://localhost:5173,http://localhost:8080"
+_cors_origins = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", _default_origins).split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:8080"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

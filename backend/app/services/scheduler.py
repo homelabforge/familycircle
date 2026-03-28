@@ -7,6 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import DEFAULT_EVENT_REMINDER_DAYS
 from app.db import async_session_maker
 from app.models import Event
 from app.models.token import Token
@@ -52,11 +53,13 @@ async def check_event_reminders() -> None:
 
     async with async_session_maker() as db:
         try:
-            reminder_days_str = await _get_global_setting(db, "event_reminder_days", "3")
+            reminder_days_str = await _get_global_setting(
+                db, "event_reminder_days", str(DEFAULT_EVENT_REMINDER_DAYS)
+            )
             try:
                 reminder_days = int(reminder_days_str)
             except ValueError:
-                reminder_days = 3
+                reminder_days = DEFAULT_EVENT_REMINDER_DAYS
 
             now = datetime.now(UTC)
             reminder_cutoff = now + timedelta(days=reminder_days)

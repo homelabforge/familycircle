@@ -34,7 +34,7 @@ export default function Messages() {
       const eventsRes = await eventsApi.list()
 
       // Filter to events with Gift Exchange
-      const ssEvents = eventsRes.events.filter((e) => e.has_secret_santa)
+      const ssEvents = eventsRes.events.filter((e) => e.has_gift_exchange)
 
       // Load messages for each event
       const messagesPromises = ssEvents.map(async (event) => {

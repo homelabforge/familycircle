@@ -85,7 +85,7 @@ class Event(Base, UUIDMixin, TimestampMixin):
     location_address: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Features enabled for this event
-    has_secret_santa: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    has_gift_exchange: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     has_potluck: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     has_rsvp: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -98,15 +98,15 @@ class Event(Base, UUIDMixin, TimestampMixin):
     )  # What the host is providing
 
     # Gift Exchange status
-    secret_santa_assigned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    secret_santa_assigned_at: Mapped[datetime | None] = mapped_column(
+    gift_exchange_assigned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    gift_exchange_assigned_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
     # Gift Exchange rules
-    secret_santa_budget_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    secret_santa_budget_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    secret_santa_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    gift_exchange_budget_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gift_exchange_budget_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gift_exchange_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Cancellation
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -115,59 +115,61 @@ class Event(Base, UUIDMixin, TimestampMixin):
     # Recurrence
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Relationships
-    family: Mapped["Family"] = relationship(back_populates="events")
-    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
+    # Relationships — all use lazy="raise" (H1 fix).
+    # Callers must explicitly selectinload() the relationships they need.
+    # This prevents loading 16 relationships on every query.
+    family: Mapped["Family"] = relationship(back_populates="events", lazy="raise")
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id], lazy="raise")
     rsvps: Mapped[list["EventRSVP"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
     potluck_items: Mapped[list["PotluckItem"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Type-specific detail relationships (one-to-one)
     holiday_detail: Mapped[Optional["HolidayDetail"]] = relationship(
-        back_populates="event", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
     birthday_detail: Mapped[Optional["BirthdayDetail"]] = relationship(
-        back_populates="event", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
     baby_shower_detail: Mapped[Optional["BabyShowerDetail"]] = relationship(
-        back_populates="event", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
     wedding_detail: Mapped[Optional["WeddingDetail"]] = relationship(
-        back_populates="event", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
     wedding_party_members: Mapped[list["WeddingPartyMember"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
-    # Polls and comments
+    # Polls and comments — accessed via their own endpoints, not via Event
     polls: Mapped[list["Poll"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
     comments: Mapped[list["EventComment"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
-    # Photos
+    # Photos — accessed via their own endpoint, not via Event
     photos: Mapped[list["EventPhoto"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
-    # Baby shower updates
+    # Baby shower updates — accessed via their own endpoint, not via Event
     baby_shower_updates: Mapped[list["BabyShowerUpdate"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
-    # Registry items
+    # Registry items — accessed via their own endpoint, not via Event
     registry_items: Mapped[list["RegistryItem"]] = relationship(
-        back_populates="event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Recurrence
     recurrence: Mapped[Optional["EventRecurrence"]] = relationship(
-        back_populates="event", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+        back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
 
     # Self-referential for sub-events
@@ -177,7 +179,7 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="sub_events",
     )
     sub_events: Mapped[list["Event"]] = relationship(
-        back_populates="parent_event", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="parent_event", lazy="raise", cascade="all, delete-orphan"
     )
 
     @property
@@ -206,7 +208,7 @@ class EventRSVP(Base, UUIDMixin, TimestampMixin):
     event: Mapped["Event"] = relationship(back_populates="rsvps")
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     guests: Mapped[list["RSVPGuest"]] = relationship(
-        back_populates="rsvp", lazy="selectin", cascade="all, delete-orphan"
+        back_populates="rsvp", lazy="raise", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

@@ -1,9 +1,12 @@
 """Authentication endpoints - login, register, password management."""
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+import os
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import SESSION_COOKIE_MAX_AGE_SECONDS
 from app.db import get_db_session
 from app.models import FamilyRole, User
 from app.schemas.auth import (
@@ -23,19 +26,74 @@ from app.services.email import get_smtp_config, send_password_reset_email
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
+# Cookie configuration (H5)
+SESSION_COOKIE_NAME = "fc_session"
+_IS_PRODUCTION = os.getenv("DEBUG", "").lower() not in ("true", "1", "yes")
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    """Set httpOnly session cookie on the response."""
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=_IS_PRODUCTION,
+        samesite="lax",
+        max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
+        path="/",
+    )
+
+
+def _clear_session_cookie(response: Response) -> None:
+    """Clear the session cookie."""
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        httponly=True,
+        secure=_IS_PRODUCTION,
+        samesite="lax",
+        path="/",
+    )
+
 
 # ============ Dependencies ============
 
 
+def _extract_token(
+    request: Request, credentials: HTTPAuthorizationCredentials | None
+) -> str | None:
+    """Extract session token from cookie (preferred) or Authorization header (fallback).
+
+    H5: Cookie-first auth with bearer token fallback for non-browser clients.
+    """
+    # 1. httpOnly cookie (browser clients)
+    cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if cookie_token:
+        return cookie_token
+
+    # 2. Authorization: Bearer header (API clients, scripts)
+    if credentials:
+        return credentials.credentials
+
+    return None
+
+
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db_session),
 ) -> User:
-    """Dependency to get current authenticated user."""
-    if not credentials:
+    """Dependency to get current authenticated user (lightweight — no family eager loading).
+
+    H2: This is the default auth dependency. Most endpoints only need the user's
+    identity and basic fields. Family memberships are NOT loaded here.
+
+    H5: Checks httpOnly cookie first, falls back to Authorization header.
+    """
+    token = _extract_token(request, credentials)
+    if not token:
         raise HTTPException(status_code=401, detail="Please log in to continue")
 
-    user = await auth_service.get_user_by_session(db, credentials.credentials)
+    user = await auth_service.get_user_by_session(db, token)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
 
@@ -43,14 +101,16 @@ async def get_current_user(
 
 
 async def get_optional_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db_session),
 ) -> User | None:
     """Dependency to optionally get current user (no error if not authenticated)."""
-    if not credentials:
+    token = _extract_token(request, credentials)
+    if not token:
         return None
 
-    return await auth_service.get_user_by_session(db, credentials.credentials)
+    return await auth_service.get_user_by_session(db, token)
 
 
 async def require_family_context(
@@ -98,7 +158,12 @@ async def require_super_admin(
 
 
 def build_user_response(user: User) -> dict:
-    """Build user response with family context."""
+    """Build user response with family context.
+
+    Caller contract: the User passed here MUST have been loaded with
+    get_user_by_id_with_families() or get_user_by_email_with_families(),
+    because this function walks user.family_memberships[].family.
+    """
     context = auth_service.get_current_family_context(user)
     families = auth_service.get_user_families_info(user)
 
@@ -120,23 +185,32 @@ def build_user_response(user: User) -> dict:
 
 
 @router.get("/me", response_model=UserWithFamilyContext)
-async def get_current_user_info(user: User = Depends(get_current_user)):
-    """Get current authenticated user with family context."""
+async def get_current_user_info(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Get current authenticated user with family context.
+
+    H2: This endpoint needs family-loaded user for build_user_response().
+    """
+    user = await auth_service.get_user_by_id_with_families(db, user.id)
     return build_user_response(user)
 
 
 @router.post("/login")
 async def login(
     request: LoginRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Login with email and password."""
-    user = await auth_service.verify_password(db, request.email, request.password)
+    user, session_token = await auth_service.verify_password(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    _set_session_cookie(response, session_token)
     return {
-        "session_token": user.session_token,
+        "session_token": session_token,
         "user": build_user_response(user),
     }
 
@@ -144,11 +218,12 @@ async def login(
 @router.post("/register")
 async def register(
     request: RegisterRequest,
+    response: Response,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Register with a family code."""
-    user, error = await auth_service.register_with_family_code(
+    user, error, session_token = await auth_service.register_with_family_code(
         db,
         request.family_code,
         request.email,
@@ -169,20 +244,30 @@ async def register(
         family_name=request.family_code,
     )
 
+    _set_session_cookie(response, session_token)
     return {
         "message": "Welcome to the family!",
-        "session_token": user.session_token,
+        "session_token": session_token,
         "user": build_user_response(user),
     }
 
 
 @router.post("/logout")
 async def logout(
+    request: Request,
+    response: Response,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Logout current user."""
-    await auth_service.logout(db, user)
+    """Logout current user.
+
+    H5: Deletes token from Token table and clears httpOnly cookie.
+    """
+    token = _extract_token(request, credentials)
+    if token:
+        await auth_service.logout(db, token)
+    _clear_session_cookie(response)
     return {"message": "Logged out successfully"}
 
 
@@ -200,8 +285,8 @@ async def switch_family(
             detail="You are not a member of this family",
         )
 
-    # Refresh user to get updated context
-    user = await auth_service.get_user_by_id(db, user.id)
+    # Re-fetch with families for build_user_response
+    user = await auth_service.get_user_by_id_with_families(db, user.id)
 
     return {
         "message": f"Switched to {membership.family.name}",
@@ -251,10 +336,11 @@ async def forgot_password(
 @router.post("/reset-password")
 async def reset_password(
     request: ResetPasswordRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Reset password using magic link token."""
-    user = await auth_service.verify_magic_token_and_reset_password(
+    user, session_token = await auth_service.verify_magic_token_and_reset_password(
         db, request.token, request.new_password
     )
     if not user:
@@ -263,9 +349,10 @@ async def reset_password(
             detail="Invalid or expired reset link",
         )
 
+    _set_session_cookie(response, session_token)
     return {
         "message": "Password reset successfully",
-        "session_token": user.session_token,
+        "session_token": session_token,
         "user": build_user_response(user),
     }
 
@@ -329,10 +416,11 @@ async def get_setup_status(db: AsyncSession = Depends(get_db_session)):
 @router.post("/setup")
 async def initial_setup(
     request: SetupRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db_session),
 ):
-    """
-    Initial platform setup - creates super admin and first family.
+    """Initial platform setup - creates super admin and first family.
+
     Only works if no super admins exist.
     """
     needs_setup = await auth_service.check_needs_setup(db)
@@ -343,7 +431,7 @@ async def initial_setup(
         )
 
     try:
-        user, family = await auth_service.initial_setup(
+        user, family, session_token = await auth_service.initial_setup(
             db,
             request.email,
             request.password,
@@ -353,9 +441,10 @@ async def initial_setup(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    _set_session_cookie(response, session_token)
     return {
         "message": "Setup complete! Welcome to FamilyCircle.",
-        "session_token": user.session_token,
+        "session_token": session_token,
         "user": build_user_response(user),
         "family": {
             "id": family.id,
@@ -458,7 +547,6 @@ async def regenerate_family_code(
         new_code = auth_service.generate_family_code()
 
     family.family_code = new_code
-    await db.commit()
 
     return {
         "message": "Family code regenerated",

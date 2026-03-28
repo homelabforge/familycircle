@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.constants import RECURRENCE_LOOKAHEAD_DAYS
 from app.models.event import Event
 from app.models.event_recurrence import EventRecurrence
 
@@ -58,7 +60,7 @@ async def setup_recurrence(
 
 async def generate_pending_occurrences(
     db: AsyncSession,
-    lookahead_days: int = 30,
+    lookahead_days: int = RECURRENCE_LOOKAHEAD_DAYS,
 ) -> int:
     """Generate upcoming occurrences for all recurring events.
 
@@ -95,8 +97,17 @@ async def generate_pending_occurrences(
             rec.next_occurrence = None
             continue
 
-        # Load the source event
-        source_result = await db.execute(select(Event).where(Event.id == rec.event_id))
+        # Load the source event with detail relationships for cloning
+        source_result = await db.execute(
+            select(Event)
+            .where(Event.id == rec.event_id)
+            .options(
+                selectinload(Event.holiday_detail),
+                selectinload(Event.birthday_detail),
+                selectinload(Event.baby_shower_detail),
+                selectinload(Event.wedding_detail),
+            )
+        )
         source = source_result.scalar_one_or_none()
         if not source:
             continue
@@ -110,14 +121,14 @@ async def generate_pending_occurrences(
             event_date=rec.next_occurrence,
             location_name=source.location_name,
             location_address=source.location_address,
-            has_secret_santa=source.has_secret_santa,
+            has_gift_exchange=source.has_gift_exchange,
             has_potluck=source.has_potluck,
             has_rsvp=source.has_rsvp,
             potluck_mode=source.potluck_mode,
             potluck_host_providing=source.potluck_host_providing,
-            secret_santa_budget_min=source.secret_santa_budget_min,
-            secret_santa_budget_max=source.secret_santa_budget_max,
-            secret_santa_notes=source.secret_santa_notes,
+            gift_exchange_budget_min=source.gift_exchange_budget_min,
+            gift_exchange_budget_max=source.gift_exchange_budget_max,
+            gift_exchange_notes=source.gift_exchange_notes,
             event_type=source.event_type,
             parent_event_id=source.parent_event_id,
         )
@@ -182,13 +193,13 @@ def event_to_template_json(event: Event) -> str:
         "location_name": event.location_name,
         "location_address": event.location_address,
         "event_type": event.event_type,
-        "has_secret_santa": event.has_secret_santa,
+        "has_gift_exchange": event.has_gift_exchange,
         "has_potluck": event.has_potluck,
         "has_rsvp": event.has_rsvp,
         "potluck_mode": event.potluck_mode,
         "potluck_host_providing": event.potluck_host_providing,
-        "secret_santa_budget_min": event.secret_santa_budget_min,
-        "secret_santa_budget_max": event.secret_santa_budget_max,
-        "secret_santa_notes": event.secret_santa_notes,
+        "gift_exchange_budget_min": event.gift_exchange_budget_min,
+        "gift_exchange_budget_max": event.gift_exchange_budget_max,
+        "gift_exchange_notes": event.gift_exchange_notes,
     }
     return json.dumps(data)

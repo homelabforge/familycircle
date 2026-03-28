@@ -15,7 +15,7 @@ interface EventFormData {
   event_date: string
   location_name: string
   location_address: string
-  has_secret_santa: boolean
+  has_gift_exchange: boolean
   has_potluck: boolean
 }
 
@@ -25,7 +25,7 @@ const emptyForm: EventFormData = {
   event_date: '',
   location_name: '',
   location_address: '',
-  has_secret_santa: false,
+  has_gift_exchange: false,
   has_potluck: false,
 }
 
@@ -70,7 +70,7 @@ export default function ManageEventsModal({ isOpen, onClose }: ManageEventsModal
       event_date: event.event_date.split('T')[0],
       location_name: event.location_name || '',
       location_address: event.location_address || '',
-      has_secret_santa: event.has_secret_santa,
+      has_gift_exchange: event.has_gift_exchange,
       has_potluck: event.has_potluck,
     })
     setEditingId(event.id)
@@ -264,8 +264,8 @@ export default function ManageEventsModal({ isOpen, onClose }: ManageEventsModal
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formData.has_secret_santa}
-                  onChange={(e) => setFormData({ ...formData, has_secret_santa: e.target.checked })}
+                  checked={formData.has_gift_exchange}
+                  onChange={(e) => setFormData({ ...formData, has_gift_exchange: e.target.checked })}
                   className="w-4 h-4 accent-primary"
                 />
                 <TreePine className="w-4 h-4 text-success" />
@@ -374,7 +374,7 @@ export default function ManageEventsModal({ isOpen, onClose }: ManageEventsModal
                               <Heart className="w-3 h-3" />
                             </span>
                           )}
-                          {event.has_secret_santa && (
+                          {event.has_gift_exchange && (
                             <span className="flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
                               <TreePine className="w-3 h-3" />
                             </span>

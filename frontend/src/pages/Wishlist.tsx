@@ -1,12 +1,20 @@
 import { useState } from 'react'
 import { Gift, Plus, Trash2, ExternalLink, Edit2, Loader2, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { useWishlist } from '@/hooks/queries/useWishlist'
 import { wishlistApi, type WishlistItem } from '@/lib/api'
-import { useZodForm, getFieldError } from '@/hooks/useZodForm'
 import { wishlistItemSchema } from '@/lib/schemas'
+interface WishlistFormValues {
+  name: string
+  description?: string
+  url?: string
+  price_range?: '' | '$' | '$$' | '$$$'
+  priority: number
+}
 
 export default function Wishlist() {
   const { bigMode } = useBigMode()
@@ -218,15 +226,26 @@ interface WishlistModalProps {
 function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
   const [error, setError] = useState<string | null>(null)
 
-  const form = useZodForm(wishlistItemSchema, {
-    name: item?.name || '',
-    description: item?.description || '',
-    url: item?.url || '',
-    price_range: item?.price_range as '$' | '$$' | '$$$' | undefined,
-    priority: item?.priority || 3,
+  const {
+    watch,
+    setValue,
+    handleSubmit,
+    formState: { errors, isSubmitting, isSubmitted },
+  } = useForm<WishlistFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(wishlistItemSchema) as any,
+    defaultValues: {
+      name: item?.name || '',
+      description: item?.description || '',
+      url: item?.url || '',
+      price_range: (item?.price_range as '' | '$' | '$$' | '$$$' | undefined) ?? '',
+      priority: item?.priority || 3,
+    },
   })
 
-  const handleSubmit = form.handleSubmit(async (data) => {
+  const values = watch()
+
+  const onSubmit = handleSubmit(async (data: WishlistFormValues) => {
     try {
       setError(null)
       await onSave({
@@ -254,6 +273,11 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
   `
 
   const errorTextClass = `text-error ${bigMode ? 'text-sm' : 'text-xs'} mt-1`
+
+  // Helper: show error only after form submission
+  const fieldError = (field: string): string | undefined => {
+    return isSubmitted ? (errors as Record<string, { message?: string } | undefined>)[field]?.message : undefined
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -283,20 +307,20 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className={`block text-fc-text mb-2 ${bigMode ? 'text-base' : 'text-sm'}`}>
               Item Name <span className="text-error">*</span>
             </label>
             <input
               type="text"
-              value={form.values.name}
-              onChange={(e) => form.setValue('name', e.target.value)}
+              value={values.name}
+              onChange={(e) => setValue('name', e.target.value)}
               placeholder="What would you like?"
-              className={getFieldError(form.errors, 'name', form.touched) ? inputErrorClass : inputClass}
+              className={fieldError('name') ? inputErrorClass : inputClass}
             />
-            {getFieldError(form.errors, 'name', form.touched) && (
-              <p className={errorTextClass}>{form.errors.name}</p>
+            {fieldError('name') && (
+              <p className={errorTextClass}>{fieldError('name')}</p>
             )}
           </div>
 
@@ -305,8 +329,8 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
               Description/Notes
             </label>
             <textarea
-              value={form.values.description || ''}
-              onChange={(e) => form.setValue('description', e.target.value)}
+              value={values.description || ''}
+              onChange={(e) => setValue('description', e.target.value)}
               placeholder="Size, color, brand preference, etc."
               rows={2}
               className={`${inputClass} resize-none`}
@@ -319,13 +343,13 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
             </label>
             <input
               type="url"
-              value={form.values.url || ''}
-              onChange={(e) => form.setValue('url', e.target.value)}
+              value={values.url || ''}
+              onChange={(e) => setValue('url', e.target.value)}
               placeholder="https://..."
-              className={getFieldError(form.errors, 'url', form.touched) ? inputErrorClass : inputClass}
+              className={fieldError('url') ? inputErrorClass : inputClass}
             />
-            {getFieldError(form.errors, 'url', form.touched) && (
-              <p className={errorTextClass}>{form.errors.url}</p>
+            {fieldError('url') && (
+              <p className={errorTextClass}>{fieldError('url')}</p>
             )}
           </div>
 
@@ -334,8 +358,8 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
               Price Range
             </label>
             <select
-              value={form.values.price_range || ''}
-              onChange={(e) => form.setValue('price_range', (e.target.value || undefined) as '$' | '$$' | '$$$' | undefined)}
+              value={values.price_range || ''}
+              onChange={(e) => setValue('price_range', (e.target.value || undefined) as '' | '$' | '$$' | '$$$' | undefined)}
               className={inputClass}
             >
               <option value="">Not specified</option>
@@ -350,8 +374,8 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
               Priority
             </label>
             <select
-              value={form.values.priority}
-              onChange={(e) => form.setValue('priority', Number(e.target.value))}
+              value={values.priority}
+              onChange={(e) => setValue('priority', Number(e.target.value))}
               className={inputClass}
             >
               <option value={1}>Most wanted</option>
@@ -376,7 +400,7 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
             </button>
             <button
               type="submit"
-              disabled={form.submitting}
+              disabled={isSubmitting}
               className={`
                 flex-1 bg-primary text-white rounded-xl
                 hover:bg-primary-hover transition-colors
@@ -384,7 +408,7 @@ function WishlistModal({ item, onClose, onSave, bigMode }: WishlistModalProps) {
                 ${bigMode ? 'px-4 py-3 text-lg' : 'px-3 py-2'}
               `}
             >
-              {form.submitting ? 'Saving...' : item ? 'Update' : 'Add'}
+              {isSubmitting ? 'Saving...' : item ? 'Update' : 'Add'}
             </button>
           </div>
         </form>

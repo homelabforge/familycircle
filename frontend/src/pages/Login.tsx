@@ -1,17 +1,26 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Users, Mail, KeyRound, UserPlus, ArrowRight, Eye, EyeOff, Lock } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'
-import { useZodForm, getFieldError } from '@/hooks/useZodForm'
 import {
   loginSchema,
   registerSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  type LoginInput,
+  type RegisterInput,
+  type ForgotPasswordInput,
+  type ResetPasswordInput,
 } from '@/lib/schemas'
+import type { z } from 'zod'
 
 type View = 'main' | 'login' | 'register' | 'forgot' | 'reset'
+
+type RegisterFormValues = z.input<typeof registerSchema>
+type ResetFormValues = z.input<typeof resetPasswordSchema>
 
 // Password input component - defined outside to prevent re-renders
 function PasswordInput({
@@ -67,21 +76,33 @@ export default function Login() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Form hooks
-  const loginForm = useZodForm(loginSchema, { email: '', password: '' })
-  const registerForm = useZodForm(registerSchema, {
-    family_code: '',
-    display_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+  const loginForm = useForm<z.input<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
   })
-  const forgotForm = useZodForm(forgotPasswordSchema, { email: '' })
-  const resetForm = useZodForm(resetPasswordSchema, { password: '', confirmPassword: '' })
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      family_code: '',
+      display_name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  })
+  const forgotForm = useForm<z.input<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+  })
+  const resetForm = useForm<ResetFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  })
 
   // Get reset token from URL
   const resetToken = searchParams.get('reset_token')
 
-  const handleLogin = loginForm.handleSubmit(async (data) => {
+  const handleLogin = loginForm.handleSubmit(async (data: LoginInput) => {
     setError('')
     try {
       await login(data.email, data.password)
@@ -91,7 +112,7 @@ export default function Login() {
     }
   })
 
-  const handleRegister = registerForm.handleSubmit(async (data) => {
+  const handleRegister = registerForm.handleSubmit(async (data: RegisterInput) => {
     setError('')
     try {
       await register(data.family_code, data.email, data.password, data.display_name)
@@ -101,7 +122,7 @@ export default function Login() {
     }
   })
 
-  const handleForgotPassword = forgotForm.handleSubmit(async (data) => {
+  const handleForgotPassword = forgotForm.handleSubmit(async (data: ForgotPasswordInput) => {
     setError('')
     setSuccess('')
     try {
@@ -118,7 +139,7 @@ export default function Login() {
     }
   })
 
-  const handleResetPassword = resetForm.handleSubmit(async (data) => {
+  const handleResetPassword = resetForm.handleSubmit(async (data: ResetPasswordInput) => {
     setError('')
     if (!resetToken) {
       setError('No reset token found. Please request a new password reset link.')
@@ -181,6 +202,15 @@ export default function Login() {
     resetForm.reset()
   }
 
+  // Helper: show error only after form submission
+  const fieldError = (
+    formErrors: Record<string, { message?: string } | undefined>,
+    field: string,
+    isSubmitted: boolean,
+  ): string | undefined => {
+    return isSubmitted ? formErrors[field]?.message : undefined
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-fc-bg px-4">
       <div className="w-full max-w-md">
@@ -232,13 +262,13 @@ export default function Login() {
               </label>
               <input
                 type="email"
-                value={loginForm.values.email}
+                value={loginForm.watch('email')}
                 onChange={(e) => loginForm.setValue('email', e.target.value)}
                 placeholder="you@family.com"
-                className={getFieldError(loginForm.errors, 'email', loginForm.touched) ? inputErrorClass : inputClass}
+                className={fieldError(loginForm.formState.errors, 'email', loginForm.formState.isSubmitted) ? inputErrorClass : inputClass}
               />
-              {getFieldError(loginForm.errors, 'email', loginForm.touched) && (
-                <p className={errorTextClass}>{loginForm.errors.email}</p>
+              {fieldError(loginForm.formState.errors, 'email', loginForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{loginForm.formState.errors.email?.message}</p>
               )}
             </div>
             <div>
@@ -246,19 +276,19 @@ export default function Login() {
                 Password
               </label>
               <PasswordInput
-                value={loginForm.values.password}
+                value={loginForm.watch('password')}
                 onChange={(e) => loginForm.setValue('password', e.target.value)}
                 placeholder="Your password"
-                inputClassName={getFieldError(loginForm.errors, 'password', loginForm.touched) ? inputErrorClass : inputClass}
+                inputClassName={fieldError(loginForm.formState.errors, 'password', loginForm.formState.isSubmitted) ? inputErrorClass : inputClass}
                 show={showPassword}
                 onToggleShow={() => setShowPassword(!showPassword)}
               />
-              {getFieldError(loginForm.errors, 'password', loginForm.touched) && (
-                <p className={errorTextClass}>{loginForm.errors.password}</p>
+              {fieldError(loginForm.formState.errors, 'password', loginForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{loginForm.formState.errors.password?.message}</p>
               )}
             </div>
-            <button type="submit" disabled={loginForm.submitting} className={buttonClass}>
-              {loginForm.submitting ? 'Signing in...' : 'Sign In'}
+            <button type="submit" disabled={loginForm.formState.isSubmitting} className={buttonClass}>
+              {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign In'}
               <ArrowRight className="w-5 h-5" />
             </button>
             <div className="text-center">
@@ -285,13 +315,13 @@ export default function Login() {
               </label>
               <input
                 type="text"
-                value={registerForm.values.family_code}
+                value={registerForm.watch('family_code')}
                 onChange={(e) => registerForm.setValue('family_code', e.target.value.toUpperCase())}
                 placeholder="ABCDEF-12"
-                className={getFieldError(registerForm.errors, 'family_code', registerForm.touched) ? inputErrorClass : inputClass}
+                className={fieldError(registerForm.formState.errors, 'family_code', registerForm.formState.isSubmitted) ? inputErrorClass : inputClass}
               />
-              {getFieldError(registerForm.errors, 'family_code', registerForm.touched) && (
-                <p className={errorTextClass}>{registerForm.errors.family_code}</p>
+              {fieldError(registerForm.formState.errors, 'family_code', registerForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{registerForm.formState.errors.family_code?.message}</p>
               )}
               <p className={`text-fc-muted mt-1 ${bigMode ? 'text-sm' : 'text-xs'}`}>
                 Ask your family admin for the code
@@ -303,13 +333,13 @@ export default function Login() {
               </label>
               <input
                 type="text"
-                value={registerForm.values.display_name}
+                value={registerForm.watch('display_name')}
                 onChange={(e) => registerForm.setValue('display_name', e.target.value)}
                 placeholder="Grandma Rose"
-                className={getFieldError(registerForm.errors, 'display_name', registerForm.touched) ? inputErrorClass : inputClass}
+                className={fieldError(registerForm.formState.errors, 'display_name', registerForm.formState.isSubmitted) ? inputErrorClass : inputClass}
               />
-              {getFieldError(registerForm.errors, 'display_name', registerForm.touched) && (
-                <p className={errorTextClass}>{registerForm.errors.display_name}</p>
+              {fieldError(registerForm.formState.errors, 'display_name', registerForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{registerForm.formState.errors.display_name?.message}</p>
               )}
             </div>
             <div>
@@ -318,13 +348,13 @@ export default function Login() {
               </label>
               <input
                 type="email"
-                value={registerForm.values.email}
+                value={registerForm.watch('email')}
                 onChange={(e) => registerForm.setValue('email', e.target.value)}
                 placeholder="you@family.com"
-                className={getFieldError(registerForm.errors, 'email', registerForm.touched) ? inputErrorClass : inputClass}
+                className={fieldError(registerForm.formState.errors, 'email', registerForm.formState.isSubmitted) ? inputErrorClass : inputClass}
               />
-              {getFieldError(registerForm.errors, 'email', registerForm.touched) && (
-                <p className={errorTextClass}>{registerForm.errors.email}</p>
+              {fieldError(registerForm.formState.errors, 'email', registerForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{registerForm.formState.errors.email?.message}</p>
               )}
             </div>
             <div>
@@ -332,15 +362,15 @@ export default function Login() {
                 Password
               </label>
               <PasswordInput
-                value={registerForm.values.password}
+                value={registerForm.watch('password')}
                 onChange={(e) => registerForm.setValue('password', e.target.value)}
                 placeholder="At least 6 characters"
-                inputClassName={getFieldError(registerForm.errors, 'password', registerForm.touched) ? inputErrorClass : inputClass}
+                inputClassName={fieldError(registerForm.formState.errors, 'password', registerForm.formState.isSubmitted) ? inputErrorClass : inputClass}
                 show={showPassword}
                 onToggleShow={() => setShowPassword(!showPassword)}
               />
-              {getFieldError(registerForm.errors, 'password', registerForm.touched) && (
-                <p className={errorTextClass}>{registerForm.errors.password}</p>
+              {fieldError(registerForm.formState.errors, 'password', registerForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{registerForm.formState.errors.password?.message}</p>
               )}
             </div>
             <div>
@@ -348,19 +378,19 @@ export default function Login() {
                 Confirm Password
               </label>
               <PasswordInput
-                value={registerForm.values.confirmPassword}
+                value={registerForm.watch('confirmPassword')}
                 onChange={(e) => registerForm.setValue('confirmPassword', e.target.value)}
                 placeholder="Confirm your password"
-                inputClassName={getFieldError(registerForm.errors, 'confirmPassword', registerForm.touched) ? inputErrorClass : inputClass}
+                inputClassName={fieldError(registerForm.formState.errors, 'confirmPassword', registerForm.formState.isSubmitted) ? inputErrorClass : inputClass}
                 show={showConfirmPassword}
                 onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
               />
-              {getFieldError(registerForm.errors, 'confirmPassword', registerForm.touched) && (
-                <p className={errorTextClass}>{registerForm.errors.confirmPassword}</p>
+              {fieldError(registerForm.formState.errors, 'confirmPassword', registerForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{registerForm.formState.errors.confirmPassword?.message}</p>
               )}
             </div>
-            <button type="submit" disabled={registerForm.submitting} className={buttonClass}>
-              {registerForm.submitting ? 'Creating Account...' : 'Join Family'}
+            <button type="submit" disabled={registerForm.formState.isSubmitting} className={buttonClass}>
+              {registerForm.formState.isSubmitting ? 'Creating Account...' : 'Join Family'}
               <ArrowRight className="w-5 h-5" />
             </button>
             <div className="text-center">
@@ -401,17 +431,17 @@ export default function Login() {
               </label>
               <input
                 type="email"
-                value={forgotForm.values.email}
+                value={forgotForm.watch('email')}
                 onChange={(e) => forgotForm.setValue('email', e.target.value)}
                 placeholder="you@family.com"
-                className={getFieldError(forgotForm.errors, 'email', forgotForm.touched) ? inputErrorClass : inputClass}
+                className={fieldError(forgotForm.formState.errors, 'email', forgotForm.formState.isSubmitted) ? inputErrorClass : inputClass}
               />
-              {getFieldError(forgotForm.errors, 'email', forgotForm.touched) && (
-                <p className={errorTextClass}>{forgotForm.errors.email}</p>
+              {fieldError(forgotForm.formState.errors, 'email', forgotForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{forgotForm.formState.errors.email?.message}</p>
               )}
             </div>
-            <button type="submit" disabled={forgotForm.submitting} className={buttonClass}>
-              {forgotForm.submitting ? 'Sending...' : 'Send Reset Link'}
+            <button type="submit" disabled={forgotForm.formState.isSubmitting} className={buttonClass}>
+              {forgotForm.formState.isSubmitting ? 'Sending...' : 'Send Reset Link'}
               <ArrowRight className="w-5 h-5" />
             </button>
             <button type="button" onClick={() => resetAndChangeView('login')} className={secondaryButtonClass}>
@@ -439,15 +469,15 @@ export default function Login() {
                 New Password
               </label>
               <PasswordInput
-                value={resetForm.values.password}
+                value={resetForm.watch('password')}
                 onChange={(e) => resetForm.setValue('password', e.target.value)}
                 placeholder="At least 6 characters"
-                inputClassName={getFieldError(resetForm.errors, 'password', resetForm.touched) ? inputErrorClass : inputClass}
+                inputClassName={fieldError(resetForm.formState.errors, 'password', resetForm.formState.isSubmitted) ? inputErrorClass : inputClass}
                 show={showPassword}
                 onToggleShow={() => setShowPassword(!showPassword)}
               />
-              {getFieldError(resetForm.errors, 'password', resetForm.touched) && (
-                <p className={errorTextClass}>{resetForm.errors.password}</p>
+              {fieldError(resetForm.formState.errors, 'password', resetForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{resetForm.formState.errors.password?.message}</p>
               )}
             </div>
             <div>
@@ -455,19 +485,19 @@ export default function Login() {
                 Confirm New Password
               </label>
               <PasswordInput
-                value={resetForm.values.confirmPassword}
+                value={resetForm.watch('confirmPassword')}
                 onChange={(e) => resetForm.setValue('confirmPassword', e.target.value)}
                 placeholder="Confirm your new password"
-                inputClassName={getFieldError(resetForm.errors, 'confirmPassword', resetForm.touched) ? inputErrorClass : inputClass}
+                inputClassName={fieldError(resetForm.formState.errors, 'confirmPassword', resetForm.formState.isSubmitted) ? inputErrorClass : inputClass}
                 show={showConfirmPassword}
                 onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
               />
-              {getFieldError(resetForm.errors, 'confirmPassword', resetForm.touched) && (
-                <p className={errorTextClass}>{resetForm.errors.confirmPassword}</p>
+              {fieldError(resetForm.formState.errors, 'confirmPassword', resetForm.formState.isSubmitted) && (
+                <p className={errorTextClass}>{resetForm.formState.errors.confirmPassword?.message}</p>
               )}
             </div>
-            <button type="submit" disabled={resetForm.submitting} className={buttonClass}>
-              {resetForm.submitting ? 'Resetting...' : 'Reset Password'}
+            <button type="submit" disabled={resetForm.formState.isSubmitting} className={buttonClass}>
+              {resetForm.formState.isSubmitting ? 'Resetting...' : 'Reset Password'}
               <ArrowRight className="w-5 h-5" />
             </button>
             <button type="button" onClick={() => resetAndChangeView('login')} className={secondaryButtonClass}>

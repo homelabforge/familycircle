@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, ArrowRight, CheckCircle, Eye, EyeOff, Shield, Copy, Check } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { useZodForm, getFieldError } from '@/hooks/useZodForm'
-import { setupSchema } from '@/lib/schemas'
+import { setupSchema, type SetupInput } from '@/lib/schemas'
 import { settingsApi } from '@/lib/api'
+import type { z } from 'zod'
+
+type SetupFormValues = z.input<typeof setupSchema>
 
 function PasswordInput({
   value,
@@ -65,35 +69,47 @@ export default function Setup() {
   const [familyCode, setFamilyCode] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const form = useZodForm(setupSchema, {
-    display_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    family_name: '',
+  const {
+    watch,
+    setValue,
+    setError: setFieldError,
+    clearErrors,
+    handleSubmit,
+    formState: { errors, isSubmitting, isSubmitted },
+  } = useForm<SetupFormValues>({
+    resolver: zodResolver(setupSchema),
+    defaultValues: {
+      display_name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      family_name: '',
+    },
   })
+
+  const values = watch()
 
   const handleStepSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (step === 1) {
       // Validate family name only
-      if (!form.values.family_name.trim()) {
-        form.setFieldError('family_name', 'Please enter your family name')
+      if (!values.family_name.trim()) {
+        setFieldError('family_name', { message: 'Please enter your family name' })
         return
       }
-      form.clearErrors()
+      clearErrors()
       setStep(2)
       return
     }
 
     if (step === 2) {
       // Validate display name only
-      if (!form.values.display_name.trim()) {
-        form.setFieldError('display_name', 'Please enter your name')
+      if (!values.display_name.trim()) {
+        setFieldError('display_name', { message: 'Please enter your name' })
         return
       }
-      form.clearErrors()
+      clearErrors()
       setStep(3)
       return
     }
@@ -101,21 +117,21 @@ export default function Setup() {
     if (step === 3) {
       // Validate email only
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!form.values.email.trim()) {
-        form.setFieldError('email', 'Please enter your email')
+      if (!values.email.trim()) {
+        setFieldError('email', { message: 'Please enter your email' })
         return
       }
-      if (!emailRegex.test(form.values.email)) {
-        form.setFieldError('email', 'Please enter a valid email address')
+      if (!emailRegex.test(values.email)) {
+        setFieldError('email', { message: 'Please enter a valid email address' })
         return
       }
-      form.clearErrors()
+      clearErrors()
       setStep(4)
       return
     }
 
     // Step 4: Full validation and submit
-    const submitHandler = form.handleSubmit(async (data) => {
+    await handleSubmit(async (data: SetupInput) => {
       setError('')
       try {
         const result = await setup(data.email, data.password, data.display_name, data.family_name)
@@ -132,8 +148,7 @@ export default function Setup() {
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Setup failed')
       }
-    })
-    await submitHandler(e)
+    })(e)
   }
 
   const handleCopyCode = async () => {
@@ -191,7 +206,7 @@ export default function Setup() {
               <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
             <h1 className={`font-bold text-fc-text ${bigMode ? 'text-3xl' : 'text-2xl'}`}>
-              Welcome, {form.values.display_name}!
+              Welcome, {values.display_name}!
             </h1>
             <p className={`text-fc-muted mt-2 ${bigMode ? 'text-lg' : 'text-base'}`}>
               Your family circle is ready
@@ -307,14 +322,14 @@ export default function Setup() {
               </label>
               <input
                 type="text"
-                value={form.values.family_name}
-                onChange={(e) => form.setValue('family_name', e.target.value)}
+                value={values.family_name}
+                onChange={(e) => setValue('family_name', e.target.value)}
                 placeholder="The Smith Family"
                 autoFocus
-                className={form.errors.family_name ? inputErrorClass : inputClass}
+                className={errors.family_name ? inputErrorClass : inputClass}
               />
-              {form.errors.family_name && <p className={errorTextClass}>{form.errors.family_name}</p>}
-              {!form.errors.family_name && (
+              {errors.family_name && <p className={errorTextClass}>{errors.family_name.message}</p>}
+              {!errors.family_name && (
                 <p className={`text-fc-muted mt-2 ${bigMode ? 'text-base' : 'text-sm'}`}>
                   This will be the name of your family circle
                 </p>
@@ -330,14 +345,14 @@ export default function Setup() {
               </label>
               <input
                 type="text"
-                value={form.values.display_name}
-                onChange={(e) => form.setValue('display_name', e.target.value)}
+                value={values.display_name}
+                onChange={(e) => setValue('display_name', e.target.value)}
                 placeholder="Your name"
                 autoFocus
-                className={form.errors.display_name ? inputErrorClass : inputClass}
+                className={errors.display_name ? inputErrorClass : inputClass}
               />
-              {form.errors.display_name && <p className={errorTextClass}>{form.errors.display_name}</p>}
-              {!form.errors.display_name && (
+              {errors.display_name && <p className={errorTextClass}>{errors.display_name.message}</p>}
+              {!errors.display_name && (
                 <p className={`text-fc-muted mt-2 ${bigMode ? 'text-base' : 'text-sm'}`}>
                   This is how family members will see you
                 </p>
@@ -353,14 +368,14 @@ export default function Setup() {
               </label>
               <input
                 type="email"
-                value={form.values.email}
-                onChange={(e) => form.setValue('email', e.target.value)}
+                value={values.email}
+                onChange={(e) => setValue('email', e.target.value)}
                 placeholder="you@email.com"
                 autoFocus
-                className={form.errors.email ? inputErrorClass : inputClass}
+                className={errors.email ? inputErrorClass : inputClass}
               />
-              {form.errors.email && <p className={errorTextClass}>{form.errors.email}</p>}
-              {!form.errors.email && (
+              {errors.email && <p className={errorTextClass}>{errors.email.message}</p>}
+              {!errors.email && (
                 <p className={`text-fc-muted mt-2 ${bigMode ? 'text-base' : 'text-sm'}`}>
                   We'll use this for login and notifications
                 </p>
@@ -376,18 +391,18 @@ export default function Setup() {
                   Create a password
                 </label>
                 <PasswordInput
-                  value={form.values.password}
-                  onChange={(e) => form.setValue('password', e.target.value)}
+                  value={values.password}
+                  onChange={(e) => setValue('password', e.target.value)}
                   placeholder="At least 6 characters"
-                  hasError={!!getFieldError(form.errors, 'password', form.touched)}
+                  hasError={!!(isSubmitted && errors.password)}
                   show={showPassword}
                   onToggleShow={() => setShowPassword(!showPassword)}
                   autoFocus
                   inputClassName={inputClass}
                   inputErrorClassName={inputErrorClass}
                 />
-                {getFieldError(form.errors, 'password', form.touched) && (
-                  <p className={errorTextClass}>{form.errors.password}</p>
+                {isSubmitted && errors.password && (
+                  <p className={errorTextClass}>{errors.password.message}</p>
                 )}
               </div>
               <div>
@@ -395,17 +410,17 @@ export default function Setup() {
                   Confirm password
                 </label>
                 <PasswordInput
-                  value={form.values.confirmPassword}
-                  onChange={(e) => form.setValue('confirmPassword', e.target.value)}
+                  value={values.confirmPassword}
+                  onChange={(e) => setValue('confirmPassword', e.target.value)}
                   placeholder="Confirm your password"
-                  hasError={!!getFieldError(form.errors, 'confirmPassword', form.touched)}
+                  hasError={!!(isSubmitted && errors.confirmPassword)}
                   show={showConfirmPassword}
                   onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
                   inputClassName={inputClass}
                   inputErrorClassName={inputErrorClass}
                 />
-                {getFieldError(form.errors, 'confirmPassword', form.touched) && (
-                  <p className={errorTextClass}>{form.errors.confirmPassword}</p>
+                {isSubmitted && errors.confirmPassword && (
+                  <p className={errorTextClass}>{errors.confirmPassword.message}</p>
                 )}
               </div>
               <p className={`text-fc-muted ${bigMode ? 'text-base' : 'text-sm'}`}>
@@ -414,8 +429,8 @@ export default function Setup() {
             </>
           )}
 
-          <button type="submit" disabled={form.submitting} className={buttonClass}>
-            {step < 4 ? 'Continue' : form.submitting ? 'Setting up...' : 'Create Family Circle'}
+          <button type="submit" disabled={isSubmitting} className={buttonClass}>
+            {step < 4 ? 'Continue' : isSubmitting ? 'Setting up...' : 'Create Family Circle'}
             <ArrowRight className="w-5 h-5" />
           </button>
 
@@ -423,7 +438,7 @@ export default function Setup() {
             <button
               type="button"
               onClick={() => {
-                form.clearErrors()
+                clearErrors()
                 setStep(step - 1)
               }}
               className={`

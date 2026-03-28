@@ -275,7 +275,7 @@ export default function EventDetail() {
 
   const invalidateEvent = () => {
     queryClient.invalidateQueries({ queryKey: ['events', id] })
-    queryClient.invalidateQueries({ queryKey: ['events'] })
+    queryClient.invalidateQueries({ queryKey: ['events', 'upcoming'] })
   }
   const invalidatePolls = () => queryClient.invalidateQueries({ queryKey: ['polls'] })
 
@@ -468,7 +468,7 @@ export default function EventDetail() {
           )}
 
           <div className="flex flex-wrap gap-2 mt-4">
-            {event.has_secret_santa && (
+            {event.has_gift_exchange && (
               <span className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
                 Gift Exchange
               </span>
@@ -487,9 +487,9 @@ export default function EventDetail() {
           </div>
 
           {/* Feature Links */}
-          {(event.has_secret_santa || event.has_potluck) && (
+          {(event.has_gift_exchange || event.has_potluck) && (
             <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-fc-border">
-              {event.has_secret_santa && (
+              {event.has_gift_exchange && (
                 <Link
                   to={`/gift-exchange/${event.id}`}
                   className={`

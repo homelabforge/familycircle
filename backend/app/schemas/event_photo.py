@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class EventPhotoCreate(BaseModel):
@@ -38,8 +38,7 @@ class EventPhotoResponse(BaseModel):
     display_order: int = 0
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EventPhotoReorder(BaseModel):

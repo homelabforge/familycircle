@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { authApi, User, FamilyInfo, setToken, clearToken, getToken } from '@/lib/api'
+import { authApi, User, FamilyInfo, setToken, clearToken } from '@/lib/api'
+import { ROLE_POLL_INTERVAL_MS } from '@/lib/constants'
 
 interface AuthContextType {
   user: User | null
@@ -38,11 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const setupStatus = await authApi.checkSetupStatus()
       setNeedsSetup(setupStatus.needs_setup)
 
-      // If we have a token, try to validate it
-      if (getToken()) {
-        const u = await authApi.me()
-        setUser(u)
-      }
+      // Always try /me — the httpOnly cookie handles auth
+      const u = await authApi.me()
+      setUser(u)
     } catch {
       // Not authenticated or token invalid
       clearToken()
@@ -62,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const interval = setInterval(() => {
       checkAuth()
-    }, 30000) // 30 seconds
+    }, ROLE_POLL_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [user, checkAuth])

@@ -16,7 +16,7 @@ export default function GiftExchange() {
   // Load all events to find gift exchange ones
   const { data: eventsData, isLoading: eventsLoading } = useEvents()
   const giftExchangeEvents = useMemo(
-    () => (eventsData?.events ?? []).filter((e) => e.has_secret_santa),
+    () => (eventsData?.events ?? []).filter((e) => e.has_gift_exchange),
     [eventsData]
   )
 
@@ -94,7 +94,7 @@ export default function GiftExchange() {
                       {new Date(event.event_date).toLocaleDateString()}
                     </p>
                   </div>
-                  {event.secret_santa_assigned ? (
+                  {event.gift_exchange_assigned ? (
                     <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">
                       Assigned
                     </span>

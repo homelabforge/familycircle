@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class PollOptionCreate(BaseModel):
@@ -63,8 +63,7 @@ class PollOptionResponse(BaseModel):
     vote_count: int = 0
     voted_by: list[str] | None = None  # None when anonymous
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PollResponse(BaseModel):
@@ -87,8 +86,7 @@ class PollResponse(BaseModel):
     options: list[PollOptionResponse] = []
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PollVoteRequest(BaseModel):

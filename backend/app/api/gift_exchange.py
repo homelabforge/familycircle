@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, User, WishlistItem
+from app.models import Event, FamilyMembership, User, WishlistItem
 from app.services import gift_exchange as ss_service
 from app.services.permissions import permissions
 
@@ -43,7 +44,12 @@ async def get_gift_exchange(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get Gift Exchange info for an event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     assignments = await ss_service.get_assignments(db, event_id)
     participants = await ss_service.get_participants(db, event_id, user.active_family_id)
@@ -73,7 +79,12 @@ async def get_assignment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get current user's Gift Exchange assignment (who they give to)."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
 
@@ -113,7 +124,12 @@ async def run_assignment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Run the Gift Exchange assignment algorithm (family admin or event creator only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -150,7 +166,12 @@ async def list_exclusions(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List exclusion rules for Gift Exchange."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -195,7 +216,12 @@ async def add_exclusion(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add an exclusion rule (family admin or event creator only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -234,7 +260,12 @@ async def remove_exclusion(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove an exclusion rule (family admin or event creator only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -267,7 +298,12 @@ async def send_anonymous_message(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Send an anonymous message to your Gift Exchange giftee."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     # Get user's assignment (who they give to)
     assignment = await ss_service.get_user_assignment(db, event_id, str(user.id))
@@ -291,7 +327,12 @@ async def get_messages(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get anonymous messages for Gift Exchange (messages received from your match)."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     messages = await ss_service.get_received_messages(db, event_id, str(user.id))
 
@@ -314,7 +355,12 @@ async def get_participants(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get list of participants for Gift Exchange."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     participants = await ss_service.get_participants(db, event_id, user.active_family_id)
 

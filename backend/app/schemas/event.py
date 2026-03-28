@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.baby_shower import BabyShowerDetailCreate, BabyShowerDetailResponse
 from app.schemas.birthday import BirthdayDetailCreate, BirthdayDetailResponse
@@ -18,16 +18,16 @@ class EventCreate(BaseModel):
     event_date: datetime
     location_name: str | None = None
     location_address: str | None = None
-    has_secret_santa: bool = False
+    has_gift_exchange: bool = False
     has_potluck: bool = False
     has_rsvp: bool = True
     # Potluck configuration
     potluck_mode: str | None = None  # 'organized' or 'open'
     potluck_host_providing: str | None = None
     # Gift Exchange rules
-    secret_santa_budget_min: int | None = None
-    secret_santa_budget_max: int | None = None
-    secret_santa_notes: str | None = None
+    gift_exchange_budget_min: int | None = None
+    gift_exchange_budget_max: int | None = None
+    gift_exchange_notes: str | None = None
     # Event type (parent_event_id only set via POST /events/{id}/sub-events)
     event_type: str = "general"
     # Recurrence
@@ -49,16 +49,16 @@ class EventUpdate(BaseModel):
     event_date: datetime | None = None
     location_name: str | None = None
     location_address: str | None = None
-    has_secret_santa: bool | None = None
+    has_gift_exchange: bool | None = None
     has_potluck: bool | None = None
     has_rsvp: bool | None = None
     # Potluck configuration
     potluck_mode: str | None = None
     potluck_host_providing: str | None = None
     # Gift Exchange rules
-    secret_santa_budget_min: int | None = None
-    secret_santa_budget_max: int | None = None
-    secret_santa_notes: str | None = None
+    gift_exchange_budget_min: int | None = None
+    gift_exchange_budget_max: int | None = None
+    gift_exchange_notes: str | None = None
     # Type-specific details (upsert on update)
     holiday_detail: HolidayDetailCreate | None = None
     birthday_detail: BirthdayDetailCreate | None = None
@@ -75,17 +75,17 @@ class EventResponse(BaseModel):
     event_date: datetime
     location_name: str | None
     location_address: str | None
-    has_secret_santa: bool
+    has_gift_exchange: bool
     has_potluck: bool
     has_rsvp: bool
     # Potluck configuration
     potluck_mode: str | None = None
     potluck_host_providing: str | None = None
-    secret_santa_assigned: bool
+    gift_exchange_assigned: bool
     # Gift Exchange rules
-    secret_santa_budget_min: int | None = None
-    secret_santa_budget_max: int | None = None
-    secret_santa_notes: str | None = None
+    gift_exchange_budget_min: int | None = None
+    gift_exchange_budget_max: int | None = None
+    gift_exchange_notes: str | None = None
     # Event type
     event_type: str = "general"
     parent_event_id: str | None = None
@@ -95,8 +95,7 @@ class EventResponse(BaseModel):
     wedding_detail: WeddingDetailResponse | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RSVPRequest(BaseModel):
@@ -114,5 +113,4 @@ class RSVPResponse(BaseModel):
     status: str
     member_name: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

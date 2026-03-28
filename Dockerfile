@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Frontend Builder
 # ==============================================================================
-FROM oven/bun:1.3.10-alpine AS frontend-builder
+FROM oven/bun:1.3.11-alpine AS frontend-builder
 
 WORKDIR /build
 

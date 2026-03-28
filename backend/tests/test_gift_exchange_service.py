@@ -224,7 +224,7 @@ class TestRunAssignments:
             created_by_id=users[0].id,
             event_type=EventType.GENERAL.value,
             title="Gift Exchange",
-            has_secret_santa=True,
+            has_gift_exchange=True,
             event_date=datetime.now(UTC) + timedelta(days=30),
         )
         db.add(event)

@@ -6,11 +6,12 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, User
+from app.models import Event, FamilyMembership, User
 from app.models.registry_item import RegistryItem
 from app.schemas.registry_item import RegistryItemCreate, RegistryItemUpdate
 from app.services.permissions import permissions
@@ -59,7 +60,12 @@ async def list_registry_items(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List registry items for an event."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem)
@@ -92,7 +98,12 @@ async def create_registry_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a registry item. Requires event creator or family admin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     is_admin = await permissions.is_family_admin(db, user, event.family_id)
     is_creator = event.created_by_id == user.id
@@ -126,7 +137,12 @@ async def update_registry_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update a registry item. Requires event creator or family admin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem).where(
@@ -165,7 +181,12 @@ async def claim_registry_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Claim (reserve) a registry item."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem).where(
@@ -195,7 +216,12 @@ async def unclaim_registry_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Unclaim (release) a registry item. Only the claimer can unclaim."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem).where(
@@ -225,7 +251,12 @@ async def mark_purchased(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Mark a claimed registry item as purchased. Only the claimer can mark."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem).where(
@@ -257,7 +288,12 @@ async def delete_registry_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete a registry item. Requires event creator or family admin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RegistryItem).where(

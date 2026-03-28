@@ -1,4 +1,4 @@
-import { Heart, Github, ExternalLink } from 'lucide-react'
+import { Heart, ExternalLink } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import { useBigMode } from '@/contexts/BigModeContext'
 
@@ -119,7 +119,7 @@ export default function About() {
                   ${bigMode ? 'text-lg' : ''}
                 `}
               >
-                <Github className="w-5 h-5" />
+                <ExternalLink className="w-5 h-5" />
                 GitHub Repository
               </a>
             </div>

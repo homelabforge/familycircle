@@ -5,11 +5,12 @@ import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, User
+from app.models import Event, FamilyMembership, User
 from app.models.baby_shower_update import BabyShowerUpdate
 from app.schemas.baby_shower_update import BabyShowerUpdateCreate
 from app.services.notifications.fire import send_notification_background
@@ -56,7 +57,12 @@ async def list_updates(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List baby shower updates for an event, chronologically."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     if event.event_type != "baby_shower":
         raise HTTPException(status_code=400, detail="This event is not a baby shower")
@@ -90,7 +96,12 @@ async def create_update(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a baby shower update. Requires event creator or family admin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     if event.event_type != "baby_shower":
         raise HTTPException(status_code=400, detail="This event is not a baby shower")
@@ -138,7 +149,12 @@ async def delete_update(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete a baby shower update. Requires event creator or family admin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(BabyShowerUpdate).where(

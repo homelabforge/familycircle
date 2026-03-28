@@ -28,14 +28,14 @@ export default function SaveTemplateButton({ event }: SaveTemplateButtonProps) {
       location_name: event.location_name,
       location_address: event.location_address,
       event_type: event.event_type,
-      has_secret_santa: event.has_secret_santa,
+      has_gift_exchange: event.has_gift_exchange,
       has_potluck: event.has_potluck,
       has_rsvp: event.has_rsvp,
       potluck_mode: event.potluck_mode,
       potluck_host_providing: event.potluck_host_providing,
-      secret_santa_budget_min: event.secret_santa_budget_min,
-      secret_santa_budget_max: event.secret_santa_budget_max,
-      secret_santa_notes: event.secret_santa_notes,
+      gift_exchange_budget_min: event.gift_exchange_budget_min,
+      gift_exchange_budget_max: event.gift_exchange_budget_max,
+      gift_exchange_notes: event.gift_exchange_notes,
     }
 
     setSaving(true)

@@ -6,11 +6,12 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, User
+from app.models import Event, FamilyMembership, User
 from app.models.comment_mention import CommentMention
 from app.models.comment_reaction import CommentReaction
 from app.models.event_comment import EventComment
@@ -72,7 +73,12 @@ async def list_comments(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List comments for an event. Pinned comments appear first, then chronological."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventComment)
@@ -110,7 +116,12 @@ async def create_comment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a comment to an event. Parses @mentions and fires notifications."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Cannot comment on a cancelled event")
@@ -165,7 +176,12 @@ async def update_comment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Edit own comment. Sets edited_at timestamp."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventComment).where(
@@ -196,7 +212,12 @@ async def pin_comment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Pin a comment. Only event creator or family admin can pin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventComment).where(
@@ -231,7 +252,12 @@ async def unpin_comment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Unpin a comment. Only event creator or family admin can unpin."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventComment).where(
@@ -265,7 +291,12 @@ async def delete_comment(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete own comment. Family admins can delete any comment."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventComment).where(
@@ -297,7 +328,12 @@ async def toggle_reaction(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Toggle a reaction on a comment. Add if not present, remove if already there."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     # Verify comment exists on this event
     result = await db.execute(

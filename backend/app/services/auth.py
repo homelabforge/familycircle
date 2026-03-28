@@ -11,6 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.constants import SESSION_TOKEN_EXPIRY_DAYS
 from app.models import (
     Family,
     FamilyMembership,
@@ -47,7 +48,10 @@ async def get_setting(session: AsyncSession, key: str, family_id: str | None = N
 async def set_setting(
     session: AsyncSession, key: str, value: str, family_id: str | None = None
 ) -> None:
-    """Set a setting value (global or per-family)."""
+    """Set a setting value (global or per-family).
+
+    Does not commit — caller or request-level session manager handles commit.
+    """
     result = await session.execute(
         select(Setting).where(Setting.key == key, Setting.family_id == family_id)
     )
@@ -56,40 +60,28 @@ async def set_setting(
         setting.value = value
     else:
         session.add(Setting(key=key, value=value, family_id=family_id))
-    await session.commit()
 
 
-# ============ User Lookups ============
+# ============ Eager-loading helper ============
+
+_FAMILY_EAGER_LOAD = selectinload(User.family_memberships).selectinload(FamilyMembership.family)
+"""Caller contract: use this when the returned User will be passed to
+build_user_response(), get_current_family_context(), or get_user_families_info()
+— i.e., any code that walks user.family_memberships[].family.
+Identity-only and permission-only flows must NOT use this."""
 
 
-async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
-    """Get user by email."""
-    result = await session.execute(
-        select(User)
-        .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-        .where(User.email == email.lower())
-    )
-    return result.scalar_one_or_none()
-
-
-async def get_user_by_id(session: AsyncSession, user_id: str) -> User | None:
-    """Get user by ID."""
-    result = await session.execute(
-        select(User)
-        .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-        .where(User.id == user_id)
-    )
-    return result.scalar_one_or_none()
+# ============ User Lookups — Lightweight (no eager loading) ============
 
 
 async def get_user_by_session(session: AsyncSession, token: str) -> User | None:
-    """Get user by session token.
+    """Get user by session token (lightweight — no family eager loading).
 
-    Reads from Token table (primary), falls back to User columns (legacy).
+    Used by get_current_user dependency for most API endpoints.
+    Reads from Token table only (legacy User column fallback removed — M2).
     """
     now = datetime.now(UTC)
 
-    # Primary: Token table
     token_result = await session.execute(
         select(Token).where(
             Token.token == token,
@@ -98,23 +90,46 @@ async def get_user_by_session(session: AsyncSession, token: str) -> User | None:
         )
     )
     token_row = token_result.scalar_one_or_none()
+    if not token_row:
+        return None
 
-    if token_row:
-        result = await session.execute(
-            select(User)
-            .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-            .where(User.id == token_row.user_id)
-        )
-        return result.scalar_one_or_none()
+    result = await session.execute(select(User).where(User.id == token_row.user_id))
+    return result.scalar_one_or_none()
 
-    # Fallback: User columns (legacy, for tokens created before migration)
+
+async def get_user_by_id(session: AsyncSession, user_id: str) -> User | None:
+    """Get user by ID (lightweight — no family eager loading)."""
+    result = await session.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
+    """Get user by email (lightweight — no family eager loading)."""
+    result = await session.execute(select(User).where(User.email == email.lower()))
+    return result.scalar_one_or_none()
+
+
+# ============ User Lookups — Family-loaded (for build_user_response callers) ============
+
+
+async def get_user_by_id_with_families(session: AsyncSession, user_id: str) -> User | None:
+    """Get user by ID with family memberships eager-loaded.
+
+    Use when the returned User will be passed to build_user_response().
+    """
     result = await session.execute(
-        select(User)
-        .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-        .where(
-            User.session_token == token,
-            User.session_expires > now,
-        )
+        select(User).options(_FAMILY_EAGER_LOAD).where(User.id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_email_with_families(session: AsyncSession, email: str) -> User | None:
+    """Get user by email with family memberships eager-loaded.
+
+    Use when the returned User will be passed to build_user_response().
+    """
+    result = await session.execute(
+        select(User).options(_FAMILY_EAGER_LOAD).where(User.email == email.lower())
     )
     return result.scalar_one_or_none()
 
@@ -122,11 +137,11 @@ async def get_user_by_session(session: AsyncSession, token: str) -> User | None:
 async def get_user_by_magic_token(session: AsyncSession, token: str) -> User | None:
     """Get user by magic link token (for password recovery).
 
-    Reads from Token table (primary), falls back to User columns (legacy).
+    Returns family-loaded user (needed for build_user_response after password reset).
+    Reads from Token table only (legacy User column fallback removed — M2).
     """
     now = datetime.now(UTC)
 
-    # Primary: Token table
     token_result = await session.execute(
         select(Token).where(
             Token.token == token,
@@ -135,23 +150,11 @@ async def get_user_by_magic_token(session: AsyncSession, token: str) -> User | N
         )
     )
     token_row = token_result.scalar_one_or_none()
+    if not token_row:
+        return None
 
-    if token_row:
-        result = await session.execute(
-            select(User)
-            .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-            .where(User.id == token_row.user_id)
-        )
-        return result.scalar_one_or_none()
-
-    # Fallback: User columns (legacy)
     result = await session.execute(
-        select(User)
-        .options(selectinload(User.family_memberships).selectinload(FamilyMembership.family))
-        .where(
-            User.magic_token == token,
-            User.magic_token_expires > now,
-        )
+        select(User).options(_FAMILY_EAGER_LOAD).where(User.id == token_row.user_id)
     )
     return result.scalar_one_or_none()
 
@@ -192,13 +195,14 @@ async def get_user_membership(
 async def create_session(user: User, session: AsyncSession) -> str:
     """Create a new session for a user.
 
-    Dual-write: writes to both Token table (primary) and User columns (backwards compat).
+    Writes to Token table only (legacy User column dual-write removed — M2).
     Multi-session: does NOT invalidate existing sessions.
+
+    Does not commit — caller or request-level session manager handles commit.
     """
     token_value = secrets.token_urlsafe(32)
-    expires = datetime.now(UTC) + timedelta(days=30)
+    expires = datetime.now(UTC) + timedelta(days=SESSION_TOKEN_EXPIRY_DAYS)
 
-    # Primary: Token table (multi-session — new row, old sessions stay)
     session.add(
         Token(
             user_id=str(user.id),
@@ -208,56 +212,56 @@ async def create_session(user: User, session: AsyncSession) -> str:
         )
     )
 
-    # Backwards compat: User columns (overwritten — single-session legacy)
-    user.session_token = token_value
-    user.session_expires = expires
-
-    await session.commit()
+    await session.flush()
     return token_value
 
 
-async def logout(session: AsyncSession, user: User) -> None:
-    """Clear user session.
+async def logout(session: AsyncSession, token: str) -> None:
+    """Clear a specific session by its token value.
 
-    Multi-session: deletes only the current session token row.
+    Multi-session: deletes only the specified session token row.
     Other sessions (other devices) stay active.
+
+    Does not commit — caller or request-level session manager handles commit.
     """
-    if user.session_token:
-        # Delete from Token table (current session only)
-        await session.execute(
-            delete(Token).where(
-                Token.token == user.session_token,
-                Token.token_type == TokenType.SESSION,
-            )
+    await session.execute(
+        delete(Token).where(
+            Token.token == token,
+            Token.token_type == TokenType.SESSION,
         )
-    # Backwards compat: clear User columns
-    user.session_token = None
-    user.session_expires = None
-    await session.commit()
+    )
 
 
 # ============ Password Management ============
 
 
-async def verify_password(session: AsyncSession, email: str, password: str) -> User | None:
-    """Verify email + password login."""
-    user = await get_user_by_email(session, email)
+async def verify_password(
+    session: AsyncSession, email: str, password: str
+) -> tuple[User | None, str | None]:
+    """Verify email + password login.
+
+    Returns (user, session_token) or (None, None).
+    Uses family-loaded lookup because login response needs build_user_response().
+    """
+    user = await get_user_by_email_with_families(session, email)
     if not user or not user.password_hash:
-        return None
+        return None, None
 
     try:
         ph.verify(user.password_hash, password)
         # Create session on successful login
-        await create_session(user, session)
-        return user
+        session_token = await create_session(user, session)
+        return user, session_token
     except VerifyMismatchError:
-        return None
+        return None, None
 
 
 async def set_password(session: AsyncSession, user: User, password: str) -> None:
-    """Set password for a user."""
+    """Set password for a user.
+
+    Does not commit — caller or request-level session manager handles commit.
+    """
     user.password_hash = ph.hash(password)
-    await session.commit()
 
 
 async def change_password(
@@ -270,7 +274,6 @@ async def change_password(
     try:
         ph.verify(user.password_hash, current_password)
         user.password_hash = ph.hash(new_password)
-        await session.commit()
         return True
     except VerifyMismatchError:
         return False
@@ -283,7 +286,7 @@ async def create_magic_link(session: AsyncSession, email: str) -> str | None:
     """Create a magic link token for password recovery.
 
     One active magic_link per user — new request overwrites old.
-    Dual-write: Token table + User columns.
+    Writes to Token table only (legacy User column dual-write removed — M2).
     """
     user = await get_user_by_email(session, email)
     if not user:
@@ -296,7 +299,7 @@ async def create_magic_link(session: AsyncSession, email: str) -> str | None:
     token_value = secrets.token_urlsafe(32)
     expires = datetime.now(UTC) + timedelta(days=expiry_days)
 
-    # Primary: Token table — delete old magic_link, create new
+    # Token table — delete old magic_link, create new
     await session.execute(
         delete(Token).where(
             Token.user_id == user.id,
@@ -312,40 +315,34 @@ async def create_magic_link(session: AsyncSession, email: str) -> str | None:
         )
     )
 
-    # Backwards compat: User columns
-    user.magic_token = token_value
-    user.magic_token_expires = expires
-
-    await session.commit()
+    await session.flush()
     return token_value
 
 
 async def verify_magic_token_and_reset_password(
     session: AsyncSession, token: str, new_password: str
-) -> User | None:
+) -> tuple[User | None, str | None]:
     """Verify magic token and reset password.
 
     Security: invalidates ALL tokens for the user (compromised password means
     all sessions are suspect), then creates one new session token.
+
+    Returns (user, session_token) or (None, None).
     """
     user = await get_user_by_magic_token(session, token)
     if not user:
-        return None
+        return None, None
 
     # Delete ALL tokens for this user (sessions + magic links)
     await session.execute(delete(Token).where(Token.user_id == user.id))
 
-    # Clear legacy User columns
-    user.magic_token = None
-    user.magic_token_expires = None
-
     # Set new password
     user.password_hash = ph.hash(new_password)
 
-    # Create new session (dual-write handles both Token table + User columns)
-    await create_session(user, session)
+    # Create new session
+    session_token = await create_session(user, session)
 
-    return user
+    return user, session_token
 
 
 # ============ User & Family Creation ============
@@ -357,7 +354,11 @@ async def create_user(
     password: str,
     is_super_admin: bool = False,
 ) -> User:
-    """Create a new user account."""
+    """Create a new user account.
+
+    Does not commit — caller or request-level session manager handles commit.
+    Flushes to generate the user ID needed for the profile.
+    """
     user = User(
         email=email.lower(),
         password_hash=ph.hash(password),
@@ -371,13 +372,16 @@ async def create_user(
     profile = UserProfile(user_id=str(user.id))
     session.add(profile)
 
-    await session.commit()
-    await session.refresh(user)
+    await session.flush()
     return user
 
 
 async def create_family(session: AsyncSession, name: str) -> Family:
-    """Create a new family with a unique code."""
+    """Create a new family with a unique code.
+
+    Does not commit — caller or request-level session manager handles commit.
+    Flushes to generate the family ID.
+    """
     # Generate unique code
     code = generate_family_code()
     while await get_family_by_code(session, code):
@@ -385,8 +389,7 @@ async def create_family(session: AsyncSession, name: str) -> Family:
 
     family = Family(name=name, family_code=code)
     session.add(family)
-    await session.commit()
-    await session.refresh(family)
+    await session.flush()
     return family
 
 
@@ -397,7 +400,11 @@ async def add_user_to_family(
     display_name: str,
     role: FamilyRole = FamilyRole.MEMBER,
 ) -> FamilyMembership:
-    """Add a user to a family."""
+    """Add a user to a family.
+
+    Does not commit — caller or request-level session manager handles commit.
+    Flushes to generate the membership ID.
+    """
     membership = FamilyMembership(
         user_id=str(user.id),
         family_id=str(family.id),
@@ -416,8 +423,7 @@ async def add_user_to_family(
     )
     session.add(visibility)
 
-    await session.commit()
-    await session.refresh(membership)
+    await session.flush()
     return membership
 
 
@@ -427,15 +433,16 @@ async def register_with_family_code(
     email: str,
     password: str,
     display_name: str,
-) -> tuple[User | None, str | None]:
-    """
-    Register a new user or add existing user to a family.
-    Returns (user, error_message).
+) -> tuple[User | None, str | None, str | None]:
+    """Register a new user or add existing user to a family.
+
+    Returns (user, error_message, session_token).
+    On success: (user, None, token). On error: (None, error_msg, None).
     """
     # Find family by code
     family = await get_family_by_code(session, family_code)
     if not family:
-        return None, "Invalid family code"
+        return None, "Invalid family code", None
 
     # Check if email already exists
     existing_user = await get_user_by_email(session, email)
@@ -444,28 +451,28 @@ async def register_with_family_code(
         # Check if already in this family
         membership = await get_user_membership(session, existing_user.id, family.id)
         if membership:
-            return None, "You are already a member of this family. Please log in."
+            return None, "You are already a member of this family. Please log in.", None
 
         # Add existing user to family
         await add_user_to_family(session, existing_user, family, display_name)
         existing_user.current_family_id = family.id
-        await create_session(existing_user, session)
+        token = await create_session(existing_user, session)
         # Expire and re-fetch user with all relationships loaded
         user_id = str(existing_user.id)
         session.expire(existing_user)
-        user = await get_user_by_id(session, user_id)
-        return user, None
+        user = await get_user_by_id_with_families(session, user_id)
+        return user, None, token
     else:
         # Create new user
         user = await create_user(session, email, password)
         await add_user_to_family(session, user, family, display_name)
         user.current_family_id = family.id
-        await create_session(user, session)
+        token = await create_session(user, session)
         # Expire and re-fetch user with all relationships loaded
         user_id = str(user.id)
         session.expire(user)
-        user = await get_user_by_id(session, user_id)
-        return user, None
+        user = await get_user_by_id_with_families(session, user_id)
+        return user, None, token
 
 
 # ============ Family Context Switching ============
@@ -474,13 +481,15 @@ async def register_with_family_code(
 async def switch_family(
     session: AsyncSession, user: User, family_id: str
 ) -> FamilyMembership | None:
-    """Switch user's active family context."""
+    """Switch user's active family context.
+
+    Does not commit — caller or request-level session manager handles commit.
+    """
     membership = await get_user_membership(session, user.id, family_id)
     if not membership:
         return None
 
     user.current_family_id = family_id
-    await session.commit()
     return membership
 
 
@@ -503,10 +512,11 @@ async def initial_setup(
     password: str,
     display_name: str,
     family_name: str,
-) -> tuple[User, Family]:
-    """
-    Initial platform setup - creates super admin and first family.
+) -> tuple[User, Family, str]:
+    """Initial platform setup - creates super admin and first family.
+
     Only works if no super admins exist.
+    Returns (user, family, session_token).
     """
     if not await check_needs_setup(session):
         raise ValueError("Setup already complete")
@@ -524,14 +534,14 @@ async def initial_setup(
     user.current_family_id = family.id
 
     # Create session
-    await create_session(user, session)
+    session_token = await create_session(user, session)
 
     # Expire user to clear cached relationships, then re-fetch with all relationships
     user_id = str(user.id)
     session.expire(user)
-    user = await get_user_by_id(session, user_id)
+    user = await get_user_by_id_with_families(session, user_id)
 
-    return user, family
+    return user, family, session_token
 
 
 # ============ Helpers for API responses ============

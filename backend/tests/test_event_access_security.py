@@ -11,8 +11,13 @@ from __future__ import annotations
 import pytest
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.event_helpers import resolve_event_or_404
+from app.models.event import Event
+
+# Minimum options needed for resolve_event_or_404 (secret birthday check)
+_RESOLVE_OPTIONS = [selectinload(Event.birthday_detail)]
 
 # ─── Tenant boundary: resolve_event_or_404 ────────────────────────────────
 
@@ -26,7 +31,7 @@ class TestTenantBoundary:
         """User can access events in their current family context."""
         s = two_family_scenario
         # User context is Family B, event_b is in Family B → should succeed
-        event = await resolve_event_or_404(db, s["event_b"].id, s["user"])
+        event = await resolve_event_or_404(db, s["event_b"].id, s["user"], options=_RESOLVE_OPTIONS)
         assert event.id == s["event_b"].id
 
     async def test_cross_family_event_returns_404(
@@ -36,14 +41,14 @@ class TestTenantBoundary:
         s = two_family_scenario
         # User context is Family B, event_a is in Family A → should 404
         with pytest.raises(HTTPException) as exc_info:
-            await resolve_event_or_404(db, s["event_a"].id, s["user"])
+            await resolve_event_or_404(db, s["event_a"].id, s["user"], options=_RESOLVE_OPTIONS)
         assert exc_info.value.status_code == 404
 
     async def test_nonexistent_event_returns_404(self, db: AsyncSession, two_family_scenario: dict):
         """Nonexistent event ID returns 404."""
         s = two_family_scenario
         with pytest.raises(HTTPException) as exc_info:
-            await resolve_event_or_404(db, "nonexistent-id", s["user"])
+            await resolve_event_or_404(db, "nonexistent-id", s["user"], options=_RESOLVE_OPTIONS)
         assert exc_info.value.status_code == 404
 
 
@@ -57,7 +62,9 @@ class TestSecretBirthdayConcealment:
         """Birthday person cannot see their own secret birthday event."""
         s = secret_birthday_scenario
         with pytest.raises(HTTPException) as exc_info:
-            await resolve_event_or_404(db, s["secret_event"].id, s["birthday_person"])
+            await resolve_event_or_404(
+                db, s["secret_event"].id, s["birthday_person"], options=_RESOLVE_OPTIONS
+            )
         assert exc_info.value.status_code == 404
 
     async def test_organizer_can_see_secret_birthday(
@@ -65,7 +72,9 @@ class TestSecretBirthdayConcealment:
     ):
         """Organizer (non-birthday person) can see the secret birthday event."""
         s = secret_birthday_scenario
-        event = await resolve_event_or_404(db, s["secret_event"].id, s["organizer"])
+        event = await resolve_event_or_404(
+            db, s["secret_event"].id, s["organizer"], options=_RESOLVE_OPTIONS
+        )
         assert event.id == s["secret_event"].id
 
     async def test_super_admin_can_see_secret_birthday(
@@ -73,7 +82,9 @@ class TestSecretBirthdayConcealment:
     ):
         """Super admin bypasses secret birthday filter."""
         s = secret_birthday_scenario
-        event = await resolve_event_or_404(db, s["secret_event"].id, s["super_admin"])
+        event = await resolve_event_or_404(
+            db, s["secret_event"].id, s["super_admin"], options=_RESOLVE_OPTIONS
+        )
         assert event.id == s["secret_event"].id
 
 
@@ -91,7 +102,7 @@ class TestSuperAdminBypass:
         # Make user a super admin with context in Family B
         s["user"].is_super_admin = True
         # Should access event_a (Family A) even though context is Family B
-        event = await resolve_event_or_404(db, s["event_a"].id, s["user"])
+        event = await resolve_event_or_404(db, s["event_a"].id, s["user"], options=_RESOLVE_OPTIONS)
         assert event.id == s["event_a"].id
 
 
@@ -103,13 +114,12 @@ class TestOptionsPassthrough:
 
     async def test_options_parameter_works(self, db: AsyncSession, two_family_scenario: dict):
         """Options parameter does not break the query."""
-        from sqlalchemy.orm import selectinload
-
-        from app.models.event import Event
-
         s = two_family_scenario
         event = await resolve_event_or_404(
-            db, s["event_b"].id, s["user"], options=[selectinload(Event.rsvps)]
+            db,
+            s["event_b"].id,
+            s["user"],
+            options=[selectinload(Event.birthday_detail), selectinload(Event.rsvps)],
         )
         assert event.id == s["event_b"].id
         # rsvps should be loaded (empty list, not lazy-load proxy)

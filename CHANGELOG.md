@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dev Dependencies
+- **@tailwindcss/vite**: 4.2.1 → 4.2.2
+- **@vitejs/plugin-react**: 5.1.4 → 6.0.1
+- **@vitest/ui**: 4.0.18 → 4.1.2
+- **eslint**: 10.0.2 → 10.1.0
+- **globals**: 17.3.0 → 17.4.0
+- **jsdom**: 28.1.0 → 29.0.1
+- **ruff**: 0.15.4 → 0.15.8
+- **tailwindcss**: 4.2.1 → 4.2.2
+- **typescript**: 5.9.3 → 6.0.2
+- **typescript-eslint**: 8.56.1 → 8.57.2
+- **vite**: 7.3.1 → 8.0.3
+- **vitest**: 4.0.18 → 4.1.2
+
+### App Dependencies
+- **@tanstack/react-query**: 5.90.21 → 5.95.2
+- **fastapi**: 0.134.0 → 0.135.2
+- **lucide-react**: 0.575.0 → 1.7.0
+- **react-router-dom**: 7.13.1 → 7.13.2
+- **sqlalchemy**: 2.0.47 → 2.0.48
+
+### Dockerfile Dependencies
+- **oven/bun**: 1.3.10-alpine → 1.3.11-alpine
+
 ### Added
 - Event detail handler registry for pluggable event types
 - Token table with multi-session support (dual-write migration)
@@ -14,22 +38,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Background notification helper via FastAPI BackgroundTasks
 - `notify_family_member_joined` for register and admin invite flows
 - TanStack Query hooks for all data fetching (5 query + 5 mutation modules)
-- Backend test coverage: 98 tests (up from 13)
+- Backend test coverage: 133 tests (up from 13), including API lifecycle integration tests
+- Frontend test coverage: 43 tests covering auth, events, hooks, and API client
 - Daily expired token cleanup job
+- httpOnly cookie authentication with bearer token fallback for API clients
+- Compound database indexes on events(family_id, event_date) and event_rsvps(event_id, user_id)
+- `openapi-typescript` pipeline for generated frontend types from OpenAPI schema
+- `.env.example` for new developer setup
+- `NotificationCategory` dataclass replacing parallel dispatcher dicts
+- `constants.py` and `constants.ts` for application-wide magic numbers
 
 ### Changed
 - Event type branching replaced with registry pattern across events, validation, and recurrence
 - Notification dispatch moved from synchronous to BackgroundTasks with own db session
-- Auth token reads from Token table (primary) with User column fallback
-- Frontend pages migrated from manual useState/useEffect to TanStack Query
-- Auth context clears query cache on login/logout/register/switchFamily/resetPassword
-- Merged comment_reactions router into event_comments
-- Extracted RSVP + guest endpoints into dedicated rsvp router
-- Settings API reads use typed SettingsService models
+- Auth helpers are now flush-only; single commit at request boundary for transaction atomicity
+- Auth token storage uses Token table exclusively (legacy User column dual-write removed)
+- Auth lookups split into lightweight (identity-only) and family-loaded (for user responses)
+- All Event model relationships changed to `lazy="raise"` with explicit per-endpoint loading
+- Renamed `secret_santa` columns/fields to `gift_exchange` across backend and frontend
+- `current_family_id` now has a foreign key constraint to families(id) with ON DELETE SET NULL
+- Frontend `api.ts` split into 19 per-domain modules under `src/lib/api/`
+- `CreateEventModal` split from 2,050-line monolith into 13 focused components
+- CORS origins configurable via `CORS_ORIGINS` environment variable
+- Query cache invalidation targeted per event for cancel/RSVP mutations
+- Frontend auth uses `credentials: 'include'` instead of manual token headers
+- Pydantic schemas migrated from `class Config` to `model_config = ConfigDict()`
+- Forms migrated from custom `useZodForm` to `react-hook-form` with Zod resolver
+- Version in `__init__.py` corrected from 1.0.0 to 3.0.0
 
 ### Fixed
 - Wishlist schema module updated to match live API fields (was stale dead code)
 - Backend password validation now enforces min_length=6 (matching frontend Zod schema)
+- Auth flows (register, setup) are now atomic — partial failures roll back completely
+
+### Removed
+- Legacy session/magic token fallback code paths in auth service
+- `Dockerfile.backup` artifact from repository
+- Custom `useZodForm` hook (replaced by `react-hook-form`)
 
 ## [3.0.0] - 2026-03-10
 

@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.baby_shower_detail import ALLOWED_GENDERS
 
@@ -40,5 +40,4 @@ class BabyShowerDetailResponse(BaseModel):
     is_gender_reveal: bool
     display_parents: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

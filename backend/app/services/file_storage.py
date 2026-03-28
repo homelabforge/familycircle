@@ -7,12 +7,11 @@ from pathlib import Path
 import magic
 from fastapi import UploadFile
 
+from app.constants import MAX_UPLOAD_SIZE_BYTES as MAX_FILE_SIZE
+
 logger = logging.getLogger(__name__)
 
 UPLOAD_ROOT = Path("/data/uploads")
-
-# 10 MB default max
-MAX_FILE_SIZE = 10 * 1024 * 1024
 
 ALLOWED_MIME_TYPES = {
     "image/jpeg",

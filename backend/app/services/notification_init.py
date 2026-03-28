@@ -10,6 +10,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import DEFAULT_EVENT_REMINDER_DAYS
 from app.models import Setting
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ DEFAULT_NOTIFICATION_SETTINGS: dict[str, str] = {
     "notify_comment_mention": "true",
     "notify_family_member_joined": "true",
     # Event reminder configuration
-    "event_reminder_days": "3",
+    "event_reminder_days": str(DEFAULT_EVENT_REMINDER_DAYS),
 }
 
 

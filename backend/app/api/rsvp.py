@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
@@ -91,7 +92,12 @@ async def rsvp_to_event(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid RSVP status. Use yes, no, or maybe.")
 
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     if event.is_cancelled:
         raise HTTPException(status_code=400, detail="Cannot RSVP to a cancelled event")
@@ -155,7 +161,12 @@ async def remove_rsvp(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove RSVP from an event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventRSVP).where(
@@ -194,13 +205,20 @@ async def list_my_guests(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List the current user's additional guests for an event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
-        select(EventRSVP).where(
+        select(EventRSVP)
+        .where(
             EventRSVP.event_id == event_id,
             EventRSVP.user_id == user.id,
         )
+        .options(selectinload(EventRSVP.guests))
     )
     rsvp = result.scalar_one_or_none()
     if not rsvp:
@@ -217,7 +235,12 @@ async def add_guest(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add an additional guest to the user's RSVP."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(EventRSVP).where(
@@ -253,7 +276,12 @@ async def update_guest(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update an additional guest's info."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RSVPGuest)
@@ -284,7 +312,12 @@ async def delete_guest(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Remove an additional guest from the user's RSVP."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(RSVPGuest)

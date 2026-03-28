@@ -1,6 +1,6 @@
 """Holiday event schemas."""
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.holiday_detail import PREDEFINED_HOLIDAYS
 
@@ -39,5 +39,4 @@ class HolidayDetailResponse(BaseModel):
     display_name: str
     year: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

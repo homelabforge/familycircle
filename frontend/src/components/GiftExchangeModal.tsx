@@ -49,9 +49,9 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
       loadExclusions()
       const event = events.find((e) => e.id === selectedEventId)
       if (event) {
-        setBudgetMin(event.secret_santa_budget_min?.toString() || '')
-        setBudgetMax(event.secret_santa_budget_max?.toString() || '')
-        setNotes(event.secret_santa_notes || '')
+        setBudgetMin(event.gift_exchange_budget_min?.toString() || '')
+        setBudgetMax(event.gift_exchange_budget_max?.toString() || '')
+        setNotes(event.gift_exchange_notes || '')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,7 +64,7 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
         eventsApi.list(),
         familyApi.listMembers(),
       ])
-      const ssEvents = eventsRes.events.filter((e) => e.has_secret_santa)
+      const ssEvents = eventsRes.events.filter((e) => e.has_gift_exchange)
       setEvents(ssEvents)
       setMembers(membersRes.members)
       if (ssEvents.length > 0 && !selectedEventId) {
@@ -151,9 +151,9 @@ export default function GiftExchangeModal({ isOpen, onClose }: GiftExchangeModal
     try {
       setSavingRules(true)
       await eventsApi.update(selectedEventId, {
-        secret_santa_budget_min: budgetMin ? parseInt(budgetMin) : undefined,
-        secret_santa_budget_max: budgetMax ? parseInt(budgetMax) : undefined,
-        secret_santa_notes: notes || undefined,
+        gift_exchange_budget_min: budgetMin ? parseInt(budgetMin) : undefined,
+        gift_exchange_budget_max: budgetMax ? parseInt(budgetMax) : undefined,
+        gift_exchange_notes: notes || undefined,
       })
       toast.success('Rules saved')
       await loadEvents()

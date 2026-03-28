@@ -1,6 +1,6 @@
 """Auth-related schemas."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class FamilyInfo(BaseModel):
@@ -11,8 +11,7 @@ class FamilyInfo(BaseModel):
     family_code: str
     role: str  # admin or member
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponse(BaseModel):
@@ -26,8 +25,7 @@ class UserResponse(BaseModel):
     current_family_id: str | None = None
     families: list[FamilyInfo] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWithFamilyContext(BaseModel):
@@ -44,8 +42,7 @@ class UserWithFamilyContext(BaseModel):
     role_in_family: str | None = None  # admin/member in current family
     families: list[FamilyInfo] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginRequest(BaseModel):

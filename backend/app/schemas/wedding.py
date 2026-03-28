@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.wedding_detail import WEDDING_PARTY_ROLES
 
@@ -30,8 +30,7 @@ class WeddingDetailResponse(BaseModel):
     color_theme: str | None = None
     display_couple: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WeddingPartyMemberCreate(BaseModel):
@@ -72,5 +71,4 @@ class WeddingPartyMemberResponse(BaseModel):
     side: str | None = None
     user_id: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

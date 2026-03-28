@@ -7,11 +7,10 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from starlette.requests import Request
 
 from app.api.auth import forgot_password
-from app.api.events import event_to_dict
+from app.api.events import EVENT_DICT_OPTIONS, event_to_dict
 from app.models.event import Event, EventType
 from app.models.user import User
 from app.schemas.auth import ForgotPasswordRequest
@@ -50,7 +49,7 @@ class TestEventToDictSubEvents:
         """Baseline: event with no sub-events works fine."""
         s = two_family_scenario
         result = await db.execute(
-            select(Event).where(Event.id == s["event_b"].id).options(selectinload(Event.sub_events))
+            select(Event).where(Event.id == s["event_b"].id).options(*EVENT_DICT_OPTIONS)
         )
         parent = result.scalar_one()
 
@@ -77,7 +76,7 @@ class TestEventToDictSubEvents:
 
         # Query with explicit eager load — this is the fix
         result = await db.execute(
-            select(Event).where(Event.id == s["event_b"].id).options(selectinload(Event.sub_events))
+            select(Event).where(Event.id == s["event_b"].id).options(*EVENT_DICT_OPTIONS)
         )
         parent = result.scalar_one()
 
@@ -115,7 +114,7 @@ class TestEventToDictSubEvents:
         await db.commit()
 
         result = await db.execute(
-            select(Event).where(Event.id == s["event_b"].id).options(selectinload(Event.sub_events))
+            select(Event).where(Event.id == s["event_b"].id).options(*EVENT_DICT_OPTIONS)
         )
         parent = result.scalar_one()
 

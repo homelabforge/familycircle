@@ -1,7 +1,7 @@
 """User profile API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,8 +28,7 @@ class ProfileResponse(BaseModel):
     mobility_notes: str | None = None
     share_health_info: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProfileUpdate(BaseModel):
@@ -56,8 +55,7 @@ class VisibilityResponse(BaseModel):
     show_phone: bool = True
     show_address: bool = True
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class VisibilityUpdate(BaseModel):

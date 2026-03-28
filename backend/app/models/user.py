@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -39,7 +39,9 @@ class User(Base, UUIDMixin, TimestampMixin):
     session_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Current active family context (set after login/switch)
-    current_family_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    current_family_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("families.id", ondelete="SET NULL"), nullable=True
+    )
 
     # User preferences
     theme: Mapped[str] = mapped_column(String(20), default="system", nullable=False)

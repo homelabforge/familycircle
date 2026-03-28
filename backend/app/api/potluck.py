@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
-from app.models import FamilyMembership, PotluckItem, User
+from app.models import Event, FamilyMembership, PotluckItem, User
 from app.services.permissions import permissions
 
 router = APIRouter()
@@ -71,7 +72,12 @@ async def get_potluck(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get potluck info for an event."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail), selectinload(Event.potluck_items)],
+    )
 
     if not event.has_potluck:
         raise HTTPException(status_code=400, detail="This event does not have a potluck")
@@ -120,7 +126,12 @@ async def list_items(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List all potluck items for an event."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(select(PotluckItem).where(PotluckItem.event_id == event_id))
     items = result.scalars().all()
@@ -146,7 +157,12 @@ async def add_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a potluck item. Permissions vary by potluck mode."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     # Get potluck mode (default to organized for old events)
     potluck_mode = event.potluck_mode or "organized"
@@ -194,7 +210,12 @@ async def update_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update a potluck item (family admin or event creator only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -242,7 +263,12 @@ async def delete_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete a potluck item (family admin or event creator only)."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     can_manage = await permissions.can_manage_event(db, user, event)
     if not can_manage:
@@ -278,7 +304,12 @@ async def claim_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Claim a potluck item."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(PotluckItem).where(
@@ -312,7 +343,12 @@ async def unclaim_item(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Unclaim a potluck item."""
-    event = await resolve_event_or_404(db, event_id, user)
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(PotluckItem).where(
@@ -349,7 +385,12 @@ async def get_my_items(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get items claimed by current user."""
-    await resolve_event_or_404(db, event_id, user)
+    await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
 
     result = await db.execute(
         select(PotluckItem).where(
