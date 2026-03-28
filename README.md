@@ -4,7 +4,7 @@ Self-hosted family event coordination with Gift Exchange, potluck management, an
 
 [![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![Bun 1.3.9](https://img.shields.io/badge/Bun-1.3.9-000000?logo=bun&logoColor=white)](https://bun.sh)
+[![Bun 1.3.11](https://img.shields.io/badge/Bun-1.3.11-000000?logo=bun&logoColor=white)](https://bun.sh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 </div>
