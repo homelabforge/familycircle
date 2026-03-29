@@ -11,6 +11,9 @@ import logging
 import os
 import sys
 import tempfile
+from pathlib import Path
+
+from starlette.staticfiles import StaticFiles
 
 # Suppress app startup logs
 logging.disable(logging.WARNING)
@@ -21,8 +24,6 @@ _tmp = _tmpdir.name
 os.environ["DATABASE_PATH"] = os.path.join(_tmp, "openapi.db")
 
 # Patch Path.mkdir and StaticFiles to avoid touching /data/ at module level
-from pathlib import Path
-
 _orig_mkdir = Path.mkdir
 
 
@@ -32,8 +33,6 @@ def _patched_mkdir(self, *args, **kwargs):
         return
     return _orig_mkdir(self, *args, **kwargs)
 
-
-from starlette.staticfiles import StaticFiles
 
 _orig_staticfiles_init = StaticFiles.__init__
 
