@@ -1,11 +1,17 @@
 <div align="center">
 
-Self-hosted family event coordination with Gift Exchange, potluck management, and accessibility-first design for elderly users.
+Self-hosted family event coordination with gift exchange, potluck management, and accessibility-first design for elderly users.
 
+[![Docker Build](https://github.com/homelabforge/familycircle/actions/workflows/docker-build.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/docker-build.yml)
+[![CodeQL](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml)
+[![CI](https://github.com/homelabforge/familycircle/actions/workflows/ci.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/ci.yml)
+
+[![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker&logoColor=white)](https://github.com/homelabforge/familycircle/pkgs/container/familycircle)
 [![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Bun 1.3.11](https://img.shields.io/badge/Bun-1.3.11-000000?logo=bun&logoColor=white)](https://bun.sh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/6XttnVgG)
 
 </div>
 
@@ -13,13 +19,12 @@ Self-hosted family event coordination with Gift Exchange, potluck management, an
 
 ## Key Features
 
-- **Magic Link Authentication** - Passwordless access for participants via email links
 - **Gift Exchange Management** - Smart assignment algorithm with exclusion rules and repeat prevention
 - **Potluck Coordination** - Track contributions with dietary info and categories
 - **Multi-Family Support** - Users can belong to multiple family groups
 - **RSVP Tracking** - Simple yes/no/maybe responses for events
 - **Gift Wishlists** - Easy wishlist creation with priority and price ranges
-- **Anonymous Messaging** - Gift Exchange pairs can communicate privately
+- **Anonymous Messaging** - Gift exchange pairs can communicate privately
 - **Big Mode** - Accessibility toggle for enhanced readability (larger text, bigger touch targets)
 - **Dark/Light Themes** - Full theme support with system preference detection
 - **Self-Hosted** - Your family data stays on your infrastructure
@@ -28,65 +33,11 @@ Self-hosted family event coordination with Gift Exchange, potluck management, an
 
 **Target Audience**: Designed specifically for elderly users who need simple, accessible interfaces without complex registration flows.
 
----
+## Support
 
-## Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| Backend | Python 3.14, FastAPI, Granian (ASGI) |
-| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4 |
-| Database | SQLite with WAL mode |
-| Package Manager | Bun 1.3.8 |
-| Authentication | JWT + Argon2id password hashing |
-
----
-
-## Quick Start
-
-```yaml
-# docker-compose.yml
-services:
-  familycircle:
-    image: familycircle:latest
-    container_name: familycircle
-    environment:
-      - DATABASE_PATH=/data/familycircle.db
-    volumes:
-      - familycircle-data:/data
-    ports:
-      - "8080:8080"
-```
-
-On first startup, you'll be guided through a setup wizard to create a super admin account and your first family.
-
----
-
-## Configuration
-
-FamilyCircle uses database-stored settings managed through the Settings UI:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `magic_link_expiry_days` | 90 | How long magic links remain valid |
-| `family_code` | Auto-generated | 6-character join code (e.g., `SMITH-24`) |
-| `theme` | system | Default theme (light/dark/system) |
-| `theme_color` | teal | Primary color (teal/rose) |
-
-Email settings (SMTP) are configured via the admin Settings page.
-
----
-
-## Accessibility
-
-Since the primary users are elderly, the frontend prioritizes:
-
-- **Large touch targets** (minimum 44x44px, 56px in Big Mode)
-- **High contrast ratios** (WCAG AA/AAA)
-- **Large, readable fonts** (18px minimum, scalable)
-- **Simple navigation** (minimal nesting)
-- **Keyboard navigation** (full accessibility)
-- **Screen reader compatibility** (proper ARIA labels)
+- **Website**: [homelabforge.io/builds/familycircle](https://homelabforge.io/builds/familycircle/)
+- **Bug Reports**: [GitHub Issues](https://github.com/homelabforge/familycircle/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/homelabforge/familycircle/discussions)
 
 ---
 
@@ -100,6 +51,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 Built for families who want to coordinate events without sending personal data to third-party services.
 
+Part of the [HomelabForge](https://homelabforge.io) ecosystem.
+
 ### Development Assistance
 
-FamilyCircle was developed through AI-assisted pair programming with **Claude**, combining human vision with AI capabilities for architecture, accessibility patterns, and implementation.
+FamilyCircle was developed through AI-assisted pair programming with **Claude** and **Codex**, combining human vision with AI capabilities for architecture, accessibility patterns, and implementation.
