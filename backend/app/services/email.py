@@ -47,10 +47,9 @@ async def send_email(
     if not config.is_configured:
         # Log email instead of sending (development mode)
         logger.info(
-            f"[EMAIL NOT SENT - SMTP not configured]\n"
-            f"To: {to_email}\n"
-            f"Subject: {subject}\n"
-            f"Body: {body_text or body_html[:500]}"
+            "[EMAIL NOT SENT - SMTP not configured] To: %s, Subject: %s",
+            to_email,
+            subject,
         )
         return False
 
@@ -87,11 +86,11 @@ async def send_email(
                 password=config.password,
             )
 
-        logger.info(f"Email sent successfully to {to_email}: {subject}")
+        logger.info("Email sent successfully to %s: %s", to_email, subject)
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {e}")
+        logger.error("Failed to send email to %s: %s", to_email, type(e).__name__)
         return False
 
 

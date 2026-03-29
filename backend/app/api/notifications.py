@@ -283,7 +283,7 @@ async def test_notification_service(
             return {"success": False, "message": f"Unknown service: {service_name}"}
 
     except Exception as e:
-        logger.error("Error testing %s: %s", service_name, e)
-        return {"success": False, "message": f"Error: {str(e)}"}
+        logger.error("Error testing %s: %s", service_name, type(e).__name__)
+        return {"success": False, "message": f"Connection test failed: {type(e).__name__}"}
 
     return {"success": success, "message": message}

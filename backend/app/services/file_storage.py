@@ -94,9 +94,11 @@ async def save_upload(
     full_path.write_bytes(content)
 
     original_name = file.filename or unique_name
+    # Sanitize filename for logging (strip newlines/control chars to prevent log injection)
+    safe_name = original_name.replace("\n", "").replace("\r", "")[:100]
     logger.info(
         "Saved upload: %s -> %s (%d bytes, %s)",
-        original_name,
+        safe_name,
         relative_path,
         file_size,
         mime_type,

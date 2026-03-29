@@ -116,9 +116,9 @@ if STATIC_DIR.exists():
         if full_path.startswith("api/"):
             return {"detail": "Not found"}
 
-        # Check if file exists in static
-        file_path = STATIC_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        # Check if file exists in static (resolve to prevent traversal)
+        file_path = (STATIC_DIR / full_path).resolve()
+        if file_path.is_relative_to(STATIC_DIR) and file_path.is_file():
             return FileResponse(file_path)
 
         # Return index.html for SPA routing
