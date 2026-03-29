@@ -20,6 +20,36 @@ _tmpdir = tempfile.TemporaryDirectory(prefix="familycircle-openapi-")
 _tmp = _tmpdir.name
 os.environ["DATABASE_PATH"] = os.path.join(_tmp, "openapi.db")
 
+# Patch Path.mkdir and StaticFiles to avoid touching /data/ at module level
+from pathlib import Path
+
+_orig_mkdir = Path.mkdir
+
+
+def _patched_mkdir(self, *args, **kwargs):
+    if str(self).startswith("/data"):
+        Path(_tmp, "uploads").mkdir(parents=True, exist_ok=True)
+        return
+    return _orig_mkdir(self, *args, **kwargs)
+
+
+from starlette.staticfiles import StaticFiles
+
+_orig_staticfiles_init = StaticFiles.__init__
+
+
+def _patched_staticfiles_init(self, *args, **kwargs):
+    directory = kwargs.get("directory") or (args[0] if args else None)
+    if directory and str(directory).startswith("/data"):
+        kwargs["directory"] = str(Path(_tmp, "uploads"))
+        if args:
+            args = (str(Path(_tmp, "uploads")),) + args[1:]
+    return _orig_staticfiles_init(self, *args, **kwargs)
+
+
+Path.mkdir = _patched_mkdir  # type: ignore[assignment]
+StaticFiles.__init__ = _patched_staticfiles_init  # type: ignore[assignment]
+
 try:
     from app.main import app
 
@@ -28,6 +58,8 @@ except Exception as e:
     print(f"ERROR: Failed to generate OpenAPI schema: {e}", file=sys.stderr)
     sys.exit(1)
 finally:
+    Path.mkdir = _orig_mkdir  # type: ignore[assignment]
+    StaticFiles.__init__ = _orig_staticfiles_init  # type: ignore[assignment]
     _tmpdir.cleanup()
 
 output = json.dumps(schema, indent=2, sort_keys=True) + "\n"

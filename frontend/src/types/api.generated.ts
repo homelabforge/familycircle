@@ -4,67 +4,7 @@
  */
 
 export interface paths {
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Health Check
-         * @description Health check endpoint.
-         */
-        get: operations["health_check_api_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/version": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Version
-         * @description Get application version.
-         */
-        get: operations["get_version_api_version_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Current User Info
-         * @description Get current authenticated user with family context.
-         */
-        get: operations["get_current_user_info_api_auth_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/login": {
+    "/api/auth/admin/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -74,110 +14,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Login
-         * @description Login with email and password.
+         * Admin Reset Password
+         * @description Reset another user's password (admin only).
          */
-        post: operations["login_api_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register
-         * @description Register with a family code.
-         */
-        post: operations["register_api_auth_register_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Logout
-         * @description Logout current user.
-         */
-        post: operations["logout_api_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/switch-family": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Switch Family
-         * @description Switch active family context.
-         */
-        post: operations["switch_family_api_auth_switch_family_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/forgot-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Forgot Password
-         * @description Request password reset email.
-         */
-        post: operations["forgot_password_api_auth_forgot_password_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reset Password
-         * @description Reset password using magic link token.
-         */
-        post: operations["reset_password_api_auth_reset_password_post"];
+        post: operations["admin_reset_password_api_auth_admin_reset_password_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -204,67 +44,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/admin/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Admin Reset Password
-         * @description Reset another user's password (admin only).
-         */
-        post: operations["admin_reset_password_api_auth_admin_reset_password_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/setup-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Setup Status
-         * @description Check if initial setup is needed (no super admins exist).
-         */
-        get: operations["get_setup_status_api_auth_setup_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/setup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Initial Setup
-         * @description Initial platform setup - creates super admin and first family.
-         *     Only works if no super admins exist.
-         */
-        post: operations["initial_setup_api_auth_setup_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/families": {
         parameters: {
             query?: never;
@@ -274,7 +53,7 @@ export interface paths {
         };
         /**
          * List Families
-         * @description List all families (super admin only).
+         * @description List all families with member counts (super admin only).
          */
         get: operations["list_families_api_auth_families_get"];
         put?: never;
@@ -286,6 +65,28 @@ export interface paths {
          */
         post: operations["create_family_api_auth_families_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/families/{family_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Family
+         * @description Delete a family and all associated data (super admin only).
+         *
+         *     Returns 409 if any users would be orphaned (left with no family).
+         */
+        delete: operations["delete_family_api_auth_families__family_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -331,6 +132,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot Password
+         * @description Request password reset email.
+         */
+        post: operations["forgot_password_api_auth_forgot_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login
+         * @description Login with email and password.
+         */
+        post: operations["login_api_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description Logout current user.
+         *
+         *     H5: Deletes token from Token table and clears httpOnly cookie.
+         */
+        post: operations["logout_api_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/magic-link": {
         parameters: {
             query?: never;
@@ -346,6 +209,234 @@ export interface paths {
          */
         post: operations["send_magic_link_api_auth_magic_link_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Current User Info
+         * @description Get current authenticated user with family context.
+         *
+         *     H2: This endpoint needs family-loaded user for build_user_response().
+         */
+        get: operations["get_current_user_info_api_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register
+         * @description Register with a family code.
+         */
+        post: operations["register_api_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Password
+         * @description Reset password using magic link token.
+         */
+        post: operations["reset_password_api_auth_reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Initial Setup
+         * @description Initial platform setup - creates super admin and first family.
+         *
+         *     Only works if no super admins exist.
+         */
+        post: operations["initial_setup_api_auth_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/setup-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Setup Status
+         * @description Check if initial setup is needed (no super admins exist).
+         */
+        get: operations["get_setup_status_api_auth_setup_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/switch-family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch Family
+         * @description Switch active family context.
+         */
+        post: operations["switch_family_api_auth_switch_family_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calendar/feed-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Feed Url
+         * @description Get the calendar feed URL for the current family.
+         */
+        get: operations["get_feed_url_api_calendar_feed_url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calendar/regenerate-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Feed Token
+         * @description Regenerate the calendar feed token. Admin only. Old URL stops working.
+         */
+        post: operations["regenerate_feed_token_api_calendar_regenerate_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calendar/{feed_token}/feed.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Family Calendar Feed
+         * @description Public calendar feed URL. No auth — secured by unique feed token.
+         */
+        get: operations["family_calendar_feed_api_calendar__feed_token__feed_ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/event-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Templates
+         * @description List event templates for the current family.
+         */
+        get: operations["list_templates_api_event_templates_get"];
+        put?: never;
+        /**
+         * Create Template
+         * @description Create a new event template. Requires family admin.
+         */
+        post: operations["create_template_api_event_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/event-templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Template
+         * @description Delete an event template. Requires family admin.
+         */
+        delete: operations["delete_template_api_event_templates__template_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -375,26 +466,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/events/upcoming": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Upcoming Events
-         * @description List upcoming events for current family.
-         */
-        get: operations["list_upcoming_events_api_events_upcoming_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/events/holidays": {
         parameters: {
             query?: never;
@@ -407,6 +478,26 @@ export interface paths {
          * @description Get list of predefined holidays for the holiday picker.
          */
         get: operations["list_predefined_holidays_api_events_holidays_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Upcoming Events
+         * @description List upcoming events for current family.
+         */
+        get: operations["list_upcoming_events_api_events_upcoming_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -443,6 +534,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{event_id}/baby-shower-updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Updates
+         * @description List baby shower updates for an event, chronologically.
+         */
+        get: operations["list_updates_api_events__event_id__baby_shower_updates_get"];
+        put?: never;
+        /**
+         * Create Update
+         * @description Add a baby shower update. Requires event creator or family admin.
+         */
+        post: operations["create_update_api_events__event_id__baby_shower_updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{event_id}/baby-shower-updates/{update_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Update
+         * @description Delete a baby shower update. Requires event creator or family admin.
+         */
+        delete: operations["delete_update_api_events__event_id__baby_shower_updates__update_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{event_id}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Event Ics
+         * @description Download a single event as an .ics file.
+         */
+        get: operations["download_event_ics_api_events__event_id__calendar_ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{event_id}/cancel": {
         parameters: {
             query?: never;
@@ -457,903 +612,6 @@ export interface paths {
          * @description Cancel an event (creator or admin only).
          */
         post: operations["cancel_event_api_events__event_id__cancel_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/health-summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event Health Summary
-         * @description Get anonymous health information for event attendees.
-         *
-         *     Only returns health info from users who:
-         *     1. Have RSVPed 'yes' to this event
-         *     2. Have explicitly enabled health info sharing (share_health_info = true)
-         *
-         *     Information is returned anonymously - no names are attached.
-         *     Only event managers (creator or family admins) can access this.
-         */
-        get: operations["get_event_health_summary_api_events__event_id__health_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/sub-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Sub Events
-         * @description List sub-events for a parent event.
-         */
-        get: operations["list_sub_events_api_events__event_id__sub_events_get"];
-        put?: never;
-        /**
-         * Create Sub Event
-         * @description Create a sub-event under a parent event.
-         */
-        post: operations["create_sub_event_api_events__event_id__sub_events_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/wedding-party": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Wedding Party
-         * @description List wedding party members for an event.
-         */
-        get: operations["list_wedding_party_api_events__event_id__wedding_party_get"];
-        put?: never;
-        /**
-         * Add Wedding Party Member
-         * @description Add a wedding party member.
-         */
-        post: operations["add_wedding_party_member_api_events__event_id__wedding_party_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/wedding-party/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove Wedding Party Member
-         * @description Remove a wedding party member.
-         */
-        delete: operations["remove_wedding_party_member_api_events__event_id__wedding_party__member_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Members
-         * @description List all members in current family.
-         */
-        get: operations["list_members_api_family_members_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/members/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Member
-         * @description Get a specific family member.
-         */
-        get: operations["get_member_api_family_members__user_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Remove Member
-         * @description Remove a member from the family (admin only).
-         */
-        delete: operations["remove_member_api_family_members__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/address-book": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Address Book
-         * @description Get family address book with contact info (respects visibility).
-         */
-        get: operations["get_address_book_api_family_address_book_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/invite": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Invite Member
-         * @description Invite a new member to the family (admin only).
-         */
-        post: operations["invite_member_api_family_invite_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/members/{user_id}/role": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Member Role
-         * @description Change a member's role (admin only).
-         */
-        post: operations["update_member_role_api_family_members__user_id__role_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/family/members/{user_id}/display-name": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Display Name
-         * @description Update display name (self or admin).
-         */
-        put: operations["update_display_name_api_family_members__user_id__display_name_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Profile
-         * @description Get current user's profile.
-         */
-        get: operations["get_profile_api_profile_get"];
-        /**
-         * Update Profile
-         * @description Update current user's profile.
-         */
-        put: operations["update_profile_api_profile_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/profile/visibility/{family_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Visibility
-         * @description Get visibility settings for a specific family.
-         */
-        get: operations["get_visibility_api_profile_visibility__family_id__get"];
-        /**
-         * Update Visibility
-         * @description Update visibility settings for a specific family.
-         */
-        put: operations["update_visibility_api_profile_visibility__family_id__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/profile/health-info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Health Info
-         * @description Get health-related profile info (allergies, medical needs).
-         */
-        get: operations["get_health_info_api_profile_health_info_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/potluck/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Potluck
-         * @description Get potluck info for an event.
-         */
-        get: operations["get_potluck_api_potluck__event_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/potluck/{event_id}/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Items
-         * @description List all potluck items for an event.
-         */
-        get: operations["list_items_api_potluck__event_id__items_get"];
-        put?: never;
-        /**
-         * Add Item
-         * @description Add a potluck item. Permissions vary by potluck mode.
-         */
-        post: operations["add_item_api_potluck__event_id__items_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/potluck/{event_id}/items/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Item
-         * @description Update a potluck item (family admin or event creator only).
-         */
-        put: operations["update_item_api_potluck__event_id__items__item_id__put"];
-        post?: never;
-        /**
-         * Delete Item
-         * @description Delete a potluck item (family admin or event creator only).
-         */
-        delete: operations["delete_item_api_potluck__event_id__items__item_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/potluck/{event_id}/claim/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Claim Item
-         * @description Claim a potluck item.
-         */
-        post: operations["claim_item_api_potluck__event_id__claim__item_id__post"];
-        /**
-         * Unclaim Item
-         * @description Unclaim a potluck item.
-         */
-        delete: operations["unclaim_item_api_potluck__event_id__claim__item_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/potluck/{event_id}/my-items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Items
-         * @description Get items claimed by current user.
-         */
-        get: operations["get_my_items_api_potluck__event_id__my_items_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Gift Exchange
-         * @description Get Gift Exchange info for an event.
-         */
-        get: operations["get_gift_exchange_api_gift_exchange__event_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/assignment": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Assignment
-         * @description Get current user's Gift Exchange assignment (who they give to).
-         */
-        get: operations["get_assignment_api_gift_exchange__event_id__assignment_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run Assignment
-         * @description Run the Gift Exchange assignment algorithm (family admin or event creator only).
-         */
-        post: operations["run_assignment_api_gift_exchange__event_id__run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/exclusions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Exclusions
-         * @description List exclusion rules for Gift Exchange.
-         */
-        get: operations["list_exclusions_api_gift_exchange__event_id__exclusions_get"];
-        put?: never;
-        /**
-         * Add Exclusion
-         * @description Add an exclusion rule (family admin or event creator only).
-         */
-        post: operations["add_exclusion_api_gift_exchange__event_id__exclusions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/exclusions/{exclusion_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove Exclusion
-         * @description Remove an exclusion rule (family admin or event creator only).
-         */
-        delete: operations["remove_exclusion_api_gift_exchange__event_id__exclusions__exclusion_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/message": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send Anonymous Message
-         * @description Send an anonymous message to your Gift Exchange giftee.
-         */
-        post: operations["send_anonymous_message_api_gift_exchange__event_id__message_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Messages
-         * @description Get anonymous messages for Gift Exchange (messages received from your match).
-         */
-        get: operations["get_messages_api_gift_exchange__event_id__messages_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/gift-exchange/{event_id}/participants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Participants
-         * @description Get list of participants for Gift Exchange.
-         */
-        get: operations["get_participants_api_gift_exchange__event_id__participants_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Settings
-         * @description Get application settings.
-         *
-         *     - Public: app_name
-         *     - Authenticated: family-specific settings
-         *     - Super admin: SMTP and other sensitive global settings
-         */
-        get: operations["get_settings_api_settings_get"];
-        /**
-         * Update Settings Compat
-         * @description Update settings (backwards compatibility, redirects to global).
-         */
-        put: operations["update_settings_compat_api_settings_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/global": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Global Settings
-         * @description Update global application settings (super admin only).
-         */
-        put: operations["update_global_settings_api_settings_global_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/family": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Family Settings
-         * @description Update family-specific settings (family admin only).
-         */
-        put: operations["update_family_settings_api_settings_family_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/family-code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Family Code
-         * @description Get the current family's join code (family admin only).
-         */
-        get: operations["get_family_code_api_settings_family_code_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/family-code/regenerate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Regenerate Family Code
-         * @description Regenerate the family join code (family admin only).
-         */
-        post: operations["regenerate_family_code_api_settings_family_code_regenerate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/user-preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User Preferences
-         * @description Get current user's preferences.
-         */
-        get: operations["get_user_preferences_api_settings_user_preferences_get"];
-        /**
-         * Update User Preferences
-         * @description Update current user's preferences.
-         */
-        put: operations["update_user_preferences_api_settings_user_preferences_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/wishlist": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Wishlist
-         * @description Get current user's wishlist.
-         */
-        get: operations["get_wishlist_api_wishlist_get"];
-        put?: never;
-        /**
-         * Add Wishlist Item
-         * @description Add an item to wishlist.
-         */
-        post: operations["add_wishlist_item_api_wishlist_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/wishlist/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Wishlist Item
-         * @description Update a wishlist item.
-         */
-        put: operations["update_wishlist_item_api_wishlist__item_id__put"];
-        post?: never;
-        /**
-         * Delete Wishlist Item
-         * @description Delete a wishlist item.
-         */
-        delete: operations["delete_wishlist_item_api_wishlist__item_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/wishlist/user/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User Wishlist
-         * @description Get another user's wishlist.
-         *
-         *     Only allowed if:
-         *     1. You're viewing your own wishlist
-         *     2. You're a family admin
-         *     3. You're assigned to give a gift to this user (Gift Exchange)
-         *     4. Target user is in the same family
-         */
-        get: operations["get_user_wishlist_api_wishlist_user__user_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/wishlist/member/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Member Wishlist
-         * @description Backwards compatible alias for get_user_wishlist.
-         */
-        get: operations["get_member_wishlist_api_wishlist_member__member_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/polls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Polls
-         * @description List polls for the current family, optionally filtered by event.
-         */
-        get: operations["list_polls_api_polls_get"];
-        put?: never;
-        /**
-         * Create Poll
-         * @description Create a new poll.
-         */
-        post: operations["create_poll_api_polls_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/polls/{poll_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Poll
-         * @description Get a single poll with full details.
-         */
-        get: operations["get_poll_api_polls__poll_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Poll
-         * @description Delete a poll. Requires creator or family admin.
-         */
-        delete: operations["delete_poll_api_polls__poll_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/polls/{poll_id}/vote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Vote On Poll
-         * @description Vote on a poll. Single-select replaces previous vote. Multi-select toggles.
-         */
-        post: operations["vote_on_poll_api_polls__poll_id__vote_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/polls/{poll_id}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Close Poll
-         * @description Manually close a poll. Requires creator or family admin.
-         */
-        post: operations["close_poll_api_polls__poll_id__close_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/polls/{poll_id}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Export Poll Csv
-         * @description Export poll results as CSV. Requires creator or family admin.
-         */
-        get: operations["export_poll_csv_api_polls__poll_id__export_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1452,6 +710,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{event_id}/health-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Health Summary
+         * @description Get anonymous health information for event attendees.
+         *
+         *     Only returns health info from users who:
+         *     1. Have RSVPed 'yes' to this event
+         *     2. Have explicitly enabled health info sharing (share_health_info = true)
+         *
+         *     Information is returned anonymously - no names are attached.
+         *     Only event managers (creator or family admins) can access this.
+         */
+        get: operations["get_event_health_summary_api_events__event_id__health_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{event_id}/photos": {
         parameters: {
             query?: never;
@@ -1471,26 +756,6 @@ export interface paths {
          */
         post: operations["upload_photo_api_events__event_id__photos_post"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/photos/{photo_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete Photo
-         * @description Delete a photo. Uploader or admin can delete.
-         */
-        delete: operations["delete_photo_api_events__event_id__photos__photo_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1516,31 +781,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/poll-templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Templates
-         * @description List available poll templates (built-in + family custom).
-         */
-        get: operations["list_templates_api_poll_templates_get"];
-        put?: never;
-        /**
-         * Create Template
-         * @description Create a custom poll template for the current family.
-         */
-        post: operations["create_template_api_poll_templates_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/poll-templates/{template_id}": {
+    "/api/events/{event_id}/photos/{photo_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1551,182 +792,10 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Delete Template
-         * @description Delete a custom poll template. Built-in templates cannot be deleted.
+         * Delete Photo
+         * @description Delete a photo. Uploader or admin can delete.
          */
-        delete: operations["delete_template_api_poll_templates__template_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/calendar.ics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Event Ics
-         * @description Download a single event as an .ics file.
-         */
-        get: operations["download_event_ics_api_events__event_id__calendar_ics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/calendar/{feed_token}/feed.ics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Family Calendar Feed
-         * @description Public calendar feed URL. No auth — secured by unique feed token.
-         */
-        get: operations["family_calendar_feed_api_calendar__feed_token__feed_ics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/calendar/feed-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Feed Url
-         * @description Get the calendar feed URL for the current family.
-         */
-        get: operations["get_feed_url_api_calendar_feed_url_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/calendar/regenerate-token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Regenerate Feed Token
-         * @description Regenerate the calendar feed token. Admin only. Old URL stops working.
-         */
-        post: operations["regenerate_feed_token_api_calendar_regenerate_token_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Notification Settings
-         * @description Get all notification settings (super admin only).
-         *
-         *     Sensitive values (tokens, webhooks) are masked.
-         */
-        get: operations["get_notification_settings_api_notifications_get"];
-        /**
-         * Update Notification Settings
-         * @description Update notification settings (super admin only).
-         *
-         *     Masked values (********) are ignored to avoid overwriting secrets.
-         */
-        put: operations["update_notification_settings_api_notifications_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notifications/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Notification Service
-         * @description Test a notification service by sending a test message (super admin only).
-         */
-        post: operations["test_notification_service_api_notifications_test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/baby-shower-updates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Updates
-         * @description List baby shower updates for an event, chronologically.
-         */
-        get: operations["list_updates_api_events__event_id__baby_shower_updates_get"];
-        put?: never;
-        /**
-         * Create Update
-         * @description Add a baby shower update. Requires event creator or family admin.
-         */
-        post: operations["create_update_api_events__event_id__baby_shower_updates_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_id}/baby-shower-updates/{update_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete Update
-         * @description Delete a baby shower update. Requires event creator or family admin.
-         */
-        delete: operations["delete_update_api_events__event_id__baby_shower_updates__update_id__delete"];
+        delete: operations["delete_photo_api_events__event_id__photos__photo_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1896,7 +965,431 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/event-templates": {
+    "/api/events/{event_id}/sub-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sub Events
+         * @description List sub-events for a parent event.
+         */
+        get: operations["list_sub_events_api_events__event_id__sub_events_get"];
+        put?: never;
+        /**
+         * Create Sub Event
+         * @description Create a sub-event under a parent event.
+         */
+        post: operations["create_sub_event_api_events__event_id__sub_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{event_id}/wedding-party": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Wedding Party
+         * @description List wedding party members for an event.
+         */
+        get: operations["list_wedding_party_api_events__event_id__wedding_party_get"];
+        put?: never;
+        /**
+         * Add Wedding Party Member
+         * @description Add a wedding party member.
+         */
+        post: operations["add_wedding_party_member_api_events__event_id__wedding_party_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{event_id}/wedding-party/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Wedding Party Member
+         * @description Remove a wedding party member.
+         */
+        delete: operations["remove_wedding_party_member_api_events__event_id__wedding_party__member_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/address-book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Address Book
+         * @description Get family address book with contact info (respects visibility).
+         */
+        get: operations["get_address_book_api_family_address_book_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite Member
+         * @description Invite a new member to the family (admin only).
+         */
+        post: operations["invite_member_api_family_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Members
+         * @description List all members in current family.
+         */
+        get: operations["list_members_api_family_members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Member
+         * @description Get a specific family member.
+         */
+        get: operations["get_member_api_family_members__user_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove Member
+         * @description Remove a member from the family (admin only).
+         */
+        delete: operations["remove_member_api_family_members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/members/{user_id}/display-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Display Name
+         * @description Update display name (self or admin).
+         */
+        put: operations["update_display_name_api_family_members__user_id__display_name_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/family/members/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Member Role
+         * @description Change a member's role (admin only).
+         */
+        post: operations["update_member_role_api_family_members__user_id__role_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gift Exchange
+         * @description Get Gift Exchange info for an event.
+         */
+        get: operations["get_gift_exchange_api_gift_exchange__event_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/assignment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assignment
+         * @description Get current user's Gift Exchange assignment (who they give to).
+         */
+        get: operations["get_assignment_api_gift_exchange__event_id__assignment_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/exclusions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Exclusions
+         * @description List exclusion rules for Gift Exchange.
+         */
+        get: operations["list_exclusions_api_gift_exchange__event_id__exclusions_get"];
+        put?: never;
+        /**
+         * Add Exclusion
+         * @description Add an exclusion rule (family admin or event creator only).
+         */
+        post: operations["add_exclusion_api_gift_exchange__event_id__exclusions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/exclusions/{exclusion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Exclusion
+         * @description Remove an exclusion rule (family admin or event creator only).
+         */
+        delete: operations["remove_exclusion_api_gift_exchange__event_id__exclusions__exclusion_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Anonymous Message
+         * @description Send an anonymous message to your Gift Exchange giftee.
+         */
+        post: operations["send_anonymous_message_api_gift_exchange__event_id__message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Messages
+         * @description Get anonymous messages for Gift Exchange (messages received from your match).
+         */
+        get: operations["get_messages_api_gift_exchange__event_id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Participants
+         * @description Get list of participants for Gift Exchange.
+         */
+        get: operations["get_participants_api_gift_exchange__event_id__participants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gift-exchange/{event_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Assignment
+         * @description Run the Gift Exchange assignment algorithm (family admin or event creator only).
+         */
+        post: operations["run_assignment_api_gift_exchange__event_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health Check
+         * @description Health check endpoint.
+         */
+        get: operations["health_check_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Notification Settings
+         * @description Get all notification settings (super admin only).
+         *
+         *     Sensitive values (tokens, webhooks) are masked.
+         */
+        get: operations["get_notification_settings_api_notifications_get"];
+        /**
+         * Update Notification Settings
+         * @description Update notification settings (super admin only).
+         *
+         *     Masked values (********) are ignored to avoid overwriting secrets.
+         */
+        put: operations["update_notification_settings_api_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Notification Service
+         * @description Test a notification service by sending a test message (super admin only).
+         */
+        post: operations["test_notification_service_api_notifications_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/poll-templates": {
         parameters: {
             query?: never;
             header?: never;
@@ -1905,22 +1398,22 @@ export interface paths {
         };
         /**
          * List Templates
-         * @description List event templates for the current family.
+         * @description List available poll templates (built-in + family custom).
          */
-        get: operations["list_templates_api_event_templates_get"];
+        get: operations["list_templates_api_poll_templates_get"];
         put?: never;
         /**
          * Create Template
-         * @description Create a new event template. Requires family admin.
+         * @description Create a custom poll template for the current family.
          */
-        post: operations["create_template_api_event_templates_post"];
+        post: operations["create_template_api_poll_templates_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/event-templates/{template_id}": {
+    "/api/poll-templates/{template_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1932,15 +1425,15 @@ export interface paths {
         post?: never;
         /**
          * Delete Template
-         * @description Delete an event template. Requires family admin.
+         * @description Delete a custom poll template. Built-in templates cannot be deleted.
          */
-        delete: operations["delete_template_api_event_templates__template_id__delete"];
+        delete: operations["delete_template_api_poll_templates__template_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/{full_path}": {
+    "/api/polls": {
         parameters: {
             query?: never;
             header?: never;
@@ -1948,13 +1441,527 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Serve Spa
-         * @description Serve SPA for all non-API routes.
+         * List Polls
+         * @description List polls for the current family, optionally filtered by event.
          */
-        get: operations["serve_spa__full_path__get"];
+        get: operations["list_polls_api_polls_get"];
+        put?: never;
+        /**
+         * Create Poll
+         * @description Create a new poll.
+         */
+        post: operations["create_poll_api_polls_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polls/{poll_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Poll
+         * @description Get a single poll with full details.
+         */
+        get: operations["get_poll_api_polls__poll_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Poll
+         * @description Delete a poll. Requires creator or family admin.
+         */
+        delete: operations["delete_poll_api_polls__poll_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polls/{poll_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close Poll
+         * @description Manually close a poll. Requires creator or family admin.
+         */
+        post: operations["close_poll_api_polls__poll_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polls/{poll_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Poll Csv
+         * @description Export poll results as CSV. Requires creator or family admin.
+         */
+        get: operations["export_poll_csv_api_polls__poll_id__export_get"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polls/{poll_id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vote On Poll
+         * @description Vote on a poll. Single-select replaces previous vote. Multi-select toggles.
+         */
+        post: operations["vote_on_poll_api_polls__poll_id__vote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/potluck/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Potluck
+         * @description Get potluck info for an event.
+         */
+        get: operations["get_potluck_api_potluck__event_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/potluck/{event_id}/claim/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Item
+         * @description Claim a potluck item.
+         */
+        post: operations["claim_item_api_potluck__event_id__claim__item_id__post"];
+        /**
+         * Unclaim Item
+         * @description Unclaim a potluck item.
+         */
+        delete: operations["unclaim_item_api_potluck__event_id__claim__item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/potluck/{event_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Items
+         * @description List all potluck items for an event.
+         */
+        get: operations["list_items_api_potluck__event_id__items_get"];
+        put?: never;
+        /**
+         * Add Item
+         * @description Add a potluck item. Permissions vary by potluck mode.
+         */
+        post: operations["add_item_api_potluck__event_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/potluck/{event_id}/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Item
+         * @description Update a potluck item (family admin or event creator only).
+         */
+        put: operations["update_item_api_potluck__event_id__items__item_id__put"];
+        post?: never;
+        /**
+         * Delete Item
+         * @description Delete a potluck item (family admin or event creator only).
+         */
+        delete: operations["delete_item_api_potluck__event_id__items__item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/potluck/{event_id}/my-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Items
+         * @description Get items claimed by current user.
+         */
+        get: operations["get_my_items_api_potluck__event_id__my_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profile
+         * @description Get current user's profile.
+         */
+        get: operations["get_profile_api_profile_get"];
+        /**
+         * Update Profile
+         * @description Update current user's profile.
+         */
+        put: operations["update_profile_api_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/health-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Health Info
+         * @description Get health-related profile info (allergies, medical needs).
+         */
+        get: operations["get_health_info_api_profile_health_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/visibility/{family_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Visibility
+         * @description Get visibility settings for a specific family.
+         */
+        get: operations["get_visibility_api_profile_visibility__family_id__get"];
+        /**
+         * Update Visibility
+         * @description Update visibility settings for a specific family.
+         */
+        put: operations["update_visibility_api_profile_visibility__family_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Settings
+         * @description Get application settings.
+         *
+         *     - Public: app_name
+         *     - Authenticated: family-specific settings
+         *     - Super admin: SMTP and other sensitive global settings
+         */
+        get: operations["get_settings_api_settings_get"];
+        /**
+         * Update Settings Compat
+         * @description Update settings (backwards compatibility, redirects to global).
+         */
+        put: operations["update_settings_compat_api_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Family Settings
+         * @description Update family-specific settings (family admin only).
+         */
+        put: operations["update_family_settings_api_settings_family_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/family-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Family Code
+         * @description Get the current family's join code (family admin only).
+         */
+        get: operations["get_family_code_api_settings_family_code_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/family-code/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Family Code
+         * @description Regenerate the family join code (family admin only).
+         */
+        post: operations["regenerate_family_code_api_settings_family_code_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/global": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Global Settings
+         * @description Update global application settings (super admin only).
+         */
+        put: operations["update_global_settings_api_settings_global_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/user-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Preferences
+         * @description Get current user's preferences.
+         */
+        get: operations["get_user_preferences_api_settings_user_preferences_get"];
+        /**
+         * Update User Preferences
+         * @description Update current user's preferences.
+         */
+        put: operations["update_user_preferences_api_settings_user_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version
+         * @description Get application version.
+         */
+        get: operations["get_version_api_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wishlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Wishlist
+         * @description Get current user's wishlist.
+         */
+        get: operations["get_wishlist_api_wishlist_get"];
+        put?: never;
+        /**
+         * Add Wishlist Item
+         * @description Add an item to wishlist.
+         */
+        post: operations["add_wishlist_item_api_wishlist_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wishlist/member/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Member Wishlist
+         * @description Backwards compatible alias for get_user_wishlist.
+         */
+        get: operations["get_member_wishlist_api_wishlist_member__member_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wishlist/user/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Wishlist
+         * @description Get another user's wishlist.
+         *
+         *     Only allowed if:
+         *     1. You're viewing your own wishlist
+         *     2. You're a family admin
+         *     3. You're assigned to give a gift to this user (Gift Exchange)
+         *     4. Target user is in the same family
+         */
+        get: operations["get_user_wishlist_api_wishlist_user__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wishlist/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Wishlist Item
+         * @description Update a wishlist item.
+         */
+        put: operations["update_wishlist_item_api_wishlist__item_id__put"];
+        post?: never;
+        /**
+         * Delete Wishlist Item
+         * @description Delete a wishlist item.
+         */
+        delete: operations["delete_wishlist_item_api_wishlist__item_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1975,67 +1982,91 @@ export interface components {
             user2_id: string;
         };
         /**
+         * AdminFamilyInfo
+         * @description Family info for super admin listing (includes member count, no role).
+         */
+        AdminFamilyInfo: {
+            /** Created At */
+            created_at: string;
+            /** Family Code */
+            family_code: string;
+            /** Id */
+            id: string;
+            /** Member Count */
+            member_count: number;
+            /** Name */
+            name: string;
+        };
+        /**
+         * AdminFamilyListResponse
+         * @description Response for GET /api/auth/families.
+         */
+        AdminFamilyListResponse: {
+            /** Families */
+            families: components["schemas"]["AdminFamilyInfo"][];
+        };
+        /**
          * AdminResetPasswordRequest
          * @description Admin resetting another user's password.
          */
         AdminResetPasswordRequest: {
-            /** User Id */
-            user_id: string;
             /** New Password */
             new_password: string;
+            /** User Id */
+            user_id: string;
         };
         /**
          * BabyShowerDetailCreate
          * @description Create baby shower detail data.
          */
         BabyShowerDetailCreate: {
-            /** Parent1 Name */
-            parent1_name: string;
-            /** Parent2 Name */
-            parent2_name?: string | null;
             /** Baby Name */
             baby_name?: string | null;
-            /** Gender */
-            gender?: string | null;
             /** Due Date */
             due_date?: string | null;
-            /** Registry Url */
-            registry_url?: string | null;
+            /** Gender */
+            gender?: string | null;
             /**
              * Is Gender Reveal
              * @default false
              */
             is_gender_reveal: boolean;
+            /** Parent1 Name */
+            parent1_name: string;
+            /** Parent2 Name */
+            parent2_name?: string | null;
+            /** Registry Url */
+            registry_url?: string | null;
         };
         /**
          * BabyShowerUpdateCreate
          * @description Schema for creating a baby shower update.
          */
         BabyShowerUpdateCreate: {
-            /** Update Type */
-            update_type: string;
-            /** Update Date */
-            update_date?: string | null;
-            /** Title */
-            title: string;
             /** Notes */
             notes?: string | null;
             /** Photo Id */
             photo_id?: string | null;
+            /** Title */
+            title: string;
+            /** Update Date */
+            update_date?: string | null;
+            /** Update Type */
+            update_type: string;
         };
         /**
          * BirthdayDetailCreate
          * @description Create birthday detail data.
          */
         BirthdayDetailCreate: {
+            /** Age Turning */
+            age_turning?: number | null;
+            /** Birth Date */
+            birth_date?: string | null;
             /** Birthday Person Id */
             birthday_person_id?: string | null;
             /** Birthday Person Name */
             birthday_person_name: string;
-            /** Birth Date */
-            birth_date?: string | null;
-            /** Age Turning */
-            age_turning?: number | null;
             /**
              * Is Secret
              * @default false
@@ -2066,6 +2097,24 @@ export interface components {
         CommentReactionToggle: {
             /** Emoji */
             emoji: string;
+        };
+        /**
+         * DeleteFamilyErrorResponse
+         * @description 409 response when deletion would orphan users. Returned via JSONResponse.
+         */
+        DeleteFamilyErrorResponse: {
+            /** Detail */
+            detail: string;
+            /** Orphaned Users */
+            orphaned_users: string[];
+        };
+        /**
+         * DeleteFamilyResponse
+         * @description Response for successful family deletion.
+         */
+        DeleteFamilyResponse: {
+            /** Message */
+            message: string;
         };
         /**
          * DisplayNameUpdate
@@ -2104,8 +2153,8 @@ export interface components {
          * @description Create event request.
          */
         EventCreate: {
-            /** Title */
-            title: string;
+            baby_shower_detail?: components["schemas"]["BabyShowerDetailCreate"] | null;
+            birthday_detail?: components["schemas"]["BirthdayDetailCreate"] | null;
             /** Description */
             description?: string | null;
             /**
@@ -2113,15 +2162,22 @@ export interface components {
              * Format: date-time
              */
             event_date: string;
-            /** Location Name */
-            location_name?: string | null;
-            /** Location Address */
-            location_address?: string | null;
             /**
-             * Has Secret Santa
+             * Event Type
+             * @default general
+             */
+            event_type: string;
+            /** Gift Exchange Budget Max */
+            gift_exchange_budget_max?: number | null;
+            /** Gift Exchange Budget Min */
+            gift_exchange_budget_min?: number | null;
+            /** Gift Exchange Notes */
+            gift_exchange_notes?: string | null;
+            /**
+             * Has Gift Exchange
              * @default false
              */
-            has_secret_santa: boolean;
+            has_gift_exchange: boolean;
             /**
              * Has Potluck
              * @default false
@@ -2132,30 +2188,23 @@ export interface components {
              * @default true
              */
             has_rsvp: boolean;
-            /** Potluck Mode */
-            potluck_mode?: string | null;
+            holiday_detail?: components["schemas"]["HolidayDetailCreate"] | null;
+            /** Location Address */
+            location_address?: string | null;
+            /** Location Name */
+            location_name?: string | null;
             /** Potluck Host Providing */
             potluck_host_providing?: string | null;
-            /** Secret Santa Budget Min */
-            secret_santa_budget_min?: number | null;
-            /** Secret Santa Budget Max */
-            secret_santa_budget_max?: number | null;
-            /** Secret Santa Notes */
-            secret_santa_notes?: string | null;
-            /**
-             * Event Type
-             * @default general
-             */
-            event_type: string;
-            /** Recurrence Type */
-            recurrence_type?: string | null;
+            /** Potluck Mode */
+            potluck_mode?: string | null;
             /** Recurrence End Date */
             recurrence_end_date?: string | null;
             /** Recurrence Max Occurrences */
             recurrence_max_occurrences?: number | null;
-            holiday_detail?: components["schemas"]["HolidayDetailCreate"] | null;
-            birthday_detail?: components["schemas"]["BirthdayDetailCreate"] | null;
-            baby_shower_detail?: components["schemas"]["BabyShowerDetailCreate"] | null;
+            /** Recurrence Type */
+            recurrence_type?: string | null;
+            /** Title */
+            title: string;
             wedding_detail?: components["schemas"]["WeddingDetailCreate"] | null;
         };
         /**
@@ -2171,10 +2220,10 @@ export interface components {
          * @description Schema for creating an event template.
          */
         EventTemplateCreate: {
-            /** Name */
-            name: string;
             /** Description */
             description?: string | null;
+            /** Name */
+            name: string;
             /** Template Json */
             template_json: string;
         };
@@ -2183,35 +2232,35 @@ export interface components {
          * @description Update event request.
          */
         EventUpdate: {
-            /** Title */
-            title?: string | null;
+            baby_shower_detail?: components["schemas"]["BabyShowerDetailCreate"] | null;
+            birthday_detail?: components["schemas"]["BirthdayDetailCreate"] | null;
             /** Description */
             description?: string | null;
             /** Event Date */
             event_date?: string | null;
-            /** Location Name */
-            location_name?: string | null;
-            /** Location Address */
-            location_address?: string | null;
-            /** Has Secret Santa */
-            has_secret_santa?: boolean | null;
+            /** Gift Exchange Budget Max */
+            gift_exchange_budget_max?: number | null;
+            /** Gift Exchange Budget Min */
+            gift_exchange_budget_min?: number | null;
+            /** Gift Exchange Notes */
+            gift_exchange_notes?: string | null;
+            /** Has Gift Exchange */
+            has_gift_exchange?: boolean | null;
             /** Has Potluck */
             has_potluck?: boolean | null;
             /** Has Rsvp */
             has_rsvp?: boolean | null;
-            /** Potluck Mode */
-            potluck_mode?: string | null;
+            holiday_detail?: components["schemas"]["HolidayDetailCreate"] | null;
+            /** Location Address */
+            location_address?: string | null;
+            /** Location Name */
+            location_name?: string | null;
             /** Potluck Host Providing */
             potluck_host_providing?: string | null;
-            /** Secret Santa Budget Min */
-            secret_santa_budget_min?: number | null;
-            /** Secret Santa Budget Max */
-            secret_santa_budget_max?: number | null;
-            /** Secret Santa Notes */
-            secret_santa_notes?: string | null;
-            holiday_detail?: components["schemas"]["HolidayDetailCreate"] | null;
-            birthday_detail?: components["schemas"]["BirthdayDetailCreate"] | null;
-            baby_shower_detail?: components["schemas"]["BabyShowerDetailCreate"] | null;
+            /** Potluck Mode */
+            potluck_mode?: string | null;
+            /** Title */
+            title?: string | null;
             wedding_detail?: components["schemas"]["WeddingDetailCreate"] | null;
         };
         /**
@@ -2219,12 +2268,12 @@ export interface components {
          * @description Family basic info for listing.
          */
         FamilyInfo: {
+            /** Family Code */
+            family_code: string;
             /** Id */
             id: string;
             /** Name */
             name: string;
-            /** Family Code */
-            family_code: string;
             /** Role */
             role: string;
         };
@@ -2249,10 +2298,10 @@ export interface components {
          * @description Create holiday detail data.
          */
         HolidayDetailCreate: {
-            /** Holiday Name */
-            holiday_name: string;
             /** Custom Holiday Name */
             custom_holiday_name?: string | null;
+            /** Holiday Name */
+            holiday_name: string;
             /** Year */
             year?: number | null;
         };
@@ -2287,56 +2336,56 @@ export interface components {
          * @description Create a poll.
          */
         PollCreate: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Event Id */
-            event_id?: string | null;
             /**
              * Allow Multiple
              * @default false
              */
             allow_multiple: boolean;
+            /** Close Date */
+            close_date?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Event Id */
+            event_id?: string | null;
             /**
              * Is Anonymous
              * @default false
              */
             is_anonymous: boolean;
-            /** Close Date */
-            close_date?: string | null;
             /** Options */
             options: components["schemas"]["PollOptionCreate"][];
+            /** Title */
+            title: string;
         };
         /**
          * PollOptionCreate
          * @description Create a poll option.
          */
         PollOptionCreate: {
-            /** Text */
-            text: string;
             /**
              * Display Order
              * @default 0
              */
             display_order: number;
+            /** Text */
+            text: string;
         };
         /**
          * PollTemplateCreate
          * @description Create a custom poll template.
          */
         PollTemplateCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Options */
-            options: string[];
             /**
              * Allow Multiple
              * @default false
              */
             allow_multiple: boolean;
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+            /** Options */
+            options: string[];
         };
         /**
          * PollVoteRequest
@@ -2351,90 +2400,90 @@ export interface components {
          * @description Create potluck item request.
          */
         PotluckItemCreate: {
-            /** Name */
-            name: string;
+            /** Allergens */
+            allergens?: string | null;
             /** Category */
             category?: string | null;
             /** Description */
             description?: string | null;
-            /** Serves */
-            serves?: number | null;
             /** Dietary Info */
             dietary_info?: string | null;
-            /** Allergens */
-            allergens?: string | null;
+            /** Name */
+            name: string;
+            /** Serves */
+            serves?: number | null;
         };
         /**
          * PotluckItemUpdate
          * @description Update potluck item request.
          */
         PotluckItemUpdate: {
-            /** Name */
-            name?: string | null;
+            /** Allergens */
+            allergens?: string | null;
             /** Category */
             category?: string | null;
             /** Description */
             description?: string | null;
-            /** Serves */
-            serves?: number | null;
             /** Dietary Info */
             dietary_info?: string | null;
-            /** Allergens */
-            allergens?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Serves */
+            serves?: number | null;
         };
         /**
          * ProfileUpdate
          * @description Update profile request.
          */
         ProfileUpdate: {
-            /** Phone */
-            phone?: string | null;
             /** Address Line1 */
             address_line1?: string | null;
             /** Address Line2 */
             address_line2?: string | null;
-            /** City */
-            city?: string | null;
-            /** State */
-            state?: string | null;
-            /** Zip Code */
-            zip_code?: string | null;
-            /** Country */
-            country?: string | null;
             /** Allergies */
             allergies?: string | null;
+            /** City */
+            city?: string | null;
+            /** Country */
+            country?: string | null;
             /** Dietary Restrictions */
             dietary_restrictions?: string | null;
             /** Medical Needs */
             medical_needs?: string | null;
             /** Mobility Notes */
             mobility_notes?: string | null;
+            /** Phone */
+            phone?: string | null;
             /** Share Health Info */
             share_health_info?: boolean | null;
+            /** State */
+            state?: string | null;
+            /** Zip Code */
+            zip_code?: string | null;
         };
         /**
          * RSVPGuestCreate
          * @description Schema for adding a guest to an RSVP.
          */
         RSVPGuestCreate: {
-            /** Guest Name */
-            guest_name: string;
-            /** Dietary Restrictions */
-            dietary_restrictions?: string | null;
             /** Allergies */
             allergies?: string | null;
+            /** Dietary Restrictions */
+            dietary_restrictions?: string | null;
+            /** Guest Name */
+            guest_name: string;
         };
         /**
          * RSVPGuestUpdate
          * @description Schema for updating a guest.
          */
         RSVPGuestUpdate: {
-            /** Guest Name */
-            guest_name?: string | null;
-            /** Dietary Restrictions */
-            dietary_restrictions?: string | null;
             /** Allergies */
             allergies?: string | null;
+            /** Dietary Restrictions */
+            dietary_restrictions?: string | null;
+            /** Guest Name */
+            guest_name?: string | null;
         };
         /**
          * RSVPRequest
@@ -2449,66 +2498,66 @@ export interface components {
          * @description Register with family code.
          */
         RegisterRequest: {
-            /** Family Code */
-            family_code: string;
+            /** Display Name */
+            display_name: string;
             /**
              * Email
              * Format: email
              */
             email: string;
+            /** Family Code */
+            family_code: string;
             /** Password */
             password: string;
-            /** Display Name */
-            display_name: string;
         };
         /**
          * RegistryItemCreate
          * @description Schema for creating a registry item.
          */
         RegistryItemCreate: {
+            /** Image Url */
+            image_url?: string | null;
             /** Item Name */
             item_name: string;
             /** Item Url */
             item_url?: string | null;
+            /** Notes */
+            notes?: string | null;
             /** Price */
             price?: number | null;
-            /** Image Url */
-            image_url?: string | null;
             /**
              * Quantity
              * @default 1
              */
             quantity: number;
-            /** Notes */
-            notes?: string | null;
         };
         /**
          * RegistryItemUpdate
          * @description Schema for updating a registry item.
          */
         RegistryItemUpdate: {
+            /** Image Url */
+            image_url?: string | null;
             /** Item Name */
             item_name?: string | null;
             /** Item Url */
             item_url?: string | null;
-            /** Price */
-            price?: number | null;
-            /** Image Url */
-            image_url?: string | null;
-            /** Quantity */
-            quantity?: number | null;
             /** Notes */
             notes?: string | null;
+            /** Price */
+            price?: number | null;
+            /** Quantity */
+            quantity?: number | null;
         };
         /**
          * ResetPasswordRequest
          * @description Reset password with magic link token.
          */
         ResetPasswordRequest: {
-            /** Token */
-            token: string;
             /** New Password */
             new_password: string;
+            /** Token */
+            token: string;
         };
         /**
          * RoleUpdate
@@ -2531,17 +2580,17 @@ export interface components {
          * @description Initial setup - create super admin + first family.
          */
         SetupRequest: {
+            /** Display Name */
+            display_name: string;
             /**
              * Email
              * Format: email
              */
             email: string;
-            /** Password */
-            password: string;
-            /** Display Name */
-            display_name: string;
             /** Family Name */
             family_name: string;
+            /** Password */
+            password: string;
         };
         /**
          * SwitchFamilyRequest
@@ -2574,24 +2623,24 @@ export interface components {
         UpdateGlobalSettingsRequest: {
             /** App Name */
             app_name?: string | null;
-            /** Magic Link Expiry Days */
-            magic_link_expiry_days?: string | null;
             /** Cancelled Event Retention Days */
             cancelled_event_retention_days?: string | null;
-            /** Smtp Host */
-            smtp_host?: string | null;
-            /** Smtp Port */
-            smtp_port?: string | null;
-            /** Smtp Username */
-            smtp_username?: string | null;
-            /** Smtp Password */
-            smtp_password?: string | null;
+            /** Magic Link Expiry Days */
+            magic_link_expiry_days?: string | null;
             /** Smtp From Email */
             smtp_from_email?: string | null;
             /** Smtp From Name */
             smtp_from_name?: string | null;
+            /** Smtp Host */
+            smtp_host?: string | null;
+            /** Smtp Password */
+            smtp_password?: string | null;
+            /** Smtp Port */
+            smtp_port?: string | null;
             /** Smtp Use Tls */
             smtp_use_tls?: string | null;
+            /** Smtp Username */
+            smtp_username?: string | null;
         };
         /**
          * UpdateNotificationSettingsRequest
@@ -2600,94 +2649,86 @@ export interface components {
          *     All fields optional — only provided fields are updated.
          */
         UpdateNotificationSettingsRequest: {
-            /** Notification Retry Attempts */
-            notification_retry_attempts?: string | null;
-            /** Notification Retry Delay */
-            notification_retry_delay?: string | null;
-            /** Ntfy Enabled */
-            ntfy_enabled?: string | null;
-            /** Ntfy Server */
-            ntfy_server?: string | null;
-            /** Ntfy Topic */
-            ntfy_topic?: string | null;
-            /** Ntfy Token */
-            ntfy_token?: string | null;
+            /** Discord Enabled */
+            discord_enabled?: string | null;
+            /** Discord Webhook Url */
+            discord_webhook_url?: string | null;
+            /** Event Reminder Days */
+            event_reminder_days?: string | null;
             /** Gotify Enabled */
             gotify_enabled?: string | null;
             /** Gotify Server */
             gotify_server?: string | null;
             /** Gotify Token */
             gotify_token?: string | null;
-            /** Pushover Enabled */
-            pushover_enabled?: string | null;
-            /** Pushover User Key */
-            pushover_user_key?: string | null;
-            /** Pushover Api Token */
-            pushover_api_token?: string | null;
-            /** Slack Enabled */
-            slack_enabled?: string | null;
-            /** Slack Webhook Url */
-            slack_webhook_url?: string | null;
-            /** Discord Enabled */
-            discord_enabled?: string | null;
-            /** Discord Webhook Url */
-            discord_webhook_url?: string | null;
-            /** Telegram Enabled */
-            telegram_enabled?: string | null;
-            /** Telegram Bot Token */
-            telegram_bot_token?: string | null;
-            /** Telegram Chat Id */
-            telegram_chat_id?: string | null;
             /** Notification Email Enabled */
             notification_email_enabled?: string | null;
             /** Notification Email To */
             notification_email_to?: string | null;
-            /** Notify Event Created */
-            notify_event_created?: string | null;
-            /** Notify Event Updated */
-            notify_event_updated?: string | null;
-            /** Notify Event Cancelled */
-            notify_event_cancelled?: string | null;
-            /** Notify Event Reminder */
-            notify_event_reminder?: string | null;
-            /** Notify Rsvp Received */
-            notify_rsvp_received?: string | null;
-            /** Notify Poll Created */
-            notify_poll_created?: string | null;
-            /** Notify Poll Closing Soon */
-            notify_poll_closing_soon?: string | null;
+            /** Notification Retry Attempts */
+            notification_retry_attempts?: string | null;
+            /** Notification Retry Delay */
+            notification_retry_delay?: string | null;
             /** Notify Comment Added */
             notify_comment_added?: string | null;
             /** Notify Comment Mention */
             notify_comment_mention?: string | null;
+            /** Notify Event Cancelled */
+            notify_event_cancelled?: string | null;
+            /** Notify Event Created */
+            notify_event_created?: string | null;
+            /** Notify Event Reminder */
+            notify_event_reminder?: string | null;
+            /** Notify Event Updated */
+            notify_event_updated?: string | null;
             /** Notify Family Member Joined */
             notify_family_member_joined?: string | null;
-            /** Event Reminder Days */
-            event_reminder_days?: string | null;
+            /** Notify Poll Closing Soon */
+            notify_poll_closing_soon?: string | null;
+            /** Notify Poll Created */
+            notify_poll_created?: string | null;
+            /** Notify Rsvp Received */
+            notify_rsvp_received?: string | null;
+            /** Ntfy Enabled */
+            ntfy_enabled?: string | null;
+            /** Ntfy Server */
+            ntfy_server?: string | null;
+            /** Ntfy Token */
+            ntfy_token?: string | null;
+            /** Ntfy Topic */
+            ntfy_topic?: string | null;
+            /** Pushover Api Token */
+            pushover_api_token?: string | null;
+            /** Pushover Enabled */
+            pushover_enabled?: string | null;
+            /** Pushover User Key */
+            pushover_user_key?: string | null;
+            /** Slack Enabled */
+            slack_enabled?: string | null;
+            /** Slack Webhook Url */
+            slack_webhook_url?: string | null;
+            /** Telegram Bot Token */
+            telegram_bot_token?: string | null;
+            /** Telegram Chat Id */
+            telegram_chat_id?: string | null;
+            /** Telegram Enabled */
+            telegram_enabled?: string | null;
         };
         /**
          * UserPreferencesRequest
          * @description User preferences update.
          */
         UserPreferencesRequest: {
-            /** Theme */
-            theme?: string | null;
             /** Big Mode */
             big_mode?: boolean | null;
+            /** Theme */
+            theme?: string | null;
         };
         /**
          * UserWithFamilyContext
          * @description User response with current family context.
          */
         UserWithFamilyContext: {
-            /** Id */
-            id: string;
-            /** Email */
-            email: string;
-            /** Is Super Admin */
-            is_super_admin: boolean;
-            /** Theme */
-            theme: string;
             /** Big Mode */
             big_mode: boolean;
             /** Current Family Id */
@@ -2696,84 +2737,90 @@ export interface components {
             current_family_name?: string | null;
             /** Display Name */
             display_name?: string | null;
-            /** Role In Family */
-            role_in_family?: string | null;
+            /** Email */
+            email: string;
             /**
              * Families
              * @default []
              */
             families: components["schemas"]["FamilyInfo"][];
+            /** Id */
+            id: string;
+            /** Is Super Admin */
+            is_super_admin: boolean;
+            /** Role In Family */
+            role_in_family?: string | null;
+            /** Theme */
+            theme: string;
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
         /**
          * VisibilityUpdate
          * @description Update visibility settings.
          */
         VisibilityUpdate: {
+            /** Show Address */
+            show_address?: boolean | null;
             /** Show Email */
             show_email?: boolean | null;
             /** Show Phone */
             show_phone?: boolean | null;
-            /** Show Address */
-            show_address?: boolean | null;
         };
         /**
          * WeddingDetailCreate
          * @description Create wedding detail data.
          */
         WeddingDetailCreate: {
+            /** Color Theme */
+            color_theme?: string | null;
             /** Partner1 Name */
             partner1_name: string;
             /** Partner2 Name */
             partner2_name: string;
-            /** Wedding Date */
-            wedding_date?: string | null;
-            /** Venue Name */
-            venue_name?: string | null;
             /** Registry Url */
             registry_url?: string | null;
-            /** Color Theme */
-            color_theme?: string | null;
             /** Sub Event Template */
             sub_event_template?: string | null;
+            /** Venue Name */
+            venue_name?: string | null;
+            /** Wedding Date */
+            wedding_date?: string | null;
         };
         /**
          * WeddingPartyMemberCreate
          * @description Create wedding party member.
          */
         WeddingPartyMemberCreate: {
-            /** User Id */
-            user_id?: string | null;
             /** Name */
             name: string;
             /** Role */
             role: string;
             /** Side */
             side?: string | null;
+            /** User Id */
+            user_id?: string | null;
         };
         /**
          * WishlistItemCreate
          * @description Create wishlist item request.
          */
         WishlistItemCreate: {
-            /** Name */
-            name: string;
             /** Description */
             description?: string | null;
-            /** Url */
-            url?: string | null;
+            /** Name */
+            name: string;
             /** Price Range */
             price_range?: string | null;
             /**
@@ -2781,22 +2828,24 @@ export interface components {
              * @default 1
              */
             priority: number | null;
+            /** Url */
+            url?: string | null;
         };
         /**
          * WishlistItemUpdate
          * @description Update wishlist item request.
          */
         WishlistItemUpdate: {
-            /** Name */
-            name?: string | null;
             /** Description */
             description?: string | null;
-            /** Url */
-            url?: string | null;
+            /** Name */
+            name?: string | null;
             /** Price Range */
             price_range?: string | null;
             /** Priority */
             priority?: number | null;
+            /** Url */
+            url?: string | null;
         };
     };
     responses: never;
@@ -2807,67 +2856,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    health_check_api_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_version_api_version_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_current_user_info_api_auth_me_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserWithFamilyContext"];
-                };
-            };
-        };
-    };
-    login_api_auth_login_post: {
+    admin_reset_password_api_auth_admin_reset_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2876,159 +2865,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    register_api_auth_register_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    logout_api_auth_logout_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    switch_family_api_auth_switch_family_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SwitchFamilyRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    forgot_password_api_auth_forgot_password_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ForgotPasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reset_password_api_auth_reset_password_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResetPasswordRequest"];
+                "application/json": components["schemas"]["AdminResetPasswordRequest"];
             };
         };
         responses: {
@@ -3085,92 +2922,6 @@ export interface operations {
             };
         };
     };
-    admin_reset_password_api_auth_admin_reset_password_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminResetPasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_setup_status_api_auth_setup_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    initial_setup_api_auth_setup_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetupRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_families_api_auth_families_get: {
         parameters: {
             query?: never;
@@ -3186,7 +2937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["AdminFamilyListResponse"];
                 };
             };
         };
@@ -3213,6 +2964,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_family_api_auth_families__family_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                family_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteFamilyResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteFamilyErrorResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3266,6 +3057,92 @@ export interface operations {
             };
         };
     };
+    forgot_password_api_auth_forgot_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_api_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     send_magic_link_api_auth_magic_link_post: {
         parameters: {
             query?: never;
@@ -3287,6 +3164,335 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_current_user_info_api_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserWithFamilyContext"];
+                };
+            };
+        };
+    };
+    register_api_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_api_auth_reset_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    initial_setup_api_auth_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_setup_status_api_auth_setup_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    switch_family_api_auth_switch_family_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchFamilyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feed_url_api_calendar_feed_url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    regenerate_feed_token_api_calendar_regenerate_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    family_calendar_feed_api_calendar__feed_token__feed_ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feed_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_event_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    create_template_api_event_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventTemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_event_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3363,6 +3569,26 @@ export interface operations {
             };
         };
     };
+    list_predefined_holidays_api_events_holidays_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     list_upcoming_events_api_events_upcoming_get: {
         parameters: {
             query?: {
@@ -3390,26 +3616,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_predefined_holidays_api_events_holidays_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };
@@ -3511,7 +3717,38 @@ export interface operations {
             };
         };
     };
-    cancel_event_api_events__event_id__cancel_post: {
+    list_updates_api_events__event_id__baby_shower_updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_update_api_events__event_id__baby_shower_updates_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3522,1551 +3759,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EventCancel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_health_summary_api_events__event_id__health_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_sub_events_api_events__event_id__sub_events_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_sub_event_api_events__event_id__sub_events_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_wedding_party_api_events__event_id__wedding_party_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_wedding_party_member_api_events__event_id__wedding_party_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WeddingPartyMemberCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_wedding_party_member_api_events__event_id__wedding_party__member_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_members_api_family_members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_member_api_family_members__user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_member_api_family_members__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_address_book_api_family_address_book_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    invite_member_api_family_invite_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InviteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_member_role_api_family_members__user_id__role_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RoleUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_display_name_api_family_members__user_id__display_name_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DisplayNameUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_api_profile_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    update_profile_api_profile_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_visibility_api_profile_visibility__family_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                family_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_visibility_api_profile_visibility__family_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                family_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VisibilityUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_health_info_api_profile_health_info_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_potluck_api_potluck__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_items_api_potluck__event_id__items_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_item_api_potluck__event_id__items_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PotluckItemCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_item_api_potluck__event_id__items__item_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PotluckItemUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_item_api_potluck__event_id__items__item_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    claim_item_api_potluck__event_id__claim__item_id__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unclaim_item_api_potluck__event_id__claim__item_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_items_api_potluck__event_id__my_items_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_gift_exchange_api_gift_exchange__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_assignment_api_gift_exchange__event_id__assignment_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_assignment_api_gift_exchange__event_id__run_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_exclusions_api_gift_exchange__event_id__exclusions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_exclusion_api_gift_exchange__event_id__exclusions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddExclusionRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_exclusion_api_gift_exchange__event_id__exclusions__exclusion_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                exclusion_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    send_anonymous_message_api_gift_exchange__event_id__message_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendMessageRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_messages_api_gift_exchange__event_id__messages_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_participants_api_gift_exchange__event_id__participants_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_settings_api_settings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    update_settings_compat_api_settings_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGlobalSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_global_settings_api_settings_global_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGlobalSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_family_settings_api_settings_family_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateFamilySettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_family_code_api_settings_family_code_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    regenerate_family_code_api_settings_family_code_regenerate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_user_preferences_api_settings_user_preferences_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    update_user_preferences_api_settings_user_preferences_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserPreferencesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_wishlist_api_wishlist_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    add_wishlist_item_api_wishlist_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WishlistItemCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_wishlist_item_api_wishlist__item_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WishlistItemUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_wishlist_item_api_wishlist__item_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_wishlist_api_wishlist_user__user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_member_wishlist_api_wishlist_member__member_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_polls_api_polls_get: {
-        parameters: {
-            query?: {
-                event_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_poll_api_polls_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PollCreate"];
+                "application/json": components["schemas"]["BabyShowerUpdateCreate"];
             };
         };
         responses: {
@@ -5090,43 +3783,13 @@ export interface operations {
             };
         };
     };
-    get_poll_api_polls__poll_id__get: {
+    delete_update_api_events__event_id__baby_shower_updates__update_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                poll_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_poll_api_polls__poll_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                poll_id: string;
+                event_id: string;
+                update_id: string;
             };
             cookie?: never;
         };
@@ -5150,82 +3813,51 @@ export interface operations {
             };
         };
     };
-    vote_on_poll_api_polls__poll_id__vote_post: {
+    download_event_ics_api_events__event_id__calendar_ics_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                poll_id: string;
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_event_api_events__event_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PollVoteRequest"];
+                "application/json": components["schemas"]["EventCancel"];
             };
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    close_poll_api_polls__poll_id__close_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                poll_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_poll_csv_api_polls__poll_id__export_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                poll_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -5479,6 +4111,37 @@ export interface operations {
             };
         };
     };
+    get_event_health_summary_api_events__event_id__health_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_photos_api_events__event_id__photos_get: {
         parameters: {
             query?: never;
@@ -5549,36 +4212,6 @@ export interface operations {
             };
         };
     };
-    delete_photo_api_events__event_id__photos__photo_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                photo_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     reorder_photos_api_events__event_id__photos_reorder_put: {
         parameters: {
             query?: never;
@@ -5616,353 +4249,13 @@ export interface operations {
             };
         };
     };
-    list_templates_api_poll_templates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    create_template_api_poll_templates_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PollTemplateCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_template_api_poll_templates__template_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_event_ics_api_events__event_id__calendar_ics_get: {
+    delete_photo_api_events__event_id__photos__photo_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    family_calendar_feed_api_calendar__feed_token__feed_ics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                feed_token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_feed_url_api_calendar_feed_url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    regenerate_feed_token_api_calendar_regenerate_token_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    get_notification_settings_api_notifications_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    update_notification_settings_api_notifications_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateNotificationSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_notification_service_api_notifications_test_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestServiceRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_updates_api_events__event_id__baby_shower_updates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_update_api_events__event_id__baby_shower_updates_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BabyShowerUpdateCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_update_api_events__event_id__baby_shower_updates__update_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                update_id: string;
+                photo_id: string;
             };
             cookie?: never;
         };
@@ -6412,7 +4705,171 @@ export interface operations {
             };
         };
     };
-    list_templates_api_event_templates_get: {
+    list_sub_events_api_events__event_id__sub_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_sub_event_api_events__event_id__sub_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wedding_party_api_events__event_id__wedding_party_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_wedding_party_member_api_events__event_id__wedding_party_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeddingPartyMemberCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_wedding_party_member_api_events__event_id__wedding_party__member_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_address_book_api_family_address_book_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6432,7 +4889,7 @@ export interface operations {
             };
         };
     };
-    create_template_api_event_templates_post: {
+    invite_member_api_family_invite_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6441,7 +4898,606 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EventTemplateCreate"];
+                "application/json": components["schemas"]["InviteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_members_api_family_members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_member_api_family_members__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_member_api_family_members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_display_name_api_family_members__user_id__display_name_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplayNameUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_role_api_family_members__user_id__role_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_gift_exchange_api_gift_exchange__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assignment_api_gift_exchange__event_id__assignment_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exclusions_api_gift_exchange__event_id__exclusions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_exclusion_api_gift_exchange__event_id__exclusions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddExclusionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_exclusion_api_gift_exchange__event_id__exclusions__exclusion_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                exclusion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_anonymous_message_api_gift_exchange__event_id__message_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_messages_api_gift_exchange__event_id__messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_participants_api_gift_exchange__event_id__participants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_assignment_api_gift_exchange__event_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_check_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_notification_settings_api_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_notification_settings_api_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNotificationSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_notification_service_api_notifications_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestServiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_poll_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    create_template_api_poll_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollTemplateCreate"];
             };
         };
         responses: {
@@ -6465,7 +5521,7 @@ export interface operations {
             };
         };
     };
-    delete_template_api_event_templates__template_id__delete: {
+    delete_template_api_poll_templates__template_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -6494,12 +5550,1014 @@ export interface operations {
             };
         };
     };
-    serve_spa__full_path__get: {
+    list_polls_api_polls_get: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_poll_api_polls_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_poll_api_polls__poll_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                full_path: string;
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_poll_api_polls__poll_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_poll_api_polls__poll_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_poll_csv_api_polls__poll_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vote_on_poll_api_polls__poll_id__vote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollVoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_potluck_api_potluck__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_item_api_potluck__event_id__claim__item_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unclaim_item_api_potluck__event_id__claim__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_items_api_potluck__event_id__items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_item_api_potluck__event_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PotluckItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_potluck__event_id__items__item_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PotluckItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_potluck__event_id__items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_items_api_potluck__event_id__my_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_api_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_profile_api_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_info_api_profile_health_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_visibility_api_profile_visibility__family_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                family_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_visibility_api_profile_visibility__family_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                family_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisibilityUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_settings_compat_api_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGlobalSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_family_settings_api_settings_family_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFamilySettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_family_code_api_settings_family_code_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    regenerate_family_code_api_settings_family_code_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_global_settings_api_settings_global_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGlobalSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_preferences_api_settings_user_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_user_preferences_api_settings_user_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_api_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_wishlist_api_wishlist_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    add_wishlist_item_api_wishlist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_member_wishlist_api_wishlist_member__member_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_wishlist_api_wishlist_user__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_wishlist_item_api_wishlist__item_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WishlistItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_wishlist_item_api_wishlist__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
             };
             cookie?: never;
         };
