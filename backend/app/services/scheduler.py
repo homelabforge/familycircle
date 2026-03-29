@@ -119,7 +119,7 @@ async def cleanup_expired_tokens() -> None:
         try:
             now = datetime.now(UTC)
             result = await db.execute(delete(Token).where(Token.expires_at < now))
-            deleted = result.rowcount
+            deleted = result.rowcount  # type: ignore[union-attr]  # CursorResult always has rowcount
             await db.commit()
             if deleted:
                 logger.info("Cleaned up %d expired token(s)", deleted)

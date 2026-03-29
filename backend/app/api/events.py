@@ -184,7 +184,7 @@ async def list_events(
     query = (
         select(Event)
         .where(
-            Event.family_id == user.current_family_id,
+            Event.family_id == user.active_family_id,
             # Filter out cancelled events older than retention period
             or_(
                 Event.cancelled_at.is_(None),  # Not cancelled
@@ -230,7 +230,7 @@ async def list_upcoming_events(
     result = await db.execute(
         select(Event)
         .where(
-            Event.family_id == user.current_family_id,
+            Event.family_id == user.active_family_id,
             Event.event_date >= datetime.now(),  # Use naive datetime to match DB storage
             Event.cancelled_at.is_(None),  # Exclude cancelled events
         )
@@ -313,7 +313,7 @@ async def create_event(
     validate_event_type_and_details(request)
 
     event = Event(
-        family_id=user.current_family_id,
+        family_id=user.active_family_id,
         created_by_id=user.id,
         title=request.title,
         description=request.description,
@@ -372,7 +372,7 @@ async def create_event(
     await db.refresh(event)
 
     # Gather notification data before backgrounding (uses request-scoped db)
-    family_id = user.current_family_id or ""
+    family_id = user.active_family_id or ""
     creator_name = await get_member_display_name(db, user.id, family_id)
     from app.models import Family
 
@@ -518,7 +518,7 @@ async def cancel_event(
                     logger.error(f"Failed to send cancellation email to {attendee_id}: {e}")
 
     # Fire notification in background
-    canceller_name = await get_member_display_name(db, user.id, user.current_family_id or "")
+    canceller_name = await get_member_display_name(db, user.id, user.active_family_id or "")
     background_tasks.add_task(
         send_notification_background,
         "notify_event_cancelled",

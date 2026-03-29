@@ -64,12 +64,12 @@ async def get_member_with_visibility(
     if include_contact and visibility:
         # Include email if visibility allows (or if viewing self)
         if visibility.show_email or membership.user_id == viewer.id:
-            result["email"] = user.email if user else None
+            result["email"] = user.email if user else None  # type: ignore[assignment]
 
         if profile:
             # Include phone if visibility allows
             if visibility.show_phone or membership.user_id == viewer.id:
-                result["phone"] = profile.phone
+                result["phone"] = profile.phone  # type: ignore[assignment]
 
             # Include address if visibility allows
             if visibility.show_address or membership.user_id == viewer.id:
@@ -91,7 +91,7 @@ async def get_member_with_visibility(
                     city_state_zip,
                     profile.country,
                 ]
-                result["address"] = ", ".join(filter(None, address_parts)) or None
+                result["address"] = ", ".join(filter(None, address_parts)) or None  # type: ignore[assignment]
 
     return result
 
@@ -104,7 +104,7 @@ async def list_members(
     """List all members in current family."""
     result = await db.execute(
         select(FamilyMembership)
-        .where(FamilyMembership.family_id == user.current_family_id)
+        .where(FamilyMembership.family_id == user.active_family_id)
         .order_by(FamilyMembership.display_name)
     )
     memberships = result.scalars().all()
@@ -127,7 +127,7 @@ async def get_member(
     result = await db.execute(
         select(FamilyMembership).where(
             FamilyMembership.user_id == user_id,
-            FamilyMembership.family_id == user.current_family_id,
+            FamilyMembership.family_id == user.active_family_id,
         )
     )
     membership = result.scalar_one_or_none()
@@ -149,7 +149,7 @@ async def get_address_book(
     """Get family address book with contact info (respects visibility)."""
     result = await db.execute(
         select(FamilyMembership)
-        .where(FamilyMembership.family_id == user.current_family_id)
+        .where(FamilyMembership.family_id == user.active_family_id)
         .order_by(FamilyMembership.display_name)
     )
     memberships = result.scalars().all()
@@ -184,7 +184,7 @@ async def invite_member(
     if existing_user:
         # Check if already in this family
         membership = await auth_service.get_user_membership(
-            db, existing_user.id, admin.current_family_id
+            db, existing_user.id, admin.active_family_id
         )
         if membership:
             raise HTTPException(
@@ -193,7 +193,9 @@ async def invite_member(
             )
 
         # Add existing user to family
-        family = await auth_service.get_family_by_id(db, admin.current_family_id)
+        family = await auth_service.get_family_by_id(db, admin.active_family_id)
+        if not family:
+            raise HTTPException(status_code=404, detail="Family not found")
         await auth_service.add_user_to_family(db, existing_user, family, request.display_name)
 
         # Notify family that a member was added (admin-initiated)
@@ -212,11 +214,13 @@ async def invite_member(
         }
     else:
         # Get family info for invitation
-        family = await auth_service.get_family_by_id(db, admin.current_family_id)
+        family = await auth_service.get_family_by_id(db, admin.active_family_id)
+        if not family:
+            raise HTTPException(status_code=404, detail="Family not found")
 
         # Get admin's display name in this family
         admin_membership = await auth_service.get_user_membership(
-            db, admin.id, admin.current_family_id
+            db, admin.id, admin.active_family_id
         )
         inviter_name = admin_membership.display_name if admin_membership else "A family admin"
 
@@ -267,7 +271,7 @@ async def remove_member(
     result = await db.execute(
         select(FamilyMembership).where(
             FamilyMembership.user_id == user_id,
-            FamilyMembership.family_id == admin.current_family_id,
+            FamilyMembership.family_id == admin.active_family_id,
         )
     )
     membership = result.scalar_one_or_none()
@@ -282,7 +286,7 @@ async def remove_member(
     if membership.role == FamilyRole.ADMIN:
         admin_count_result = await db.execute(
             select(FamilyMembership).where(
-                FamilyMembership.family_id == admin.current_family_id,
+                FamilyMembership.family_id == admin.active_family_id,
                 FamilyMembership.role == FamilyRole.ADMIN,
             )
         )
@@ -311,7 +315,7 @@ async def remove_member(
     visibility_result = await db.execute(
         select(ProfileVisibility).where(
             ProfileVisibility.user_id == user_id,
-            ProfileVisibility.family_id == admin.current_family_id,
+            ProfileVisibility.family_id == admin.active_family_id,
         )
     )
     visibility = visibility_result.scalar_one_or_none()
@@ -349,7 +353,7 @@ async def update_member_role(
     result = await db.execute(
         select(FamilyMembership).where(
             FamilyMembership.user_id == user_id,
-            FamilyMembership.family_id == admin.current_family_id,
+            FamilyMembership.family_id == admin.active_family_id,
         )
     )
     membership = result.scalar_one_or_none()
@@ -364,7 +368,7 @@ async def update_member_role(
     if admin.id == user_id and new_role == FamilyRole.MEMBER:
         admin_count_result = await db.execute(
             select(FamilyMembership).where(
-                FamilyMembership.family_id == admin.current_family_id,
+                FamilyMembership.family_id == admin.active_family_id,
                 FamilyMembership.role == FamilyRole.ADMIN,
             )
         )
@@ -398,7 +402,7 @@ async def update_display_name(
     result = await db.execute(
         select(FamilyMembership).where(
             FamilyMembership.user_id == user_id,
-            FamilyMembership.family_id == user.current_family_id,
+            FamilyMembership.family_id == user.active_family_id,
         )
     )
     membership = result.scalar_one_or_none()
@@ -411,7 +415,7 @@ async def update_display_name(
 
     # Can only update own name, or if admin
     if user.id != user_id:
-        is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
+        is_admin = await permissions.is_family_admin(db, user, user.active_family_id)
         if not is_admin:
             raise HTTPException(
                 status_code=403,

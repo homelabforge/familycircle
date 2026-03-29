@@ -58,7 +58,7 @@ async def resolve_event_or_404(
 
     # Strict tenant boundary: event must belong to user's current family context
     if not user.is_super_admin:
-        if event.family_id != user.current_family_id:
+        if event.family_id != user.active_family_id:
             raise HTTPException(status_code=404, detail="Event not found")
 
     # Secret birthday: 404 to conceal existence from birthday person

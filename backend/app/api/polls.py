@@ -47,7 +47,7 @@ async def _resolve_poll_or_404(db: AsyncSession, poll_id: str, user: User) -> Po
         raise HTTPException(status_code=404, detail="Poll not found")
 
     # Normalize cross-family access to 404
-    if poll.family_id != user.current_family_id:
+    if poll.family_id != user.active_family_id:
         raise HTTPException(status_code=404, detail="Poll not found")
 
     # If event-scoped, enforce event visibility (secret birthday check)
@@ -119,7 +119,7 @@ async def list_polls(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List polls for the current family, optionally filtered by event."""
-    family_id = user.current_family_id
+    family_id = user.active_family_id
 
     # If filtering by event, enforce event access first
     if event_id:
@@ -171,7 +171,7 @@ async def create_poll(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Create a new poll."""
-    family_id = user.current_family_id
+    family_id = user.active_family_id
 
     # If event-scoped, verify event access (membership + secret birthday)
     if data.event_id:
@@ -232,7 +232,7 @@ async def get_poll(
 
     creator_name = None
     if poll.created_by_id:
-        creator_name = await _get_display_name(db, poll.created_by_id, user.current_family_id)
+        creator_name = await _get_display_name(db, poll.created_by_id, user.active_family_id)
     return _poll_to_dict(poll, user.id, creator_name)
 
 
@@ -299,7 +299,7 @@ async def vote_on_poll(
 
     creator_name = None
     if poll.created_by_id:
-        creator_name = await _get_display_name(db, poll.created_by_id, user.current_family_id)
+        creator_name = await _get_display_name(db, poll.created_by_id, user.active_family_id)
     return _poll_to_dict(poll, user.id, creator_name)
 
 
@@ -328,7 +328,7 @@ async def close_poll(
 
     creator_name = None
     if poll.created_by_id:
-        creator_name = await _get_display_name(db, poll.created_by_id, user.current_family_id)
+        creator_name = await _get_display_name(db, poll.created_by_id, user.active_family_id)
     return _poll_to_dict(poll, user.id, creator_name)
 
 

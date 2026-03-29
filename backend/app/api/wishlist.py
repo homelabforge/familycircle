@@ -176,7 +176,7 @@ async def get_user_wishlist(
     target_membership_result = await db.execute(
         select(FamilyMembership).where(
             FamilyMembership.user_id == user_id,
-            FamilyMembership.family_id == user.current_family_id,
+            FamilyMembership.family_id == user.active_family_id,
         )
     )
     target_membership = target_membership_result.scalar_one_or_none()
@@ -188,7 +188,7 @@ async def get_user_wishlist(
         )
 
     # Check if family admin
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id)
     if is_admin:
         result = await db.execute(
             select(WishlistItem)

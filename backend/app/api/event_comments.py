@@ -200,7 +200,7 @@ async def update_comment(
     comment.edited_at = datetime.now(UTC)
     await db.flush()
 
-    user_name = await _get_display_name(db, user.id, user.current_family_id or "")
+    user_name = await _get_display_name(db, user.id, user.active_family_id or "")
     return _comment_to_dict(comment, user.id, user_name)
 
 

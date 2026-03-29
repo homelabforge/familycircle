@@ -98,39 +98,39 @@ class TestIsSecretBirthdayForUser:
 
     def test_non_birthday_event_returns_false(self):
         event = SimpleNamespace(event_type=EventType.GENERAL.value)
-        assert is_secret_birthday_for_user(event, "some-user") is False
+        assert is_secret_birthday_for_user(event, "some-user") is False  # type: ignore[arg-type]
 
     def test_birthday_without_detail_returns_false(self):
         event = SimpleNamespace(
             event_type=EventType.BIRTHDAY.value,
             birthday_detail=None,
         )
-        assert is_secret_birthday_for_user(event, "some-user") is False
+        assert is_secret_birthday_for_user(event, "some-user") is False  # type: ignore[arg-type]
 
     def test_non_secret_birthday_returns_false(self):
         event = SimpleNamespace(
             event_type=EventType.BIRTHDAY.value,
             birthday_detail=SimpleNamespace(is_secret=False, birthday_person_id="target"),
         )
-        assert is_secret_birthday_for_user(event, "target") is False
+        assert is_secret_birthday_for_user(event, "target") is False  # type: ignore[arg-type]
 
     def test_secret_birthday_hidden_from_birthday_person(self):
         event = SimpleNamespace(
             event_type=EventType.BIRTHDAY.value,
             birthday_detail=SimpleNamespace(is_secret=True, birthday_person_id="target"),
         )
-        assert is_secret_birthday_for_user(event, "target") is True
+        assert is_secret_birthday_for_user(event, "target") is True  # type: ignore[arg-type]
 
     def test_secret_birthday_visible_to_others(self):
         event = SimpleNamespace(
             event_type=EventType.BIRTHDAY.value,
             birthday_detail=SimpleNamespace(is_secret=True, birthday_person_id="target"),
         )
-        assert is_secret_birthday_for_user(event, "other-user") is False
+        assert is_secret_birthday_for_user(event, "other-user") is False  # type: ignore[arg-type]
 
     def test_super_admin_bypasses_secret_filter(self):
         event = SimpleNamespace(
             event_type=EventType.BIRTHDAY.value,
             birthday_detail=SimpleNamespace(is_secret=True, birthday_person_id="target"),
         )
-        assert is_secret_birthday_for_user(event, "target", is_super_admin=True) is False
+        assert is_secret_birthday_for_user(event, "target", is_super_admin=True) is False  # type: ignore[arg-type]

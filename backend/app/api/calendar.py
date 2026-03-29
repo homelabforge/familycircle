@@ -85,7 +85,7 @@ async def get_feed_url(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Get the calendar feed URL for the current family."""
-    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
+    result = await db.execute(select(Family).where(Family.id == user.active_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
@@ -107,13 +107,13 @@ async def regenerate_feed_token(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Regenerate the calendar feed token. Admin only. Old URL stops working."""
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id or "")
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id or "")
     if not is_admin:
         raise HTTPException(
             status_code=403, detail="Only family admins can regenerate the feed token"
         )
 
-    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
+    result = await db.execute(select(Family).where(Family.id == user.active_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")

@@ -93,10 +93,10 @@ async def get_settings(
 
     # Get family settings if user has a current family
     family_settings = {}
-    if user.current_family_id:
+    if user.active_family_id:
         family_settings = {
             "theme_color": (
-                await get_family_setting(db, user.current_family_id, "theme_color") or "teal"
+                await get_family_setting(db, user.active_family_id, "theme_color") or "teal"
             ),
         }
 
@@ -198,12 +198,12 @@ async def update_family_settings(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Update family-specific settings (family admin only)."""
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id)
     if not is_admin:
         raise HTTPException(status_code=403, detail="Only family admins can change family settings")
 
     if request.theme_color:
-        await set_family_setting(db, user.current_family_id, "theme_color", request.theme_color)
+        await set_family_setting(db, user.active_family_id, "theme_color", request.theme_color)
 
     return {"message": "Family settings updated"}
 
@@ -214,11 +214,11 @@ async def get_family_code(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get the current family's join code (family admin only)."""
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id)
     if not is_admin:
         raise HTTPException(status_code=403, detail="Only family admins can view the family code")
 
-    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
+    result = await db.execute(select(Family).where(Family.id == user.active_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
@@ -232,13 +232,13 @@ async def regenerate_family_code(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Regenerate the family join code (family admin only)."""
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id)
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id)
     if not is_admin:
         raise HTTPException(
             status_code=403, detail="Only family admins can regenerate the family code"
         )
 
-    result = await db.execute(select(Family).where(Family.id == user.current_family_id))
+    result = await db.execute(select(Family).where(Family.id == user.active_family_id))
     family = result.scalar_one_or_none()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")

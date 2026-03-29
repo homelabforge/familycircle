@@ -612,9 +612,11 @@ async def initial_setup(
     # Expire user to clear cached relationships, then re-fetch with all relationships
     user_id = str(user.id)
     session.expire(user)
-    user = await get_user_by_id_with_families(session, user_id)
+    refreshed = await get_user_by_id_with_families(session, user_id)
+    if not refreshed:
+        raise RuntimeError(f"User {user_id} disappeared after setup")
 
-    return user, family, session_token
+    return refreshed, family, session_token
 
 
 # ============ Helpers for API responses ============

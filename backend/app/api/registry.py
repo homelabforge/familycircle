@@ -276,7 +276,7 @@ async def mark_purchased(
     item.purchased_at = datetime.now(UTC)
     await db.flush()
 
-    claimed_name = await _get_display_name(db, user.id, user.current_family_id or "")
+    claimed_name = await _get_display_name(db, user.id, user.active_family_id or "")
     return _item_to_dict(item, claimed_name)
 
 

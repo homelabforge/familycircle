@@ -25,7 +25,7 @@ async def list_templates(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List available poll templates (built-in + family custom)."""
-    family_id = user.current_family_id
+    family_id = user.active_family_id
 
     result = await db.execute(
         select(PollTemplate)
@@ -49,7 +49,7 @@ async def create_template(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Create a custom poll template for the current family."""
-    family_id = user.current_family_id or ""
+    family_id = user.active_family_id or ""
 
     # Only admins can create templates
     is_admin = await permissions.is_family_admin(db, user, family_id)
@@ -86,10 +86,10 @@ async def delete_template(
     if template.is_builtin:
         raise HTTPException(status_code=400, detail="Cannot delete built-in templates")
 
-    if template.family_id != user.current_family_id:
+    if template.family_id != user.active_family_id:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    is_admin = await permissions.is_family_admin(db, user, user.current_family_id or "")
+    is_admin = await permissions.is_family_admin(db, user, user.active_family_id or "")
     if not is_admin:
         raise HTTPException(status_code=403, detail="Only family admins can delete poll templates")
 

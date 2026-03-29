@@ -138,7 +138,7 @@ async def require_family_admin(
     if user.is_super_admin:
         return user
 
-    membership = await auth_service.get_user_membership(db, user.id, user.current_family_id)
+    membership = await auth_service.get_user_membership(db, user.id, user.active_family_id)
     if not membership or membership.role != FamilyRole.ADMIN:
         raise HTTPException(
             status_code=403,
@@ -198,8 +198,10 @@ async def get_current_user_info(
 
     H2: This endpoint needs family-loaded user for build_user_response().
     """
-    user = await auth_service.get_user_by_id_with_families(db, user.id)
-    return build_user_response(user)
+    refreshed = await auth_service.get_user_by_id_with_families(db, user.id)
+    if not refreshed:
+        raise HTTPException(status_code=404, detail="User not found")
+    return build_user_response(refreshed)
 
 
 @router.post("/login")
@@ -213,7 +215,7 @@ async def login(
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    _set_session_cookie(response, session_token)
+    _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-not-user above
     return {
         "session_token": session_token,
         "user": build_user_response(user),
@@ -249,11 +251,11 @@ async def register(
         family_name=request.family_code,
     )
 
-    _set_session_cookie(response, session_token)
+    _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-error above
     return {
         "message": "Welcome to the family!",
         "session_token": session_token,
-        "user": build_user_response(user),
+        "user": build_user_response(user),  # type: ignore[arg-type]  # guarded by if-error above
     }
 
 
@@ -291,11 +293,13 @@ async def switch_family(
         )
 
     # Re-fetch with families for build_user_response
-    user = await auth_service.get_user_by_id_with_families(db, user.id)
+    refreshed = await auth_service.get_user_by_id_with_families(db, user.id)
+    if not refreshed:
+        raise HTTPException(status_code=404, detail="User not found")
 
     return {
         "message": f"Switched to {membership.family.name}",
-        "user": build_user_response(user),
+        "user": build_user_response(refreshed),
     }
 
 
@@ -354,7 +358,7 @@ async def reset_password(
             detail="Invalid or expired reset link",
         )
 
-    _set_session_cookie(response, session_token)
+    _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-not-user above
     return {
         "message": "Password reset successfully",
         "session_token": session_token,
@@ -395,7 +399,7 @@ async def admin_reset_password(
     # If not super admin, verify target is in same family
     if not admin.is_super_admin:
         target_membership = await auth_service.get_user_membership(
-            db, target_user.id, admin.current_family_id
+            db, target_user.id, admin.active_family_id
         )
         if not target_membership:
             raise HTTPException(
@@ -572,7 +576,7 @@ async def get_family_code(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get family code for current family (admins only)."""
-    family = await auth_service.get_family_by_id(db, user.current_family_id)
+    family = await auth_service.get_family_by_id(db, user.active_family_id)
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
 
@@ -585,7 +589,7 @@ async def regenerate_family_code(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Regenerate family code (admins only)."""
-    family = await auth_service.get_family_by_id(db, user.current_family_id)
+    family = await auth_service.get_family_by_id(db, user.active_family_id)
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
 

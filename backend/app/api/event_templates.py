@@ -37,7 +37,7 @@ async def list_templates(
     db: AsyncSession = Depends(get_db_session),
 ):
     """List event templates for the current family."""
-    family_id = user.current_family_id or ""
+    family_id = user.active_family_id or ""
 
     result = await db.execute(
         select(EventTemplate)
@@ -56,7 +56,7 @@ async def create_template(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Create a new event template. Requires family admin."""
-    family_id = user.current_family_id or ""
+    family_id = user.active_family_id or ""
     is_admin = await permissions.is_family_admin(db, user, family_id)
     if not is_admin:
         raise HTTPException(
@@ -84,7 +84,7 @@ async def delete_template(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Delete an event template. Requires family admin."""
-    family_id = user.current_family_id or ""
+    family_id = user.active_family_id or ""
 
     result = await db.execute(
         select(EventTemplate).where(

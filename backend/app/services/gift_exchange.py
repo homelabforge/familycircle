@@ -32,7 +32,7 @@ async def get_participants(
         .where(FamilyMembership.family_id == family_id)
         .order_by(FamilyMembership.display_name)
     )
-    return list(result.all())
+    return list(result.all())  # type: ignore[return-value]  # Row is tuple-compatible
 
 
 async def get_exclusions(session: AsyncSession, event_id: str) -> list[GiftExchangeExclusion]:

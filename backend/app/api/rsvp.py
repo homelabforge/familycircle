@@ -138,7 +138,7 @@ async def rsvp_to_event(
     await db.commit()
 
     # Fire notification in background
-    member_name = await _get_member_display_name(db, user.id, user.current_family_id or "")
+    member_name = await _get_member_display_name(db, user.id, user.active_family_id or "")
     background_tasks.add_task(
         send_notification_background,
         "notify_rsvp_received",
