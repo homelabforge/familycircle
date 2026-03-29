@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -172,6 +172,79 @@ async def get_family_by_id(session: AsyncSession, family_id: str) -> Family | No
     """Get family by ID."""
     result = await session.execute(select(Family).where(Family.id == family_id))
     return result.scalar_one_or_none()
+
+
+async def get_users_with_single_membership(session: AsyncSession, family_id: str) -> list[str]:
+    """Return emails of users whose ONLY family membership is in the given family.
+
+    Two-step query: find users with exactly one membership globally,
+    then intersect with users who are members of the target family.
+    """
+    # Subquery: user_ids with exactly one membership across all families
+    single_membership_subq = (
+        select(FamilyMembership.user_id)
+        .group_by(FamilyMembership.user_id)
+        .having(func.count() == 1)
+        .subquery()
+    )
+
+    # Users in the target family who appear in the single-membership set
+    stmt = (
+        select(User.email)
+        .join(FamilyMembership, User.id == FamilyMembership.user_id)
+        .where(
+            FamilyMembership.family_id == family_id,
+            FamilyMembership.user_id.in_(select(single_membership_subq.c.user_id)),
+        )
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def delete_family(session: AsyncSession, family_id: str) -> tuple[str, list[str] | None]:
+    """Delete a family by ID.
+
+    Returns (family_name, orphaned_emails_or_none).
+    - If orphaned users exist, returns (name, [emails]) without deleting.
+    - If no orphans, deletes the family and returns (name, None).
+
+    Raises ValueError if family not found.
+    Does not commit — caller or request-level session manager handles commit.
+    """
+    family = await get_family_by_id(session, family_id)
+    if not family:
+        raise ValueError("Family not found")
+
+    # Check for users who would be orphaned
+    orphaned_emails = await get_users_with_single_membership(session, family_id)
+    if orphaned_emails:
+        return family.name, orphaned_emails
+
+    # Auto-switch users whose active family is being deleted to their
+    # first remaining family (avoids leaving them in a null-context limbo
+    # where the UI has no family selector visible).
+    affected_users_result = await session.execute(
+        select(User).where(User.current_family_id == family_id)
+    )
+    for user in affected_users_result.scalars().all():
+        # Find their first membership that ISN'T in the family being deleted
+        alt_result = await session.execute(
+            select(FamilyMembership.family_id)
+            .where(
+                FamilyMembership.user_id == user.id,
+                FamilyMembership.family_id != family_id,
+            )
+            .limit(1)
+        )
+        alt_family_id = alt_result.scalar_one_or_none()
+        user.current_family_id = (
+            alt_family_id  # None if no other families (shouldn't happen — orphan guard)
+        )
+
+    # Safe to delete — cascades handle memberships, events, visibility
+    await session.delete(family)
+    await session.flush()
+    return family.name, None
 
 
 async def get_user_membership(

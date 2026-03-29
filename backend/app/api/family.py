@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, EmailStr
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import require_family_admin, require_family_context
@@ -292,6 +292,18 @@ async def remove_member(
                 status_code=400,
                 detail="Cannot remove the last admin from a family",
             )
+
+    # Check if this is the user's only family membership
+    membership_count_result = await db.execute(
+        select(func.count())
+        .select_from(FamilyMembership)
+        .where(FamilyMembership.user_id == user_id)
+    )
+    if membership_count_result.scalar() == 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove a user's last family membership. Delete their account instead.",
+        )
 
     display_name = membership.display_name
 

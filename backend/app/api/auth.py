@@ -3,15 +3,20 @@
 import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import SESSION_COOKIE_MAX_AGE_SECONDS
 from app.db import get_db_session
-from app.models import FamilyRole, User
+from app.models import Family, FamilyMembership, FamilyRole, User
 from app.schemas.auth import (
+    AdminFamilyListResponse,
     AdminResetPasswordRequest,
     ChangePasswordRequest,
+    DeleteFamilyErrorResponse,
+    DeleteFamilyResponse,
     ForgotPasswordRequest,
     LoginRequest,
     RegisterRequest,
@@ -489,30 +494,73 @@ async def create_family(
     }
 
 
-@router.get("/families")
+@router.get("/families", response_model=AdminFamilyListResponse)
 async def list_families(
     admin: User = Depends(require_super_admin),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """List all families (super admin only)."""
-    from sqlalchemy import select
-
-    from app.models import Family
-
-    result = await db.execute(select(Family).order_by(Family.name))
-    families = result.scalars().all()
+    """List all families with member counts (super admin only)."""
+    stmt = (
+        select(
+            Family.id,
+            Family.name,
+            Family.family_code,
+            Family.created_at,
+            func.count(FamilyMembership.id).label("member_count"),
+        )
+        .outerjoin(FamilyMembership, Family.id == FamilyMembership.family_id)
+        .group_by(Family.id, Family.name, Family.family_code, Family.created_at)
+        .order_by(Family.name)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
 
     return {
         "families": [
             {
-                "id": f.id,
-                "name": f.name,
-                "family_code": f.family_code,
-                "created_at": f.created_at.isoformat(),
+                "id": row.id,
+                "name": row.name,
+                "family_code": row.family_code,
+                "member_count": row.member_count,
+                "created_at": row.created_at.isoformat(),
             }
-            for f in families
+            for row in rows
         ]
     }
+
+
+@router.delete(
+    "/families/{family_id}",
+    response_model=DeleteFamilyResponse,
+    responses={409: {"model": DeleteFamilyErrorResponse}},
+)
+async def delete_family(
+    family_id: str,
+    admin: User = Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Delete a family and all associated data (super admin only).
+
+    Returns 409 if any users would be orphaned (left with no family).
+    """
+    try:
+        family_name, orphaned_emails = await auth_service.delete_family(db, family_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Family not found")
+
+    if orphaned_emails is not None:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": (
+                    f"Cannot delete '{family_name}': {len(orphaned_emails)} user(s) "
+                    f"belong only to this family and would be orphaned."
+                ),
+                "orphaned_users": orphaned_emails,
+            },
+        )
+
+    return {"message": f"Family '{family_name}' deleted successfully"}
 
 
 # ============ Family Code (for family admins) ============

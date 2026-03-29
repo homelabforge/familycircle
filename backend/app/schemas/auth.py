@@ -89,6 +89,37 @@ class SetupRequest(BaseModel):
     family_name: str
 
 
+class AdminFamilyInfo(BaseModel):
+    """Family info for super admin listing (includes member count, no role)."""
+
+    id: str
+    name: str
+    family_code: str
+    member_count: int
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminFamilyListResponse(BaseModel):
+    """Response for GET /api/auth/families."""
+
+    families: list[AdminFamilyInfo]
+
+
+class DeleteFamilyResponse(BaseModel):
+    """Response for successful family deletion."""
+
+    message: str
+
+
+class DeleteFamilyErrorResponse(BaseModel):
+    """409 response when deletion would orphan users. Returned via JSONResponse."""
+
+    detail: str
+    orphaned_users: list[str]
+
+
 class CreateFamilyRequest(BaseModel):
     """Create a new family (super admin only)."""
 

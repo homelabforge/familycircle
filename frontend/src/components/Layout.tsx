@@ -102,6 +102,14 @@ function FamilySelector() {
     }
   }
 
+  // If no active family but user has families, auto-switch to the first one.
+  // This handles edge cases like family deletion where the backend couldn't auto-switch.
+  useEffect(() => {
+    if (!currentFamily && families.length > 0 && !switching) {
+      handleSwitch(families[0].id)
+    }
+  }, [currentFamily, families]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!currentFamily) return null
 
   const hasMultipleFamilies = families.length > 1

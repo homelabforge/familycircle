@@ -18,6 +18,7 @@ interface AuthContextType {
   setup: (email: string, password: string, displayName: string, familyName: string) => Promise<{ familyCode: string }>
   switchFamily: (familyId: string) => Promise<void>
   createFamily: (familyName: string, displayName: string) => Promise<{ familyCode: string }>
+  deleteFamily: (familyId: string) => Promise<void>
   forgotPassword: (email: string) => Promise<string | undefined>
   resetPassword: (token: string, newPassword: string) => Promise<void>
   logout: () => Promise<void>
@@ -106,6 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { familyCode: response.family.family_code }
   }
 
+  const deleteFamily = async (familyId: string) => {
+    await authApi.deleteFamily(familyId)
+    queryClient.clear() // Family-scoped data may reference deleted family
+    await checkAuth()   // Re-fetch /me for updated families list
+  }
+
   const forgotPassword = async (email: string): Promise<string | undefined> => {
     const response = await authApi.forgotPassword(email)
     return response.dev_token
@@ -164,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setup,
         switchFamily,
         createFamily,
+        deleteFamily,
         forgotPassword,
         resetPassword,
         logout,

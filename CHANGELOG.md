@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **oven/bun**: 1.3.10-alpine → 1.3.11-alpine
 
 ### Added
+- Delete family (super admin only) with orphan-guard safety check
+- Manage Families modal in Admin panel showing all families with member counts
+- Auto-switch users to their next family when their active family is deleted
+
+### Fixed
+- Removing a user's last family membership no longer orphans them (400 guard added)
+
+### Added
 - Event detail handler registry for pluggable event types
 - Token table with multi-session support (dual-write migration)
 - Typed SettingsService (SmtpConfig, AppConfig, NotificationRetryConfig)

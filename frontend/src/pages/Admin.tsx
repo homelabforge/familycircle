@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Wrench, Users, Settings, Plus, Mail } from 'lucide-react'
+import { Wrench, Users, Settings, Plus, Mail, List } from 'lucide-react'
 import BackButton from '@/components/BackButton'
 import NewFamilyModal from '@/components/NewFamilyModal'
 import EmailSettingsModal from '@/components/EmailSettingsModal'
 import FamilyMembersModal from '@/components/FamilyMembersModal'
+import ManageFamiliesModal from '@/components/ManageFamiliesModal'
 import AppSettingsModal from '@/components/AppSettingsModal'
 import { useBigMode } from '@/contexts/BigModeContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,6 +18,7 @@ export default function Admin() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showFamilyModal, setShowFamilyModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showManageFamiliesModal, setShowManageFamiliesModal] = useState(false)
 
   const adminCards = [
     {
@@ -140,6 +142,32 @@ export default function Admin() {
                 </span>
               </button>
               <button
+                onClick={() => setShowManageFamiliesModal(true)}
+                className={`
+                  flex flex-col items-center justify-center gap-2
+                  bg-fc-surface border border-fc-border rounded-2xl
+                  hover:border-primary/50 hover:bg-fc-surface/80
+                  transition-all cursor-pointer text-center
+                  ${bigMode ? 'p-6' : 'p-4'}
+                `}
+              >
+                <div
+                  className={`
+                    flex items-center justify-center rounded-xl
+                    bg-primary/10
+                    ${bigMode ? 'w-14 h-14' : 'w-12 h-12'}
+                  `}
+                >
+                  <List className={`text-primary ${bigMode ? 'w-7 h-7' : 'w-6 h-6'}`} />
+                </div>
+                <span className={`font-medium text-fc-text ${bigMode ? 'text-lg' : ''}`}>
+                  Manage Families
+                </span>
+                <span className={`text-fc-text-muted ${bigMode ? 'text-base' : 'text-sm'}`}>
+                  View and delete families
+                </span>
+              </button>
+              <button
                 onClick={() => setShowNewFamilyModal(true)}
                 className={`
                   flex flex-col items-center justify-center gap-2
@@ -182,6 +210,10 @@ export default function Admin() {
       <NewFamilyModal
         isOpen={showNewFamilyModal}
         onClose={() => setShowNewFamilyModal(false)}
+      />
+      <ManageFamiliesModal
+        isOpen={showManageFamiliesModal}
+        onClose={() => setShowManageFamiliesModal(false)}
       />
       <EmailSettingsModal
         isOpen={showEmailModal}
