@@ -26,7 +26,11 @@ PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 _raw_cidrs = os.getenv("TRUSTED_PROXY_CIDRS", "")
 TRUSTED_PROXY_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
 for _cidr in (s.strip() for s in _raw_cidrs.split(",") if s.strip()):
-    TRUSTED_PROXY_NETWORKS.append(ipaddress.ip_network(_cidr, strict=False))
+    try:
+        TRUSTED_PROXY_NETWORKS.append(ipaddress.ip_network(_cidr, strict=False))
+    except ValueError:
+        logger.critical("Invalid CIDR in TRUSTED_PROXY_CIDRS: '%s'", _cidr)
+        raise SystemExit(1)
 
 # Ensure data directory exists
 DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -35,10 +39,12 @@ DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
 def validate_production_config() -> None:
     """Validate configuration required in production. Call at startup."""
     if not IS_DEBUG and not PUBLIC_BASE_URL:
-        raise RuntimeError(
-            "PUBLIC_BASE_URL must be set in production (e.g., 'https://familycircle.example.com'). "
+        logger.critical(
+            "PUBLIC_BASE_URL must be set in production "
+            "(e.g., 'https://familycircle.example.com'). "
             "Set DEBUG=true to use request-derived URLs in development."
         )
+        raise SystemExit(1)
 
 
 def get_base_url(request: Request) -> str:
