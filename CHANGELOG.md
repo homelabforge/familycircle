@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Gate password reset dev_token behind DEBUG mode
+- Cookie-only auth — remove session tokens from JSON responses
+- Authenticated photo serving — replace public /uploads with authorized endpoint
+- Rate limiting on login, register, and forgot-password endpoints
+- Require `PUBLIC_BASE_URL` in production (startup-validated)
+- Reduce default magic link expiry from 90 days to 1 day
+- Path traversal protection in file deletion
+- Use `secrets` module for family code generation
+- Notification dispatch method allowlist
+
+### Added
+- `slowapi` rate limiting with proxy-aware `TRUSTED_PROXY_CIDRS` support
+- `PUBLIC_BASE_URL` env var for canonical email link generation
+
+### Dev Dependencies
+- **eslint**: 10.1.0 → 10.2.0
+- **pytest-cov**: 7.0.0 → 7.1.0
+- **ruff**: 0.15.8 → 0.15.9
+- **typescript-eslint**: 8.57.2 → 8.58.0
+
+### App Dependencies
+- **@tanstack/react-query**: 5.95.2 → 5.96.2
+- **fastapi**: 0.135.2 → 0.135.3
+- **react-hook-form**: 7.72.0 → 7.72.1
+- **react-router-dom**: 7.13.2 → 7.14.0
+
 ## [3.1.0] - 2026-03-28
 
 ### Dev Dependencies
