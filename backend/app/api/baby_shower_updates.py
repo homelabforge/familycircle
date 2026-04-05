@@ -13,6 +13,7 @@ from app.db import get_db_session
 from app.models import Event, FamilyMembership, User
 from app.models.baby_shower_update import BabyShowerUpdate
 from app.schemas.baby_shower_update import BabyShowerUpdateCreate
+from app.services.file_storage import get_photo_url
 from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 
@@ -43,7 +44,9 @@ def _update_to_dict(update: BabyShowerUpdate, poster_name: str) -> dict:
         "title": update.title,
         "notes": update.notes,
         "photo_id": str(update.photo_id) if update.photo_id else None,
-        "photo_url": f"/uploads/{update.photo.file_path}" if update.photo else None,
+        "photo_url": get_photo_url(str(update.event_id), str(update.photo_id))
+        if update.photo
+        else None,
         "posted_by_id": str(update.posted_by_id) if update.posted_by_id else None,
         "posted_by_name": poster_name,
         "created_at": update.created_at.isoformat() if update.created_at else None,

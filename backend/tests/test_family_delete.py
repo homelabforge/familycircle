@@ -212,7 +212,7 @@ async def seed(session_factory):
                 ru_token_obj,
                 Setting(key="secret_key", value=secrets.token_hex(32), family_id=None),
                 Setting(key="app_name", value="FamilyCircle", family_id=None),
-                Setting(key="magic_link_expiry_days", value="90", family_id=None),
+                Setting(key="magic_link_expiry_days", value="1", family_id=None),
             ]
         )
         await db.commit()

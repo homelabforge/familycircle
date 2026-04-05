@@ -8,13 +8,16 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_base_url
 from app.constants import SESSION_COOKIE_MAX_AGE_SECONDS
 from app.db import get_db_session
 from app.models import Family, FamilyMembership, FamilyRole, User
+from app.rate_limit import limiter
 from app.schemas.auth import (
     AdminFamilyListResponse,
     AdminResetPasswordRequest,
     ChangePasswordRequest,
+    CreateFamilyRequest,
     DeleteFamilyErrorResponse,
     DeleteFamilyResponse,
     ForgotPasswordRequest,
@@ -205,26 +208,29 @@ async def get_current_user_info(
 
 
 @router.post("/login")
+@limiter.limit("10/minute")
 async def login(
-    request: LoginRequest,
+    request: Request,
+    body: LoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Login with email and password."""
-    user, session_token = await auth_service.verify_password(db, request.email, request.password)
+    user, session_token = await auth_service.verify_password(db, body.email, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-not-user above
     return {
-        "session_token": session_token,
         "user": build_user_response(user),
     }
 
 
 @router.post("/register")
+@limiter.limit("5/minute")
 async def register(
-    request: RegisterRequest,
+    request: Request,
+    body: RegisterRequest,
     response: Response,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
@@ -232,10 +238,10 @@ async def register(
     """Register with a family code."""
     user, error, session_token = await auth_service.register_with_family_code(
         db,
-        request.family_code,
-        request.email,
-        request.password,
-        request.display_name,
+        body.family_code,
+        body.email,
+        body.password,
+        body.display_name,
     )
 
     if error:
@@ -247,14 +253,13 @@ async def register(
     background_tasks.add_task(
         send_notification_background,
         "notify_family_member_joined",
-        member_name=request.display_name,
-        family_name=request.family_code,
+        member_name=body.display_name,
+        family_name=body.family_code,
     )
 
     _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-error above
     return {
         "message": "Welcome to the family!",
-        "session_token": session_token,
         "user": build_user_response(user),  # type: ignore[arg-type]  # guarded by if-error above
     }
 
@@ -307,22 +312,23 @@ async def switch_family(
 
 
 @router.post("/forgot-password")
+@limiter.limit("3/minute")
 async def forgot_password(
-    request: ForgotPasswordRequest,
-    req: Request,
+    request: Request,
+    body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Request password reset email."""
-    token = await auth_service.create_magic_link(db, request.email)
+    result = await auth_service.create_magic_link(db, body.email)
 
     # Always return success to prevent email enumeration
     response = {
-        "message": f"If an account exists for {request.email}, a password reset link has been sent.",
+        "message": f"If an account exists for {body.email}, a password reset link has been sent.",
     }
 
-    if token:
-        # Get base URL from request
-        base_url = str(req.base_url).rstrip("/")
+    if result:
+        token, expiry_days = result
+        base_url = get_base_url(request)
 
         # Check if SMTP is configured
         smtp_config = await get_smtp_config(db)
@@ -331,12 +337,13 @@ async def forgot_password(
             # Send actual email
             await send_password_reset_email(
                 db=db,
-                to_email=request.email,
+                to_email=body.email,
                 reset_token=token,
                 base_url=base_url,
+                expiry_days=expiry_days,
             )
-        else:
-            # Development mode - return token directly
+        elif not _IS_PRODUCTION:
+            # Development mode only - return token directly
             response["dev_token"] = token
 
     return response
@@ -361,7 +368,6 @@ async def reset_password(
     _set_session_cookie(response, session_token)  # type: ignore[arg-type]  # guarded by if-not-user above
     return {
         "message": "Password reset successfully",
-        "session_token": session_token,
         "user": build_user_response(user),
     }
 
@@ -453,7 +459,6 @@ async def initial_setup(
     _set_session_cookie(response, session_token)
     return {
         "message": "Setup complete! Welcome to FamilyCircle.",
-        "session_token": session_token,
         "user": build_user_response(user),
         "family": {
             "id": family.id,
@@ -468,7 +473,7 @@ async def initial_setup(
 
 @router.post("/families")
 async def create_family(
-    request: dict,
+    request: CreateFamilyRequest,
     admin: User = Depends(require_super_admin),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -476,20 +481,14 @@ async def create_family(
 
     The creating user is automatically added as admin of the new family.
     """
-    name = request.get("name")
-    if not name:
-        raise HTTPException(status_code=400, detail="Family name is required")
-
-    display_name = request.get("display_name", "Admin")
-
     # Create the family
-    family = await auth_service.create_family(db, name)
+    family = await auth_service.create_family(db, request.name)
 
     # Add the creator as admin of the new family
-    await auth_service.add_user_to_family(db, admin, family, display_name, FamilyRole.ADMIN)
+    await auth_service.add_user_to_family(db, admin, family, request.display_name, FamilyRole.ADMIN)
 
     return {
-        "message": f"Family '{name}' created successfully",
+        "message": f"Family '{request.name}' created successfully",
         "family": {
             "id": family.id,
             "name": family.name,
@@ -611,13 +610,14 @@ async def regenerate_family_code(
 
 # Keep old endpoint for magic link (now used for password recovery)
 @router.post("/magic-link")
+@limiter.limit("3/minute")
 async def send_magic_link(
-    request: ForgotPasswordRequest,
-    req: Request,
+    request: Request,
+    body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Send a magic link for password recovery (backwards compat)."""
-    return await forgot_password(request, req, db)
+    return await forgot_password(request=request, body=body, db=db)
 
 
 # Alias for backwards compatibility

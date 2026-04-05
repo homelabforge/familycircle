@@ -23,7 +23,7 @@ export default function AppSettingsModal({ isOpen, onClose }: AppSettingsModalPr
   // Form state
   const [appName, setAppName] = useState('')
   const [themeColor, setThemeColor] = useState('#4f46e5')
-  const [magicLinkExpiry, setMagicLinkExpiry] = useState('90')
+  const [magicLinkExpiry, setMagicLinkExpiry] = useState('1')
   const [cancelledEventRetention, setCancelledEventRetention] = useState('7')
 
   useEffect(() => {
@@ -294,7 +294,7 @@ export default function AppSettingsModal({ isOpen, onClose }: AppSettingsModalPr
                       value={magicLinkExpiry}
                       onChange={(e) => setMagicLinkExpiry(e.target.value)}
                       min="1"
-                      max="365"
+                      max="30"
                       className={`
                         w-full bg-fc-surface border border-fc-border rounded-lg
                         text-fc-text placeholder:text-fc-text-muted
@@ -303,7 +303,7 @@ export default function AppSettingsModal({ isOpen, onClose }: AppSettingsModalPr
                       `}
                     />
                     <p className={`text-fc-text-muted mt-1 ${bigMode ? 'text-xs' : 'text-xs'}`}>
-                      Default: 90 days. Longer expiry is more convenient for elderly users.
+                      Default: 1 day. Maximum 30 days.
                     </p>
                   </div>
                 </div>

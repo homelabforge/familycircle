@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { authApi, User, FamilyInfo, setToken, clearToken } from '@/lib/api'
+import { authApi, User, FamilyInfo, clearToken } from '@/lib/api'
 import { ROLE_POLL_INTERVAL_MS } from '@/lib/constants'
 
 interface AuthContextType {
@@ -69,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setup = async (email: string, password: string, displayName: string, familyName: string) => {
     const response = await authApi.setup({ email, password, display_name: displayName, family_name: familyName })
-    setToken(response.session_token)
     setUser(response.user)
     setNeedsSetup(false)
     return { familyCode: response.family.family_code }
@@ -77,7 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({ email, password })
-    setToken(response.session_token)
     setUser(response.user)
     queryClient.clear() // New user context — all cached data is wrong
   }
@@ -89,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       display_name: displayName,
     })
-    setToken(response.session_token)
     setUser(response.user)
     queryClient.clear() // New user context
   }
@@ -120,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (token: string, newPassword: string) => {
     const response = await authApi.resetPassword(token, newPassword)
-    setToken(response.session_token)
     setUser(response.user)
     queryClient.clear() // Security: new session, clear everything
   }

@@ -22,5 +22,5 @@ DEFAULT_CANCELLED_EVENT_RETENTION_DAYS = 7
 DEFAULT_EVENT_REMINDER_DAYS = 3
 """Days before an event to send reminders."""
 
-DEFAULT_MAGIC_LINK_EXPIRY_DAYS = 90
+DEFAULT_MAGIC_LINK_EXPIRY_DAYS = 1
 """Days before a magic link token expires."""

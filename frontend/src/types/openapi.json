@@ -331,6 +331,25 @@
         "title": "CommentReactionToggle",
         "type": "object"
       },
+      "CreateFamilyRequest": {
+        "description": "Create a new family (super admin only).",
+        "properties": {
+          "display_name": {
+            "default": "Admin",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateFamilyRequest",
+        "type": "object"
+      },
       "DeleteFamilyErrorResponse": {
         "description": "409 response when deletion would orphan users. Returned via JSONResponse.",
         "properties": {
@@ -989,6 +1008,7 @@
             "type": "string"
           },
           "password": {
+            "minLength": 1,
             "title": "Password",
             "type": "string"
           }
@@ -2849,9 +2869,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "additionalProperties": true,
-                "title": "Request",
-                "type": "object"
+                "$ref": "#/components/schemas/CreateFamilyRequest"
               }
             }
           },
@@ -3688,6 +3706,8 @@
             "required": false,
             "schema": {
               "default": 5,
+              "maximum": 100,
+              "minimum": 1,
               "title": "Limit",
               "type": "integer"
             }
@@ -4765,6 +4785,61 @@
           }
         ],
         "summary": "Delete Photo",
+        "tags": [
+          "event-photos"
+        ]
+      }
+    },
+    "/api/events/{event_id}/photos/{photo_id}/file": {
+      "get": {
+        "description": "Serve a photo file with authentication and family authorization.",
+        "operationId": "download_photo_api_events__event_id__photos__photo_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "photo_id",
+            "required": true,
+            "schema": {
+              "title": "Photo Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Download Photo",
         "tags": [
           "event-photos"
         ]

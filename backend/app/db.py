@@ -2,7 +2,6 @@
 
 import logging
 import secrets
-import traceback
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -74,8 +73,7 @@ async def init_db() -> None:
         migrations_dir = Path(__file__).parent / "migrations"
         run_migrations(database_url, migrations_dir)
     except Exception as e:
-        logger.error(f"Migration error: {e}")
-        traceback.print_exc()
+        logger.error("Migration error: %s", e, exc_info=True)
         # Don't fail startup - log error and continue
 
 
@@ -94,7 +92,7 @@ async def init_default_settings() -> None:
 
             # Default global settings
             session.add(Setting(key="app_name", value="FamilyCircle", family_id=None))
-            session.add(Setting(key="magic_link_expiry_days", value="90", family_id=None))
+            session.add(Setting(key="magic_link_expiry_days", value="1", family_id=None))
 
             await session.commit()
 

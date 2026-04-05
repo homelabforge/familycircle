@@ -18,6 +18,22 @@ from app.services.notifications.dispatcher import NotificationDispatcher
 logger = logging.getLogger(__name__)
 
 
+ALLOWED_METHODS: frozenset[str] = frozenset(
+    {
+        "notify_event_created",
+        "notify_event_updated",
+        "notify_event_cancelled",
+        "notify_event_reminder",
+        "notify_rsvp_received",
+        "notify_poll_created",
+        "notify_poll_closing_soon",
+        "notify_comment_added",
+        "notify_comment_mention",
+        "notify_family_member_joined",
+    }
+)
+
+
 async def send_notification_background(method_name: str, **kwargs) -> None:
     """Run notification dispatch with its own db session.
 
@@ -26,6 +42,10 @@ async def send_notification_background(method_name: str, **kwargs) -> None:
 
     NOT via bare asyncio.create_task() — that drops silently on shutdown.
     """
+    if method_name not in ALLOWED_METHODS:
+        logger.error("Invalid notification method: %s", method_name)
+        return
+
     async with async_session_maker() as db:
         try:
             dispatcher = NotificationDispatcher(db)

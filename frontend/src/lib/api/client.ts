@@ -1,30 +1,22 @@
 /**
- * API client core - request helper, token management
+ * API client core - request helper, token management.
+ *
+ * Auth is handled entirely via httpOnly cookies (set by backend).
+ * Token functions are kept as no-ops for API compatibility.
  */
 
 const API_BASE = '/api'
 
-// Token stored in memory (not localStorage for security, but we persist to sessionStorage for page refresh)
-let sessionToken: string | null = null
-
 export function getToken(): string | null {
-  if (!sessionToken) {
-    sessionToken = sessionStorage.getItem('fc_session')
-  }
-  return sessionToken
+  return null
 }
 
-export function setToken(token: string | null) {
-  sessionToken = token
-  if (token) {
-    sessionStorage.setItem('fc_session', token)
-  } else {
-    sessionStorage.removeItem('fc_session')
-  }
+export function setToken(_token: string | null) {
+  // No-op: auth is handled via httpOnly cookies
 }
 
 export function clearToken() {
-  setToken(null)
+  // No-op: cookie is cleared by backend on logout
 }
 
 async function request<T>(

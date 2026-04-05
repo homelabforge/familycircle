@@ -7,9 +7,6 @@ Settings are scoped:
 User preferences are stored on the User model.
 """
 
-import random
-import string
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -18,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import get_current_user, get_optional_user, require_family_context
 from app.db import get_db_session
 from app.models import Family, Setting, User
+from app.services import auth as auth_service
 from app.services.permissions import permissions
 from app.services.settings_service import SettingsService
 
@@ -159,6 +157,14 @@ async def update_global_settings(
     if request.app_name:
         await set_global_setting(db, "app_name", request.app_name)
     if request.magic_link_expiry_days:
+        try:
+            days = int(request.magic_link_expiry_days)
+            if not 1 <= days <= 30:
+                raise ValueError
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail="magic_link_expiry_days must be between 1 and 30"
+            )
         await set_global_setting(db, "magic_link_expiry_days", request.magic_link_expiry_days)
     if request.cancelled_event_retention_days:
         await set_global_setting(
@@ -243,10 +249,11 @@ async def regenerate_family_code(
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
 
-    # Generate new code
-    new_code = (
-        "".join(random.choices(string.ascii_uppercase, k=6)) + "-" + str(random.randint(10, 99))
-    )
+    # Generate new unique code
+    new_code = auth_service.generate_family_code()
+    while await auth_service.get_family_by_code(db, new_code):
+        new_code = auth_service.generate_family_code()
+
     family.family_code = new_code
     await db.commit()
 

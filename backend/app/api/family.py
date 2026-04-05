@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import require_family_admin, require_family_context
+from app.config import get_base_url
 from app.db import get_db_session
 from app.models import FamilyMembership, FamilyRole, ProfileVisibility, User, UserProfile
 from app.services import auth as auth_service
@@ -224,8 +225,8 @@ async def invite_member(
         )
         inviter_name = admin_membership.display_name if admin_membership else "A family admin"
 
-        # Get base URL from request
-        base_url = str(req.base_url).rstrip("/")
+        # Get canonical base URL
+        base_url = get_base_url(req)
 
         # Check if SMTP is configured and send email
         smtp_config = await get_smtp_config(db)

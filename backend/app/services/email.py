@@ -202,10 +202,12 @@ async def send_password_reset_email(
     to_email: str,
     reset_token: str,
     base_url: str,
+    expiry_days: int = 1,
 ) -> bool:
     """Send password reset email with reset link."""
     app_name = await get_app_name(db)
     reset_url = f"{base_url}/login?reset={reset_token}"
+    expiry_text = f"{expiry_days} day{'s' if expiry_days != 1 else ''}"
 
     content = f"""
         <h2>Reset Your Password</h2>
@@ -216,7 +218,7 @@ async def send_password_reset_email(
         <p>Or copy and paste this link into your browser:</p>
         <p style="word-break: break-all; color: #6b7280; font-size: 14px;">{reset_url}</p>
         <div class="warning">
-            <strong>Security Note:</strong> This link will expire in 24 hours. If you didn't request a password reset, please ignore this email.
+            <strong>Security Note:</strong> This link will expire in {expiry_text}. If you didn't request a password reset, please ignore this email.
         </div>
     """
 
@@ -228,7 +230,7 @@ We received a request to reset your password.
 Click this link to create a new password:
 {reset_url}
 
-This link will expire in 24 hours. If you didn't request a password reset, please ignore this email.
+This link will expire in {expiry_text}. If you didn't request a password reset, please ignore this email.
 
 - {app_name}
 """

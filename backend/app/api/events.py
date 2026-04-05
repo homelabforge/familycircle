@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -222,7 +222,7 @@ async def list_events(
 
 @router.get("/upcoming")
 async def list_upcoming_events(
-    limit: int = 5,
+    limit: int = Query(5, ge=1, le=100),
     user: User = Depends(require_family_context),
     db: AsyncSession = Depends(get_db_session),
 ):

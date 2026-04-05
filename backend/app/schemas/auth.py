@@ -49,7 +49,7 @@ class LoginRequest(BaseModel):
     """Email + password login."""
 
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1)
 
 
 class RegisterRequest(BaseModel):
@@ -124,6 +124,7 @@ class CreateFamilyRequest(BaseModel):
     """Create a new family (super admin only)."""
 
     name: str
+    display_name: str = "Admin"
 
 
 class ChangePasswordRequest(BaseModel):

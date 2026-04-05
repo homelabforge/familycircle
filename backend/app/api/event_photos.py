@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,7 +17,8 @@ from app.schemas.event_photo import EventPhotoReorder
 from app.services.file_storage import (
     FileStorageError,
     delete_file,
-    get_upload_url,
+    get_photo_url,
+    resolve_upload_path,
     save_upload,
 )
 from app.services.permissions import permissions
@@ -48,7 +50,7 @@ def _photo_to_response(photo: EventPhoto, uploader_name: str) -> dict:
         "uploaded_by_id": str(photo.uploaded_by_id) if photo.uploaded_by_id else None,
         "uploaded_by_name": uploader_name,
         "filename": photo.filename,
-        "url": get_upload_url(photo.file_path),
+        "url": get_photo_url(str(photo.event_id), str(photo.id)),
         "file_size": photo.file_size,
         "mime_type": photo.mime_type,
         "caption": photo.caption,
@@ -213,3 +215,49 @@ async def reorder_photos(
 
     await db.flush()
     return {"message": "Photos reordered"}
+
+
+@router.get("/{event_id}/photos/{photo_id}/file")
+async def download_photo(
+    event_id: str,
+    photo_id: str,
+    user: User = Depends(require_family_context),
+    db: AsyncSession = Depends(get_db_session),
+) -> FileResponse:
+    """Serve a photo file with authentication and family authorization."""
+    # Verify event belongs to user's active family
+    event = await resolve_event_or_404(
+        db,
+        event_id,
+        user,
+        options=[selectinload(Event.birthday_detail)],
+    )
+
+    # Look up photo by both photo_id and event_id
+    result = await db.execute(
+        select(EventPhoto).where(
+            EventPhoto.id == photo_id,
+            EventPhoto.event_id == event_id,
+        )
+    )
+    photo = result.scalar_one_or_none()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    # Defense-in-depth: verify family_id matches
+    if str(photo.family_id) != str(event.family_id):
+        logger.warning(
+            "Photo family_id mismatch: photo=%s event=%s", photo.family_id, event.family_id
+        )
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    # Resolve path safely
+    file_path = resolve_upload_path(photo.file_path)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Photo file not found")
+
+    return FileResponse(
+        path=file_path,
+        media_type=photo.mime_type or "application/octet-stream",
+        filename=photo.filename,
+    )

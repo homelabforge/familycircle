@@ -801,6 +801,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{event_id}/photos/{photo_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Photo
+         * @description Serve a photo file with authentication and family authorization.
+         */
+        get: operations["download_photo_api_events__event_id__photos__photo_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{event_id}/registry": {
         parameters: {
             query?: never;
@@ -2099,6 +2119,19 @@ export interface components {
             emoji: string;
         };
         /**
+         * CreateFamilyRequest
+         * @description Create a new family (super admin only).
+         */
+        CreateFamilyRequest: {
+            /**
+             * Display Name
+             * @default Admin
+             */
+            display_name: string;
+            /** Name */
+            name: string;
+        };
+        /**
          * DeleteFamilyErrorResponse
          * @description 409 response when deletion would orphan users. Returned via JSONResponse.
          */
@@ -2951,9 +2984,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["CreateFamilyRequest"];
             };
         };
         responses: {
@@ -4267,6 +4298,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_photo_api_events__event_id__photos__photo_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {

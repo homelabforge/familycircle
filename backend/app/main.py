@@ -4,10 +4,12 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app import __version__
 from app.api import (
@@ -32,12 +34,18 @@ from app.api import (
     wishlist,
 )
 from app.db import init_db
+from app.rate_limit import limiter
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
+    # Validate production config before anything else
+    from app.config import validate_production_config
+
+    validate_production_config()
+
     # Startup
     await init_db()
 
@@ -77,6 +85,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."},
+    )
+
+
 # API routes
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -98,10 +119,9 @@ app.include_router(registry.router, prefix="/api/events", tags=["registry"])
 app.include_router(rsvp.router, prefix="/api/events", tags=["rsvp"])
 app.include_router(event_templates.router, prefix="/api/event-templates", tags=["event-templates"])
 
-# Serve uploaded files (photos)
+# Ensure upload directory exists (served via authenticated endpoint, not public static mount)
 UPLOAD_DIR = Path("/data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Serve static frontend files in production
 # In container: /app/app/main.py -> /app/static

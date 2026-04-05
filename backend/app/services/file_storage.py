@@ -109,7 +109,10 @@ async def save_upload(
 
 def delete_file(relative_path: str) -> bool:
     """Delete a file from disk. Returns True if deleted, False if not found."""
-    full_path = UPLOAD_ROOT / relative_path
+    full_path = (UPLOAD_ROOT / relative_path).resolve()
+    if not full_path.is_relative_to(UPLOAD_ROOT.resolve()):
+        logger.warning("Path traversal attempt blocked in delete_file: %s", relative_path)
+        return False
     if full_path.exists():
         full_path.unlink()
         logger.info("Deleted file: %s", relative_path)
@@ -118,6 +121,15 @@ def delete_file(relative_path: str) -> bool:
     return False
 
 
-def get_upload_url(relative_path: str) -> str:
-    """Convert a relative file path to a URL path."""
-    return f"/uploads/{relative_path}"
+def get_photo_url(event_id: str, photo_id: str) -> str:
+    """Build authenticated photo download URL."""
+    return f"/api/events/{event_id}/photos/{photo_id}/file"
+
+
+def resolve_upload_path(relative_path: str) -> Path | None:
+    """Resolve a relative upload path safely, returning None on traversal attempt."""
+    full_path = (UPLOAD_ROOT / relative_path).resolve()
+    if not full_path.is_relative_to(UPLOAD_ROOT.resolve()):
+        logger.warning("Path traversal attempt blocked: %s", relative_path)
+        return None
+    return full_path

@@ -46,7 +46,6 @@ export interface SetupStatus {
 }
 
 export interface AuthResponse {
-  session_token: string
   user: User
   message?: string
 }

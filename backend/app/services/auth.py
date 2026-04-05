@@ -1,6 +1,5 @@
 """Authentication service - user accounts, sessions, and family management."""
 
-import random
 import secrets
 import string
 from datetime import UTC, datetime, timedelta
@@ -28,8 +27,8 @@ ph = PasswordHasher()
 
 def generate_family_code() -> str:
     """Generate a unique family code."""
-    letters = "".join(random.choices(string.ascii_uppercase, k=6))
-    numbers = str(random.randint(10, 99))
+    letters = "".join(secrets.choice(string.ascii_uppercase) for _ in range(6))
+    numbers = str(secrets.randbelow(90) + 10)
     return f"{letters}-{numbers}"
 
 
@@ -355,11 +354,13 @@ async def change_password(
 # ============ Magic Link (Password Recovery) ============
 
 
-async def create_magic_link(session: AsyncSession, email: str) -> str | None:
+async def create_magic_link(session: AsyncSession, email: str) -> tuple[str, int] | None:
     """Create a magic link token for password recovery.
 
     One active magic_link per user — new request overwrites old.
     Writes to Token table only (legacy User column dual-write removed — M2).
+
+    Returns (token, expiry_days) tuple, or None if user not found.
     """
     user = await get_user_by_email(session, email)
     if not user:
@@ -389,7 +390,7 @@ async def create_magic_link(session: AsyncSession, email: str) -> str | None:
     )
 
     await session.flush()
-    return token_value
+    return token_value, expiry_days
 
 
 async def verify_magic_token_and_reset_password(

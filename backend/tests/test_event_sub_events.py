@@ -132,9 +132,9 @@ class TestMagicLinkArgWiring:
     async def test_forgot_password_non_existent_email_returns_safe_message(self, db: AsyncSession):
         """Non-existent email returns the safe 'if account exists' envelope."""
         req = _make_request()
-        request = ForgotPasswordRequest(email="nobody@example.com")
+        body = ForgotPasswordRequest(email="nobody@example.com")
 
-        result = await forgot_password(request, req, db)
+        result = await forgot_password(request=req, body=body, db=db)
         assert "message" in result
         assert "nobody@example.com" in result["message"]
 
@@ -154,11 +154,11 @@ class TestMagicLinkArgWiring:
         await db.commit()
 
         req = _make_request()
-        request = ForgotPasswordRequest(email="reset@example.com")
+        body = ForgotPasswordRequest(email="reset@example.com")
 
         # This would crash with AttributeError('AsyncSession has no attribute base_url')
         # if send_magic_link were still passing db as req
-        result = await forgot_password(request, req, db)
+        result = await forgot_password(request=req, body=body, db=db)
         assert "message" in result
-        # SMTP not configured in tests → dev_token returned alongside the message
-        assert "dev_token" in result
+        # SMTP not configured, but DEBUG is not set → dev_token must NOT be returned
+        assert "dev_token" not in result
