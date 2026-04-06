@@ -1,0 +1,18 @@
+extensions:
+  # Mark our sanitizer functions as barriers (sanitizers) for taint tracking
+  # This tells CodeQL that data passing through these functions is sanitized
+  #
+  # Path traversal: backend/app/services/file_storage.py
+  #
+  # All usages are documented and reviewed. New code MUST use these functions.
+  - addsTo:
+      pack: codeql/python-all
+      extensible: barrierModel
+    data:
+      # Path injection barriers — resolve_upload_path() resolves the path to
+      # absolute, then validates it stays within UPLOAD_ROOT via is_relative_to().
+      # Returns None on traversal attempt (callers treat None as 404).
+      - ["app.services.file_storage", "Member[resolve_upload_path].ReturnValue", "path-injection"]
+      # validate_mime_type() validates file content via libmagic against an
+      # allowlist (JPEG, PNG, WebP only). Returns the validated MIME string.
+      - ["app.services.file_storage", "Member[validate_mime_type].ReturnValue", "path-injection"]
