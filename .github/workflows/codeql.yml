@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
+      # Required for all workflows
       security-events: write
+      # Required for workflows in private repositories
       contents: read
       actions: read
 
@@ -95,7 +97,7 @@ jobs:
         path: sarif-results
         retention-days: 30
 
-    # Filter results for PR comments
+    # Filter results for PR comments (optional enhancement)
     - name: Filter SARIF for pull requests
       if: github.event_name == 'pull_request'
       uses: advanced-security/filter-sarif@f3b8118a9349d88f7b1c0c488476411145b6270d # v1
@@ -136,9 +138,9 @@ jobs:
           PYTHON_ERRORS=$(find sarif-results/codeql-results-python -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "error")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
           PYTHON_WARNINGS=$(find sarif-results/codeql-results-python -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "warning")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
           PYTHON_NOTES=$(find sarif-results/codeql-results-python -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "note")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
-          echo "- **HIGH (Errors)**: ${PYTHON_ERRORS:-0}" >> $GITHUB_STEP_SUMMARY
-          echo "- **MEDIUM (Warnings)**: ${PYTHON_WARNINGS:-0}" >> $GITHUB_STEP_SUMMARY
-          echo "- **LOW (Notes)**: ${PYTHON_NOTES:-0}" >> $GITHUB_STEP_SUMMARY
+          echo "- **HIGH (Errors)**: ${PYTHON_ERRORS:-0} 🔴" >> $GITHUB_STEP_SUMMARY
+          echo "- **MEDIUM (Warnings)**: ${PYTHON_WARNINGS:-0} 🟡" >> $GITHUB_STEP_SUMMARY
+          echo "- **LOW (Notes)**: ${PYTHON_NOTES:-0} 🔵" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
         fi
 
@@ -148,12 +150,12 @@ jobs:
           JS_ERRORS=$(find sarif-results/codeql-results-javascript -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "error")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
           JS_WARNINGS=$(find sarif-results/codeql-results-javascript -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "warning")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
           JS_NOTES=$(find sarif-results/codeql-results-javascript -name "*.sarif" -exec jq '[.runs[]?.results[]? | select(.level == "note")] | length' {} \; 2>/dev/null | awk '{s+=$1} END {print s}')
-          echo "- **HIGH (Errors)**: ${JS_ERRORS:-0}" >> $GITHUB_STEP_SUMMARY
-          echo "- **MEDIUM (Warnings)**: ${JS_WARNINGS:-0}" >> $GITHUB_STEP_SUMMARY
-          echo "- **LOW (Notes)**: ${JS_NOTES:-0}" >> $GITHUB_STEP_SUMMARY
+          echo "- **HIGH (Errors)**: ${JS_ERRORS:-0} 🔴" >> $GITHUB_STEP_SUMMARY
+          echo "- **MEDIUM (Warnings)**: ${JS_WARNINGS:-0} 🟡" >> $GITHUB_STEP_SUMMARY
+          echo "- **LOW (Notes)**: ${JS_NOTES:-0} 🔵" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
         fi
 
         echo "---" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**View detailed results**: Go to the Security tab -> Code scanning alerts" >> $GITHUB_STEP_SUMMARY
+        echo "**View detailed results**: Go to the Security tab → Code scanning alerts" >> $GITHUB_STEP_SUMMARY
