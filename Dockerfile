@@ -62,7 +62,7 @@ RUN pip install --no-cache-dir .
 # ==============================================================================
 FROM python:3.14-slim AS production
 
-LABEL org.opencontainers.image.frontend.builder="bun-1.3.5"
+LABEL org.opencontainers.image.frontend.builder="bun-1.3.11"
 
 WORKDIR /app
 
