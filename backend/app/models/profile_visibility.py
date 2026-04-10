@@ -31,8 +31,8 @@ class ProfileVisibility(Base, UUIDMixin, TimestampMixin):
     show_address: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
-    family: Mapped["Family"] = relationship(back_populates="profile_visibility_settings")
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    family: Mapped[Family] = relationship(back_populates="profile_visibility_settings")
 
     def __repr__(self) -> str:
         return f"<ProfileVisibility user={self.user_id} family={self.family_id}>"

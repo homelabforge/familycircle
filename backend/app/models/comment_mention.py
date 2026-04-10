@@ -31,8 +31,8 @@ class CommentMention(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    comment: Mapped["EventComment"] = relationship(foreign_keys=[comment_id])
-    mentioned_user: Mapped["User"] = relationship(foreign_keys=[mentioned_user_id])
+    comment: Mapped[EventComment] = relationship(foreign_keys=[comment_id])
+    mentioned_user: Mapped[User] = relationship(foreign_keys=[mentioned_user_id])
 
     def __repr__(self) -> str:
         return f"<CommentMention {self.mentioned_user_id} in {self.comment_id}>"

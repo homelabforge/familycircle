@@ -33,7 +33,7 @@ class EventRecurrence(Base, UUIDMixin, TimestampMixin):
     occurrences_created: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="recurrence")
+    event: Mapped[Event] = relationship(back_populates="recurrence")
 
     def __repr__(self) -> str:
         return f"<EventRecurrence {self.recurrence_type} for event={self.event_id}>"

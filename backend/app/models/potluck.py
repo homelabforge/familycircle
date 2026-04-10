@@ -1,6 +1,6 @@
 """Potluck contribution model."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -43,8 +43,8 @@ class PotluckItem(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="potluck_items")
-    claimed_by: Mapped[Optional["User"]] = relationship(foreign_keys=[claimed_by_id])
+    event: Mapped[Event] = relationship(back_populates="potluck_items")
+    claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id])
 
     def __repr__(self) -> str:
         claimed = f" (claimed by {self.claimed_by_id})" if self.claimed_by_id else ""

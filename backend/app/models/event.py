@@ -2,7 +2,7 @@
 
 import enum
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
@@ -118,67 +118,67 @@ class Event(Base, UUIDMixin, TimestampMixin):
     # Relationships — all use lazy="raise" (H1 fix).
     # Callers must explicitly selectinload() the relationships they need.
     # This prevents loading 16 relationships on every query.
-    family: Mapped["Family"] = relationship(back_populates="events", lazy="raise")
-    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id], lazy="raise")
-    rsvps: Mapped[list["EventRSVP"]] = relationship(
+    family: Mapped[Family] = relationship(back_populates="events", lazy="raise")
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="raise")
+    rsvps: Mapped[list[EventRSVP]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
-    potluck_items: Mapped[list["PotluckItem"]] = relationship(
+    potluck_items: Mapped[list[PotluckItem]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Type-specific detail relationships (one-to-one)
-    holiday_detail: Mapped[Optional["HolidayDetail"]] = relationship(
+    holiday_detail: Mapped[HolidayDetail | None] = relationship(
         back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
-    birthday_detail: Mapped[Optional["BirthdayDetail"]] = relationship(
+    birthday_detail: Mapped[BirthdayDetail | None] = relationship(
         back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
-    baby_shower_detail: Mapped[Optional["BabyShowerDetail"]] = relationship(
+    baby_shower_detail: Mapped[BabyShowerDetail | None] = relationship(
         back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
-    wedding_detail: Mapped[Optional["WeddingDetail"]] = relationship(
+    wedding_detail: Mapped[WeddingDetail | None] = relationship(
         back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
-    wedding_party_members: Mapped[list["WeddingPartyMember"]] = relationship(
+    wedding_party_members: Mapped[list[WeddingPartyMember]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Polls and comments — accessed via their own endpoints, not via Event
-    polls: Mapped[list["Poll"]] = relationship(
+    polls: Mapped[list[Poll]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
-    comments: Mapped[list["EventComment"]] = relationship(
+    comments: Mapped[list[EventComment]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Photos — accessed via their own endpoint, not via Event
-    photos: Mapped[list["EventPhoto"]] = relationship(
+    photos: Mapped[list[EventPhoto]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Baby shower updates — accessed via their own endpoint, not via Event
-    baby_shower_updates: Mapped[list["BabyShowerUpdate"]] = relationship(
+    baby_shower_updates: Mapped[list[BabyShowerUpdate]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Registry items — accessed via their own endpoint, not via Event
-    registry_items: Mapped[list["RegistryItem"]] = relationship(
+    registry_items: Mapped[list[RegistryItem]] = relationship(
         back_populates="event", lazy="raise", cascade="all, delete-orphan"
     )
 
     # Recurrence
-    recurrence: Mapped[Optional["EventRecurrence"]] = relationship(
+    recurrence: Mapped[EventRecurrence | None] = relationship(
         back_populates="event", lazy="raise", uselist=False, cascade="all, delete-orphan"
     )
 
     # Self-referential for sub-events
-    parent_event: Mapped[Optional["Event"]] = relationship(
+    parent_event: Mapped[Event | None] = relationship(
         remote_side="Event.id",
         foreign_keys=[parent_event_id],
         back_populates="sub_events",
     )
-    sub_events: Mapped[list["Event"]] = relationship(
+    sub_events: Mapped[list[Event]] = relationship(
         back_populates="parent_event", lazy="raise", cascade="all, delete-orphan"
     )
 
@@ -205,9 +205,9 @@ class EventRSVP(Base, UUIDMixin, TimestampMixin):
     status: Mapped[RSVPStatus] = mapped_column(SQLEnum(RSVPStatus), nullable=False)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="rsvps")
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
-    guests: Mapped[list["RSVPGuest"]] = relationship(
+    event: Mapped[Event] = relationship(back_populates="rsvps")
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    guests: Mapped[list[RSVPGuest]] = relationship(
         back_populates="rsvp", lazy="raise", cascade="all, delete-orphan"
     )
 

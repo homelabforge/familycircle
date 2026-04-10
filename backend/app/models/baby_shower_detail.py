@@ -36,7 +36,7 @@ class BabyShowerDetail(Base, UUIDMixin, TimestampMixin):
     is_gender_reveal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="baby_shower_detail")
+    event: Mapped[Event] = relationship(back_populates="baby_shower_detail")
 
     @property
     def display_parents(self) -> str:

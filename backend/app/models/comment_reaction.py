@@ -38,8 +38,8 @@ class CommentReaction(Base, UUIDMixin, TimestampMixin):
     emoji: Mapped[str] = mapped_column(String(10), nullable=False)
 
     # Relationships
-    comment: Mapped["EventComment"] = relationship(foreign_keys=[comment_id])
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    comment: Mapped[EventComment] = relationship(foreign_keys=[comment_id])
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
 
     def __repr__(self) -> str:
         return f"<CommentReaction {self.emoji} by {self.user_id} on {self.comment_id}>"

@@ -35,8 +35,8 @@ class PollTemplate(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    family: Mapped["Family | None"] = relationship(foreign_keys=[family_id])
-    created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_id])
+    family: Mapped[Family | None] = relationship(foreign_keys=[family_id])
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
 
     def __repr__(self) -> str:
         return f"<PollTemplate {self.name}>"

@@ -1,7 +1,7 @@
 """Registry item model for event gift registries."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -39,8 +39,8 @@ class RegistryItem(Base, UUIDMixin, TimestampMixin):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="registry_items")
-    claimed_by: Mapped[Optional["User"]] = relationship(foreign_keys=[claimed_by_id])
+    event: Mapped[Event] = relationship(back_populates="registry_items")
+    claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id])
 
     @property
     def is_claimed(self) -> bool:

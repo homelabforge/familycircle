@@ -28,7 +28,7 @@ class WeddingPartyPermission(Base, UUIDMixin, TimestampMixin):
     can_post_updates: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    member: Mapped["WeddingPartyMember"] = relationship(back_populates="permissions", uselist=False)
+    member: Mapped[WeddingPartyMember] = relationship(back_populates="permissions", uselist=False)
 
     def __repr__(self) -> str:
         return f"<WeddingPartyPermission member={self.member_id}>"

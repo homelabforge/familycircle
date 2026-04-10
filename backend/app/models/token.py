@@ -43,7 +43,7 @@ class Token(Base, UUIDMixin, TimestampMixin):
     token_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
 
     def __repr__(self) -> str:
         return f"<Token {self.token_type} for user={self.user_id}>"

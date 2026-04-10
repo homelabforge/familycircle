@@ -27,7 +27,7 @@ class RSVPGuest(Base, UUIDMixin, TimestampMixin):
     allergies: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships
-    rsvp: Mapped["EventRSVP"] = relationship(back_populates="guests")
+    rsvp: Mapped[EventRSVP] = relationship(back_populates="guests")
 
     def __repr__(self) -> str:
         return f"<RSVPGuest {self.guest_name} for rsvp={self.rsvp_id}>"

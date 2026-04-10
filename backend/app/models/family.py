@@ -28,13 +28,13 @@ class Family(Base, UUIDMixin, TimestampMixin):
     calendar_feed_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Relationships
-    memberships: Mapped[list["FamilyMembership"]] = relationship(
+    memberships: Mapped[list[FamilyMembership]] = relationship(
         back_populates="family", lazy="selectin", cascade="all, delete-orphan"
     )
-    events: Mapped[list["Event"]] = relationship(
+    events: Mapped[list[Event]] = relationship(
         back_populates="family", lazy="selectin", cascade="all, delete-orphan"
     )
-    profile_visibility_settings: Mapped[list["ProfileVisibility"]] = relationship(
+    profile_visibility_settings: Mapped[list[ProfileVisibility]] = relationship(
         back_populates="family", lazy="selectin", cascade="all, delete-orphan"
     )
 

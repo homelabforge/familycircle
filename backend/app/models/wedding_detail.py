@@ -1,7 +1,7 @@
 """Wedding event detail and party member models."""
 
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -48,7 +48,7 @@ class WeddingDetail(Base, UUIDMixin, TimestampMixin):
     sub_event_template: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="wedding_detail")
+    event: Mapped[Event] = relationship(back_populates="wedding_detail")
 
     @property
     def display_couple(self) -> str:
@@ -82,9 +82,9 @@ class WeddingPartyMember(Base, UUIDMixin, TimestampMixin):
     side: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="wedding_party_members")
-    user: Mapped[Optional["User"]] = relationship(foreign_keys=[user_id])
-    permissions: Mapped[Optional["WeddingPartyPermission"]] = relationship(
+    event: Mapped[Event] = relationship(back_populates="wedding_party_members")
+    user: Mapped[User | None] = relationship(foreign_keys=[user_id])
+    permissions: Mapped[WeddingPartyPermission | None] = relationship(
         back_populates="member", lazy="selectin", uselist=False, cascade="all, delete-orphan"
     )
 

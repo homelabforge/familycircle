@@ -33,8 +33,8 @@ class EventTemplate(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    family: Mapped["Family"] = relationship()
-    created_by: Mapped["User | None"] = relationship()
+    family: Mapped[Family] = relationship()
+    created_by: Mapped[User | None] = relationship()
 
     def __repr__(self) -> str:
         return f"<EventTemplate {self.name} family={self.family_id}>"

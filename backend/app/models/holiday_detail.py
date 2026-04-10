@@ -53,7 +53,7 @@ class HolidayDetail(Base, UUIDMixin, TimestampMixin):
     year: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="holiday_detail")
+    event: Mapped[Event] = relationship(back_populates="holiday_detail")
 
     @property
     def display_name(self) -> str:

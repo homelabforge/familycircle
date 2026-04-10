@@ -1,7 +1,7 @@
 """Baby shower update timeline model."""
 
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -50,9 +50,9 @@ class BabyShowerUpdate(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="baby_shower_updates")
-    photo: Mapped[Optional["EventPhoto"]] = relationship(foreign_keys=[photo_id])
-    posted_by: Mapped[Optional["User"]] = relationship(foreign_keys=[posted_by_id])
+    event: Mapped[Event] = relationship(back_populates="baby_shower_updates")
+    photo: Mapped[EventPhoto | None] = relationship(foreign_keys=[photo_id])
+    posted_by: Mapped[User | None] = relationship(foreign_keys=[posted_by_id])
 
     def __repr__(self) -> str:
         return f"<BabyShowerUpdate {self.update_type}: {self.title}>"

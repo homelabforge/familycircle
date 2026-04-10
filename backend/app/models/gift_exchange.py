@@ -27,8 +27,8 @@ class GiftExchangeAssignment(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    giver: Mapped["User"] = relationship(foreign_keys=[giver_id])
-    receiver: Mapped["User"] = relationship(foreign_keys=[receiver_id])
+    giver: Mapped[User] = relationship(foreign_keys=[giver_id])
+    receiver: Mapped[User] = relationship(foreign_keys=[receiver_id])
 
     def __repr__(self) -> str:
         return f"<GiftExchangeAssignment {self.giver_id} -> {self.receiver_id}>"
@@ -48,8 +48,8 @@ class GiftExchangeExclusion(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    giver: Mapped["User"] = relationship(foreign_keys=[giver_id])
-    receiver: Mapped["User"] = relationship(foreign_keys=[receiver_id])
+    giver: Mapped[User] = relationship(foreign_keys=[giver_id])
+    receiver: Mapped[User] = relationship(foreign_keys=[receiver_id])
 
     def __repr__(self) -> str:
         return f"<GiftExchangeExclusion {self.giver_id} <-> {self.receiver_id}>"
@@ -70,8 +70,8 @@ class GiftExchangeMessage(Base, UUIDMixin, TimestampMixin):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Relationships
-    sender: Mapped["User"] = relationship(foreign_keys=[sender_id])
-    recipient: Mapped["User"] = relationship(foreign_keys=[recipient_id])
+    sender: Mapped[User] = relationship(foreign_keys=[sender_id])
+    recipient: Mapped[User] = relationship(foreign_keys=[recipient_id])
 
     def __repr__(self) -> str:
         return f"<GiftExchangeMessage {self.sender_id} -> {self.recipient_id}>"

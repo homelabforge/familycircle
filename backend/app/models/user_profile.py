@@ -43,7 +43,7 @@ class UserProfile(Base, UUIDMixin, TimestampMixin):
     share_health_info: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship(back_populates="profile")
+    user: Mapped[User] = relationship(back_populates="profile")
 
     def __repr__(self) -> str:
         return f"<UserProfile for {self.user_id}>"

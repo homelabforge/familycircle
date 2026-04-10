@@ -43,8 +43,8 @@ class EventPhoto(Base, UUIDMixin, TimestampMixin):
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="photos")
-    uploaded_by: Mapped["User | None"] = relationship(foreign_keys=[uploaded_by_id])
+    event: Mapped[Event] = relationship(back_populates="photos")
+    uploaded_by: Mapped[User | None] = relationship(foreign_keys=[uploaded_by_id])
 
     def __repr__(self) -> str:
         return f"<EventPhoto {self.id} on {self.event_id}>"

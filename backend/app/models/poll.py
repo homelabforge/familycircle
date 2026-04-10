@@ -1,7 +1,7 @@
 """Poll models for family and event-scoped polls."""
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -45,13 +45,13 @@ class Poll(Base, UUIDMixin, TimestampMixin):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    family: Mapped["Family"] = relationship(foreign_keys=[family_id])
-    event: Mapped[Optional["Event"]] = relationship(back_populates="polls", foreign_keys=[event_id])
-    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
-    options: Mapped[list["PollOption"]] = relationship(
+    family: Mapped[Family] = relationship(foreign_keys=[family_id])
+    event: Mapped[Event | None] = relationship(back_populates="polls", foreign_keys=[event_id])
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
+    options: Mapped[list[PollOption]] = relationship(
         back_populates="poll", lazy="selectin", cascade="all, delete-orphan"
     )
-    votes: Mapped[list["PollVote"]] = relationship(
+    votes: Mapped[list[PollVote]] = relationship(
         back_populates="poll",
         lazy="selectin",
         cascade="all, delete-orphan",
@@ -86,8 +86,8 @@ class PollOption(Base, UUIDMixin, TimestampMixin):
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Relationships
-    poll: Mapped["Poll"] = relationship(back_populates="options")
-    votes: Mapped[list["PollVote"]] = relationship(
+    poll: Mapped[Poll] = relationship(back_populates="options")
+    votes: Mapped[list[PollVote]] = relationship(
         back_populates="option", lazy="selectin", cascade="all, delete-orphan"
     )
 
@@ -121,9 +121,9 @@ class PollVote(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    poll: Mapped["Poll"] = relationship(back_populates="votes", foreign_keys=[poll_id])
-    option: Mapped["PollOption"] = relationship(back_populates="votes")
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    poll: Mapped[Poll] = relationship(back_populates="votes", foreign_keys=[poll_id])
+    option: Mapped[PollOption] = relationship(back_populates="votes")
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
 
     def __repr__(self) -> str:
         return f"<PollVote {self.user_id} -> {self.option_id}>"

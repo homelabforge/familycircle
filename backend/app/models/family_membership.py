@@ -43,8 +43,8 @@ class FamilyMembership(Base, UUIDMixin, TimestampMixin):
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship(back_populates="family_memberships")
-    family: Mapped["Family"] = relationship(back_populates="memberships")
+    user: Mapped[User] = relationship(back_populates="family_memberships")
+    family: Mapped[Family] = relationship(back_populates="memberships")
 
     def __repr__(self) -> str:
         return f"<FamilyMembership {self.user_id} in {self.family_id} as {self.role}>"

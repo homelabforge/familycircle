@@ -1,7 +1,7 @@
 """User model - replaces Member for authentication."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -48,10 +48,10 @@ class User(Base, UUIDMixin, TimestampMixin):
     big_mode: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    family_memberships: Mapped[list["FamilyMembership"]] = relationship(
+    family_memberships: Mapped[list[FamilyMembership]] = relationship(
         back_populates="user", lazy="selectin", cascade="all, delete-orphan"
     )
-    profile: Mapped[Optional["UserProfile"]] = relationship(
+    profile: Mapped[UserProfile | None] = relationship(
         back_populates="user", lazy="selectin", uselist=False, cascade="all, delete-orphan"
     )
 

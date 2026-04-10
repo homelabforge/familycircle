@@ -37,15 +37,15 @@ class EventComment(Base, UUIDMixin, TimestampMixin):
     pinned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="comments")
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
-    reactions: Mapped[list["CommentReaction"]] = relationship(
+    event: Mapped[Event] = relationship(back_populates="comments")
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    reactions: Mapped[list[CommentReaction]] = relationship(
         back_populates="comment",
         lazy="selectin",
         cascade="all, delete-orphan",
         foreign_keys="CommentReaction.comment_id",
     )
-    mentions: Mapped[list["CommentMention"]] = relationship(
+    mentions: Mapped[list[CommentMention]] = relationship(
         back_populates="comment",
         lazy="selectin",
         cascade="all, delete-orphan",

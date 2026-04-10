@@ -19,7 +19,7 @@ class AssignmentResponse(BaseModel):
 
     receiver_id: str
     receiver_name: str
-    receiver_wishlist: list["WishlistItemResponse"]
+    receiver_wishlist: list[WishlistItemResponse]
 
 
 class ExclusionCreate(BaseModel):

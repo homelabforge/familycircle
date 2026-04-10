@@ -30,7 +30,7 @@ class WishlistItem(Base, UUIDMixin, TimestampMixin):
     )  # 1-5, 1 = most wanted
 
     # Relationships
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
 
     def __repr__(self) -> str:
         return f"<WishlistItem {self.name} (for {self.user_id})>"

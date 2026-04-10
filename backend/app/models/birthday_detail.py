@@ -1,7 +1,7 @@
 """Birthday event detail model."""
 
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,8 +38,8 @@ class BirthdayDetail(Base, UUIDMixin, TimestampMixin):
     theme: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Relationships
-    event: Mapped["Event"] = relationship(back_populates="birthday_detail")
-    birthday_person: Mapped[Optional["User"]] = relationship(foreign_keys=[birthday_person_id])
+    event: Mapped[Event] = relationship(back_populates="birthday_detail")
+    birthday_person: Mapped[User | None] = relationship(foreign_keys=[birthday_person_id])
 
     def __repr__(self) -> str:
         """Return string representation."""
