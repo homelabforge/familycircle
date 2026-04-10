@@ -38,6 +38,8 @@ RUN test -d dist && test -f dist/index.html
 # ==============================================================================
 FROM python:3.14-slim AS backend-builder
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /build
 
 # Install build dependencies
@@ -45,17 +47,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend requirements
-COPY backend/pyproject.toml ./
-
-# Create virtual environment and upgrade pip
+# Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip
 
-# Install the package and dependencies
+# Install dependencies from lockfile for reproducible builds
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --no-cache -r pyproject.toml
+
+# Copy backend code and install the project itself
 COPY backend/ ./
-RUN pip install --no-cache-dir .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --no-cache --no-deps .
 
 # ==============================================================================
 # Stage 3: Production
