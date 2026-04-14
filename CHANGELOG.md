@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-04-13
+
 ### Dev Dependencies
 - **@vitest/coverage-v8**: 4.1.2 → 4.1.4
 - **@vitest/ui**: 4.1.2 → 4.1.4
