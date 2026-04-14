@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dev Dependencies
+- **@vitest/coverage-v8**: 4.1.2 → 4.1.4
+- **@vitest/ui**: 4.1.2 → 4.1.4
+- **globals**: 17.4.0 → 17.5.0
+- **jsdom**: 29.0.1 → 29.0.2
+- **pyright**: 1.1.400 → 1.1.408
+- **pytest**: 9.0.2 → 9.0.3
+- **typescript-eslint**: 8.58.0 → 8.58.2
+- **vite**: 8.0.3 → 8.0.8
+- **vitest**: 4.1.2 → 4.1.4
+
+### App Dependencies
+- **@tanstack/react-query**: 5.96.2 → 5.99.0
+- **lucide-react**: 1.7.0 → 1.8.0
+- **react**: 19.2.4 → 19.2.5
+- **react-dom**: 19.2.4 → 19.2.5
+- **react-router-dom**: 7.14.0 → 7.14.1
+
+### Dockerfile Dependencies
+- **oven/bun**: 1.3.11-alpine → 1.3.12-alpine
+
+### HTTP Servers
+- **granian**: 2.7.2 → 2.7.3
+
 ## [3.2.0] - 2026-04-05
 
 ### Security
