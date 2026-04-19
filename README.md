@@ -2,9 +2,9 @@
 
 Self-hosted family event coordination with gift exchange, potluck management, and accessibility-first design for elderly users.
 
-[![Docker Build](https://github.com/homelabforge/familycircle/actions/workflows/docker-build.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/docker-build.yml)
-[![CodeQL](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml)
 [![CI](https://github.com/homelabforge/familycircle/actions/workflows/ci.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/codeql.yml)
+[![Publish](https://github.com/homelabforge/familycircle/actions/workflows/publish.yml/badge.svg)](https://github.com/homelabforge/familycircle/actions/workflows/publish.yml)
 
 [![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker&logoColor=white)](https://github.com/homelabforge/familycircle/pkgs/container/familycircle)
 [![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org)
