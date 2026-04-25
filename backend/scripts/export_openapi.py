@@ -61,6 +61,14 @@ finally:
     StaticFiles.__init__ = _orig_staticfiles_init  # type: ignore[assignment]
     _tmpdir.cleanup()
 
+# Pin info.version to a constant so the committed openapi.json doesn't drift
+# every time pyproject.toml is bumped. The runtime FastAPI app still serves
+# the real version via app.openapi(); this strip only affects the file fed
+# into openapi-typescript, which doesn't read info.version. Without this,
+# every release fails the api-types-freshness CI gate until someone
+# remembers to regenerate.
+schema.setdefault("info", {})["version"] = "0.0.0"
+
 output = json.dumps(schema, indent=2, sort_keys=True) + "\n"
 
 if len(sys.argv) < 2:

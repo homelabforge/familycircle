@@ -1,0 +1,33 @@
+# End-to-end test stack for FamilyCircle.
+# FamilyCircle is SQLite-only and does not need Docker access. Single
+# SQLite-backed instance from a freshly built image.
+
+services:
+  app:
+    image: familycircle:e2e
+    container_name: familycircle-e2e-app
+    environment:
+      # FamilyCircle's startup validator hard-exits without PUBLIC_BASE_URL.
+      # DEBUG=true bypasses the check so we can use request-derived URLs.
+      DEBUG: "true"
+    volumes:
+      - app-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  smoke:
+    image: python:3.14-slim
+    container_name: familycircle-e2e-smoke
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./smoke.py:/smoke.py:ro
+    entrypoint: ["sh", "-c", "pip install -q httpx && python /smoke.py \"$$@\"", "--"]
+
+volumes:
+  app-data:
