@@ -1,7 +1,11 @@
 # ==============================================================================
 # Stage 1: Frontend Builder
+# Bun version pinned by .bun-version, passed as BUN_VERSION build-arg.
+# Global ARG visible only to FROM lines; redeclared per-stage where used in LABEL/RUN.
 # ==============================================================================
-FROM oven/bun:1.3.12-alpine AS frontend-builder
+ARG BUN_VERSION=1.3.12
+
+FROM oven/bun:${BUN_VERSION}-alpine AS frontend-builder
 
 WORKDIR /build
 
@@ -66,7 +70,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ==============================================================================
 FROM python:3.14-slim AS production
 
-LABEL org.opencontainers.image.frontend.builder="bun-1.3.11"
+# Re-declare BUN_VERSION inside this stage — Docker ARG scope resets at every
+# FROM. Without this redeclaration, ${BUN_VERSION} expands to empty in LABEL.
+ARG BUN_VERSION
+
+LABEL org.opencontainers.image.frontend.builder="bun-${BUN_VERSION}"
 
 WORKDIR /app
 
