@@ -1,4 +1,4 @@
-# FamilyCircle E2E
+# FamilyCircle Release Smoke
 
 Hard release gate. Builds the production image, brings up a SQLite-backed
 FamilyCircle instance, and runs an HTTP smoke test.
@@ -6,7 +6,7 @@ FamilyCircle instance, and runs an HTTP smoke test.
 ## Run
 
 ```bash
-bash tests/e2e/run.sh
+bash tests/release-smoke/run.sh
 ```
 
 Takes ~60 seconds on a warm Docker cache (no Docker proxy or PG
@@ -22,5 +22,5 @@ Always tears down on exit.
 ## Knobs
 
 - `E2E_KEEP=1` — on failure, leave the stack up so you can poke at it.
-  Run `bash tests/e2e/teardown.sh` when done.
-- `E2E_NO_BUILD=1` — reuse the existing `familycircle:e2e` image.
+  Run `bash tests/release-smoke/teardown.sh` when done.
+- `E2E_NO_BUILD=1` — reuse the existing `familycircle:release-smoke` image.

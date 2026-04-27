@@ -5,7 +5,7 @@
 services:
   app:
     image: familycircle:e2e
-    container_name: familycircle-e2e-app
+    container_name: familycircle-release-smoke-app
     environment:
       # FamilyCircle's startup validator hard-exits without PUBLIC_BASE_URL.
       # DEBUG=true bypasses the check so we can use request-derived URLs.
@@ -21,7 +21,7 @@ services:
 
   smoke:
     image: python:3.14-slim
-    container_name: familycircle-e2e-smoke
+    container_name: familycircle-release-smoke-smoke
     depends_on:
       app:
         condition: service_healthy
