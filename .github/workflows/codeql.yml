@@ -20,5 +20,3 @@ permissions:
 jobs:
   codeql:
     uses: homelabforge/shared-workflows/.github/workflows/codeql.yml@v1.0.0
-    with:
-      enable-e2e: false
