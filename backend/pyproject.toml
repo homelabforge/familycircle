@@ -13,7 +13,7 @@ authors = [
 ]
 dependencies = [
     "fastapi>=0.135.3",
-    "granian>=2.7.3",
+    "granian>=2.7.4",
     "sqlalchemy[asyncio]>=2.0.48",
     "aiosqlite>=0.22.1",
     "pydantic[email]>=2.12.0",
