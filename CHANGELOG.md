@@ -13,8 +13,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallelized `AuthContext` bootstrap (`checkSetupStatus` and `me` via `Promise.allSettled`)
 - Added versioned service worker (`/sw.js?v=<APP_VERSION>`) and `/offline.html` fallback for PWA shell caching
 
-### Build
-- Bumped `.bun-version` 1.3.12 → 1.3.13 to match the rest of the homelab builds
+### Dev Dependencies
+- **@tailwindcss/vite**: 4.2.2 → 4.3.0
+- **@vitest/coverage-v8**: 4.1.4 → 4.1.6
+- **@vitest/ui**: 4.1.4 → 4.1.6
+- **coverage**: 7.13.5 → 7.14.0
+- **eslint**: 10.2.0 → 10.3.0
+- **eslint-plugin-react-hooks**: 7.0.1 → 7.1.1
+- **globals**: 17.5.0 → 17.6.0
+- **jsdom**: 29.0.2 → 29.1.1
+- **pyright**: 1.1.408 → 1.1.409
+- **ruff**: 0.15.10 → 0.15.12
+- **typescript**: 6.0.2 → 6.0.3
+- **typescript-eslint**: 8.58.2 → 8.59.3
+- **vite**: 8.0.8 → 8.0.12
+- **vitest**: 4.1.4 → 4.1.6
+
+### App Dependencies
+- **@tanstack/react-query**: 5.99.0 → 5.100.10
+- **certifi**: 2026.2.25 → 2026.4.22
+- **click**: 8.3.2 → 8.3.3
+- **fastapi**: 0.135.3 → 0.136.1
+- **greenlet**: 3.4.0 → 3.5.0
+- **icalendar**: 7.0.3 → 7.1.0
+- **idna**: 3.11 → 3.15
+- **lucide-react**: 1.8.0 → 1.14.0
+- **packaging**: 26.0 → 26.2
+- **pydantic**: 2.12.5 → 2.13.4
+- **pydantic-core**: 2.41.5 → 2.46.4
+- **pydantic-settings**: 2.13.1 → 2.14.1
+- **python-multipart**: 0.0.26 → 0.0.28
+- **react**: 19.2.5 → 19.2.6
+- **react-dom**: 19.2.5 → 19.2.6
+- **react-hook-form**: 7.72.1 → 7.75.0
+- **react-router-dom**: 7.14.1 → 7.15.0
+- **tailwindcss**: 4.2.2 → 4.3.0
+- **tzdata**: 2026.1 → 2026.2
+- **zod**: 4.3.6 → 4.4.3
+
+### Dockerfile Dependencies
+- **oven/bun**: 1.3.12-alpine → 1.3.14-alpine
 
 ## [3.2.1] - 2026-04-13
 
