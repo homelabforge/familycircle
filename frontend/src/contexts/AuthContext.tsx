@@ -34,19 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null)
   const prevRoleRef = useRef<string | undefined>(undefined)
 
+  // `checkSetupStatus` and `me` are dispatched in parallel: the previous
+  // version awaited the setup check before starting `/me`, which doubled
+  // time-to-interactive for an authenticated user. If `me` rejects (e.g. 401)
+  // we just clear the token — same as the sequential version. The setup
+  // status is independent of the auth result.
   const checkAuth = useCallback(async () => {
     try {
-      // First check if setup is needed
-      const setupStatus = await authApi.checkSetupStatus()
-      setNeedsSetup(setupStatus.needs_setup)
+      const [setupResult, meResult] = await Promise.allSettled([
+        authApi.checkSetupStatus(),
+        authApi.me(),
+      ])
 
-      // Always try /me — the httpOnly cookie handles auth
-      const u = await authApi.me()
-      setUser(u)
-    } catch {
-      // Not authenticated or token invalid
-      clearToken()
-      setUser(null)
+      if (setupResult.status === 'fulfilled') {
+        setNeedsSetup(setupResult.value.needs_setup)
+      }
+
+      if (meResult.status === 'fulfilled') {
+        setUser(meResult.value)
+      } else {
+        clearToken()
+        setUser(null)
+      }
     } finally {
       setIsLoading(false)
     }

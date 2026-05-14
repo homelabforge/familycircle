@@ -2,8 +2,16 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import pkg from './package.json' with { type: 'json' }
 
 export default defineConfig({
+  define: {
+    // Expose the app version as a compile-time constant so the service worker
+    // registration can namespace its caches per release (see main.tsx and
+    // public/sw.js). Hardcoded cache names produce the classic "white screen
+    // on restart" when chunk hashes change.
+    APP_VERSION: JSON.stringify(pkg.version),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

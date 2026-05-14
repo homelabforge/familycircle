@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 
 from app import __version__
 from app.api import (
@@ -85,9 +84,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rate limiting
+# Rate limiting — per-route `@limiter.limit(...)` decorators enforce the
+# limits inline; we deliberately do NOT register `SlowAPIMiddleware`. That
+# middleware is implemented on top of Starlette's `BaseHTTPMiddleware`, which
+# buffers the entire response body through an asyncio queue and breaks
+# streaming responses (event photo serving, large file responses).
 app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -127,7 +129,40 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # In container: /app/app/main.py -> /app/static
 STATIC_DIR = Path(__file__).parent.parent / "static"
 if STATIC_DIR.exists():
-    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+    # Vite emits content-hashed filenames under /assets (e.g. main-abc123.js),
+    # which are immutable for the life of the build. The `immutable` directive
+    # plus a year-long max-age stops browsers and Cloudflare from revalidating
+    # these on every navigation — the source of most post-deploy reload latency.
+    class ImmutableStaticFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            response = await super().get_response(path, scope)
+            if response.status_code == 200:
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            return response
+
+    app.mount(
+        "/assets",
+        ImmutableStaticFiles(directory=STATIC_DIR / "assets"),
+        name="assets",
+    )
+
+    # PWA assets that live in `frontend/public/` (and are copied to the root
+    # of `dist/` by Vite). These have to be explicit because the catch-all
+    # below would otherwise serve `index.html` for unknown paths — and the
+    # service worker registration will fail if `/sw.js` returns HTML instead
+    # of JavaScript. The SW script itself must not be long-cached; browsers
+    # also limit SW script caching to a max of 24h since Chrome 68.
+    @app.get("/sw.js", include_in_schema=False)
+    async def service_worker():
+        return FileResponse(
+            STATIC_DIR / "sw.js",
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-cache"},
+        )
+
+    @app.get("/offline.html", include_in_schema=False)
+    async def offline_page():
+        return FileResponse(STATIC_DIR / "offline.html", media_type="text/html")
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):

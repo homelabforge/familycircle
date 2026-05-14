@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+- Removed `SlowAPIMiddleware`; per-route `@limiter.limit(...)` decorators still enforce limits without buffering response bodies through `BaseHTTPMiddleware`'s asyncio queue
+- Added `Cache-Control: public, max-age=31536000, immutable` to Vite-hashed assets under `/assets`
+- Parallelized `AuthContext` bootstrap (`checkSetupStatus` and `me` via `Promise.allSettled`)
+- Added versioned service worker (`/sw.js?v=<APP_VERSION>`) and `/offline.html` fallback for PWA shell caching
+
+### Build
+- Bumped `.bun-version` 1.3.12 → 1.3.13 to match the rest of the homelab builds
+
 ## [3.2.1] - 2026-04-13
 
 ### Dev Dependencies
