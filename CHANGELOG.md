@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Bump FastAPI floor to >=0.136.3 to pull Starlette >=1.0.1 (CVE-2026-48710 BadHost header auth bypass)
+
 ### Performance
 - Removed `SlowAPIMiddleware`; per-route `@limiter.limit(...)` decorators still enforce limits without buffering response bodies through `BaseHTTPMiddleware`'s asyncio queue
 - Added `Cache-Control: public, max-age=31536000, immutable` to Vite-hashed assets under `/assets`
