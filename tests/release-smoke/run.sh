@@ -34,6 +34,11 @@ echo
 dc down -v --remove-orphans >/dev/null 2>&1 || true
 
 if [[ "${E2E_NO_BUILD:-0}" != "1" ]]; then
+  # Hermeticity: blow away any prior :release-smoke tag (and the legacy :e2e
+  # tag this compose.yml used to hardcode) so a stale image can't masquerade
+  # as a fresh build. Pattern from mygarage v2.27.1 fixup.
+  docker rmi familycircle:release-smoke familycircle:e2e >/dev/null 2>&1 || true
+
   echo "[e2e] Building $IMAGE from $REPO_ROOT ..."
   docker build -t "$IMAGE" "$REPO_ROOT" >/dev/null
   echo "[e2e] Build OK"
