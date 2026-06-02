@@ -304,6 +304,21 @@ async def logout(session: AsyncSession, token: str) -> None:
     )
 
 
+async def revoke_user_sessions(session: AsyncSession, user_id: str) -> None:
+    """Revoke ALL session tokens for a user (every device).
+
+    Used to withdraw access server-side — e.g. when a member is removed from
+    their active family. Leaves magic-link tokens untouched (password recovery
+    is a separate flow). Does not commit — caller handles the transaction.
+    """
+    await session.execute(
+        delete(Token).where(
+            Token.user_id == user_id,
+            Token.token_type == TokenType.SESSION,
+        )
+    )
+
+
 # ============ Password Management ============
 
 
@@ -527,7 +542,21 @@ async def register_with_family_code(
         if membership:
             return None, "You are already a member of this family. Please log in.", None
 
-        # Add existing user to family
+        # SECURITY (F1): the register flow must never mint a session for an
+        # existing account on the strength of an email + family code alone —
+        # that is account takeover. Prove control of the account by verifying
+        # the submitted password before linking the family. OIDC-only accounts
+        # (no local password_hash) cannot be account-linked here; they must log
+        # in first. Keep the failure message generic so it does not reveal
+        # whether the email exists or the password was simply wrong.
+        if not existing_user.password_hash:
+            return None, "Invalid email or password.", None
+        try:
+            ph.verify(existing_user.password_hash, password)
+        except VerifyMismatchError:
+            return None, "Invalid email or password.", None
+
+        # Password verified — safe to add the existing user to the family.
         await add_user_to_family(session, existing_user, family, display_name)
         existing_user.current_family_id = family.id
         token = await create_session(existing_user, session)
@@ -627,11 +656,17 @@ def get_user_families_info(user: User) -> list[dict]:
     """Get list of families for a user with their role."""
     families = []
     for membership in user.family_memberships:
+        # SECURITY (F4): family_code is the family's join secret. It must NOT
+        # ride along in general auth responses (/me, /login, /register,
+        # /switch-family, …) where every member could read and share it —
+        # that is also the reachability precondition for the register-takeover
+        # (F1). The code is disclosed only by the admin-only endpoints
+        # (/auth/family-code, /settings/family-code) and the super-admin
+        # AdminFamilyInfo listing.
         families.append(
             {
                 "id": membership.family.id,
                 "name": membership.family.name,
-                "family_code": membership.family.family_code,
                 "role": membership.role.value,
             }
         )

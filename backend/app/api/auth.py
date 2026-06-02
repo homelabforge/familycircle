@@ -30,6 +30,7 @@ from app.schemas.auth import (
 )
 from app.services import auth as auth_service
 from app.services.email import get_smtp_config, send_password_reset_email
+from app.services.permissions import permissions
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
@@ -123,9 +124,21 @@ async def get_optional_user(
 
 async def require_family_context(
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
 ) -> User:
-    """Require user to have an active family context."""
-    if not user.current_family_id:
+    """Require user to have a LIVE active family membership.
+
+    SECURITY (F2): a non-null ``current_family_id`` is not proof of access. A
+    member removed from a family keeps a stale id pointing at it, and routes
+    that only checked "is a family selected" would keep serving that family's
+    data after revocation. Verify an actual ``FamilyMembership`` still exists
+    so every route gated on family context re-checks live membership. Super
+    admins short-circuit true (matches ``is_family_member``). The response
+    shape is unchanged (same 400) so callers see no difference.
+    """
+    if not user.current_family_id or not await permissions.is_family_member(
+        db, user, user.current_family_id
+    ):
         raise HTTPException(
             status_code=400,
             detail="Please select a family first",
@@ -402,16 +415,18 @@ async def admin_reset_password(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # If not super admin, verify target is in same family
-    if not admin.is_super_admin:
-        target_membership = await auth_service.get_user_membership(
-            db, target_user.id, admin.active_family_id
+    # SECURITY (N1): a family admin may reset only ordinary MEMBER passwords —
+    # never a super admin's or a peer admin's (which would seize that account).
+    # The full policy (super-admin bypass, same-family, privilege guard) lives
+    # in PermissionService so it is shared and unit-testable. Keep the message
+    # generic so it does not reveal the target's role.
+    if not await permissions.can_reset_user_password(
+        db, admin, target_user, admin.active_family_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="You can only reset passwords for members of your family",
         )
-        if not target_membership:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only reset passwords for members of your family",
-            )
 
     await auth_service.set_password(db, target_user, request.new_password)
 

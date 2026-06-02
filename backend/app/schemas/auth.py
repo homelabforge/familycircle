@@ -4,11 +4,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class FamilyInfo(BaseModel):
-    """Family basic info for listing."""
+    """Family basic info for listing.
+
+    SECURITY (F4): deliberately omits ``family_code``. This schema is reused by
+    ``UserResponse`` / ``UserWithFamilyContext`` and serialized on every general
+    auth response (``/me``, ``/login``, ``/register``, ``/switch-family``), so it
+    must not carry the family join secret. The code is exposed only via the
+    admin-only endpoints and ``AdminFamilyInfo``.
+    """
 
     id: str
     name: str
-    family_code: str
     role: str  # admin or member
 
     model_config = ConfigDict(from_attributes=True)
