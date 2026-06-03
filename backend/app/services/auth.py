@@ -32,6 +32,15 @@ def generate_family_code() -> str:
     return f"{letters}-{numbers}"
 
 
+def generate_calendar_feed_token() -> str:
+    """Generate a high-entropy bearer token for a family's iCal feed URL.
+
+    The token is the only auth on the public feed (CLAUDE.md), so use the
+    full CSPRNG width. Shared by feed-URL creation and rotation.
+    """
+    return secrets.token_urlsafe(48)
+
+
 # ============ Settings ============
 
 
@@ -319,6 +328,17 @@ async def revoke_user_sessions(session: AsyncSession, user_id: str) -> None:
     )
 
 
+async def revoke_all_user_tokens(session: AsyncSession, user_id: str) -> None:
+    """Revoke EVERY token for a user — sessions and outstanding magic links.
+
+    Used when the user's credential itself changes (password change / admin
+    reset): all existing sessions are suspect and any live magic-link reset
+    token must not remain usable. Does not commit — caller handles the
+    transaction.
+    """
+    await session.execute(delete(Token).where(Token.user_id == user_id))
+
+
 # ============ Password Management ============
 
 
@@ -353,17 +373,25 @@ async def set_password(session: AsyncSession, user: User, password: str) -> None
 
 async def change_password(
     session: AsyncSession, user: User, current_password: str, new_password: str
-) -> bool:
-    """Change password (requires current password)."""
+) -> str | None:
+    """Change password (requires current password).
+
+    SECURITY (F5): on success, invalidate every existing token (all devices +
+    any outstanding magic-link reset) because the old credential is gone, then
+    mint one fresh session so the current device stays logged in. Returns the
+    new session token, or None if the current password is wrong / missing.
+    """
     if not user.password_hash:
-        return False
+        return None
 
     try:
         ph.verify(user.password_hash, current_password)
-        user.password_hash = ph.hash(new_password)
-        return True
     except VerifyMismatchError:
-        return False
+        return None
+
+    user.password_hash = ph.hash(new_password)
+    await revoke_all_user_tokens(session, user.id)
+    return await create_session(user, session)
 
 
 # ============ Magic Link (Password Recovery) ============
@@ -423,7 +451,7 @@ async def verify_magic_token_and_reset_password(
         return None, None
 
     # Delete ALL tokens for this user (sessions + magic links)
-    await session.execute(delete(Token).where(Token.user_id == user.id))
+    await revoke_all_user_tokens(session, user.id)
 
     # Set new password
     user.password_hash = ph.hash(new_password)

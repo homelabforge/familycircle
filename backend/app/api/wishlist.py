@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user, require_family_context
 from app.db import get_db_session
-from app.models import FamilyMembership, User, WishlistItem
+from app.models import Event, FamilyMembership, User, WishlistItem
 from app.models.gift_exchange import GiftExchangeAssignment
 from app.services.permissions import permissions
 
@@ -203,14 +203,24 @@ async def get_user_wishlist(
             "items": [item_to_dict(item) for item in items],
         }
 
-    # Check if assigned to this user in any Gift Exchange
+    # Check if assigned to give to this user in a LIVE gift exchange.
+    # SECURITY (F7): an assignment row alone is not enough — event_id is an
+    # unconstrained string, so a stale/deleted/cross-family/non-gift-exchange
+    # assignment must NOT keep unlocking the target's wishlist. Join the
+    # assignment to its Event and require a current, same-family, gift-exchange,
+    # non-cancelled event.
     assignment_result = await db.execute(
-        select(GiftExchangeAssignment).where(
+        select(GiftExchangeAssignment)
+        .join(Event, Event.id == GiftExchangeAssignment.event_id)
+        .where(
             GiftExchangeAssignment.giver_id == user.id,
             GiftExchangeAssignment.receiver_id == user_id,
+            Event.family_id == user.active_family_id,
+            Event.has_gift_exchange.is_(True),
+            Event.cancelled_at.is_(None),
         )
     )
-    assignment = assignment_result.scalar_one_or_none()
+    assignment = assignment_result.scalars().first()
 
     if not assignment:
         raise HTTPException(

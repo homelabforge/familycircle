@@ -1,7 +1,6 @@
 """Calendar API endpoints — iCal export and family feed."""
 
 import logging
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -13,6 +12,7 @@ from app.api.auth import require_family_context
 from app.api.event_helpers import resolve_event_or_404
 from app.db import get_db_session
 from app.models import Event, Family, User
+from app.services import auth as auth_service
 from app.services.icalendar_service import generate_family_feed, generate_single_event_ics
 from app.services.permissions import permissions
 
@@ -74,7 +74,13 @@ async def family_calendar_feed(
         media_type=ICS_CONTENT_TYPE,
         headers={
             "Content-Disposition": f'inline; filename="{family.name}_calendar.ics"',
-            "Cache-Control": "public, max-age=900",  # 15 min cache
+            # SECURITY (F8): the feed token is a bearer secret carried in the URL
+            # path. A shared/CDN cache (Cloudflare) would otherwise retain the
+            # token-bearing response for up to 15 min and keep serving it after
+            # the token is rotated on member removal — defeating revocation.
+            # iCal clients poll on their own schedule and do not rely on HTTP
+            # caching, so no-store is safe here.
+            "Cache-Control": "private, no-store",
         },
     )
 
@@ -92,7 +98,7 @@ async def get_feed_url(
 
     # Generate token if not set
     if not family.calendar_feed_token:
-        family.calendar_feed_token = uuid.uuid4().hex + uuid.uuid4().hex[:32]
+        family.calendar_feed_token = auth_service.generate_calendar_feed_token()
         await db.commit()
 
     return {
@@ -118,7 +124,7 @@ async def regenerate_feed_token(
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
 
-    family.calendar_feed_token = uuid.uuid4().hex + uuid.uuid4().hex[:32]
+    family.calendar_feed_token = auth_service.generate_calendar_feed_token()
     await db.commit()
 
     return {

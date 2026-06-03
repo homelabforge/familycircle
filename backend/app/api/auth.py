@@ -388,19 +388,25 @@ async def reset_password(
 @router.post("/change-password")
 async def change_password(
     request: ChangePasswordRequest,
+    response: Response,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
     """Change password (requires current password)."""
-    success = await auth_service.change_password(
+    # SECURITY (F5): a successful change revokes every existing session (all
+    # other devices) and any outstanding magic-link token; the service mints one
+    # fresh session for the current device, which we re-cookie here so the caller
+    # stays logged in.
+    new_session_token = await auth_service.change_password(
         db, user, request.current_password, request.new_password
     )
-    if not success:
+    if not new_session_token:
         raise HTTPException(
             status_code=400,
             detail="Current password is incorrect",
         )
 
+    _set_session_cookie(response, new_session_token)
     return {"message": "Password changed successfully"}
 
 
@@ -429,6 +435,10 @@ async def admin_reset_password(
         )
 
     await auth_service.set_password(db, target_user, request.new_password)
+    # SECURITY (F5): an admin reset must actually lock the target out — revoke
+    # all of their tokens (existing sessions + any live magic-link) so the new
+    # password is the only way back in.
+    await auth_service.revoke_all_user_tokens(db, target_user.id)
 
     return {"message": "Password reset successfully"}
 

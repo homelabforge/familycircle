@@ -58,10 +58,20 @@ async def add_exclusion(
     return exclusion
 
 
-async def remove_exclusion(session: AsyncSession, exclusion_id: str) -> bool:
-    """Remove an exclusion rule."""
+async def remove_exclusion(session: AsyncSession, exclusion_id: str, event_id: str) -> bool:
+    """Remove an exclusion rule, scoped to its event.
+
+    SECURITY (F6): the caller authorizes a specific path event_id; the delete
+    must match on BOTH the exclusion id AND that event_id, or a manager of
+    event A could delete an exclusion belonging to event B by guessing its id
+    (cross-event/family IDOR). This is the shared sink — scope it here, not at
+    the route.
+    """
     result = await session.execute(
-        select(GiftExchangeExclusion).where(GiftExchangeExclusion.id == exclusion_id)
+        select(GiftExchangeExclusion).where(
+            GiftExchangeExclusion.id == exclusion_id,
+            GiftExchangeExclusion.event_id == event_id,
+        )
     )
     exclusion = result.scalar_one_or_none()
     if exclusion:

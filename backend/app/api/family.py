@@ -350,6 +350,17 @@ async def remove_member(
 
     await auth_service.revoke_user_sessions(db, user_id)
 
+    # SECURITY (F8): the family iCal feed is authed solely by a bearer token in
+    # the URL, which the removed member still holds — session revocation does not
+    # touch it. Rotate it so their subscription stops resolving at the origin.
+    # The token is family-wide, so every remaining member must re-add the feed
+    # URL: accepted trade-off for immediate, automatic revocation (owner decision
+    # 2026-06-02). Paired with the feed's no-store header so no CDN keeps serving
+    # the old token after rotation.
+    family = await auth_service.get_family_by_id(db, admin.active_family_id)
+    if family and family.calendar_feed_token:
+        family.calendar_feed_token = auth_service.generate_calendar_feed_token()
+
     await db.commit()
 
     return {"message": f"{display_name} has been removed from the family"}

@@ -274,7 +274,7 @@ async def remove_exclusion(
             detail="Only family admins or event creators can remove exclusion rules",
         )
 
-    success = await ss_service.remove_exclusion(db, exclusion_id)
+    success = await ss_service.remove_exclusion(db, exclusion_id, event_id)
 
     if not success:
         raise HTTPException(
