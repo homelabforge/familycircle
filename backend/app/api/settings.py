@@ -89,12 +89,19 @@ async def get_settings(
     if not user:
         return {"settings": public_settings}
 
-    # Get family settings if user has a current family
+    # Get family settings if user has a LIVE current family.
+    # SECURITY (F2 follow-up): this route uses get_optional_user and reads the
+    # family context directly, bypassing require_family_context. Re-check live
+    # membership so a removed member with a stale current_family_id cannot keep
+    # reading their old family's settings. (Also use current_family_id, the
+    # nullable column, not the active_family_id property which raises on None.)
     family_settings = {}
-    if user.active_family_id:
+    if user.current_family_id and await permissions.is_family_member(
+        db, user, user.current_family_id
+    ):
         family_settings = {
             "theme_color": (
-                await get_family_setting(db, user.active_family_id, "theme_color") or "teal"
+                await get_family_setting(db, user.current_family_id, "theme_color") or "teal"
             ),
         }
 

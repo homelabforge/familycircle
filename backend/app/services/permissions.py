@@ -130,7 +130,13 @@ class PermissionService:
         """
         Check if admin can reset another user's password.
         - Super admin can reset anyone's password
-        - Family admin can reset passwords for their family members
+        - A family admin can reset ONLY ordinary MEMBER passwords in their family
+
+        SECURITY (N1): a family admin must NOT be able to reset a super admin's
+        or a peer admin's password — the bootstrap super admin is an ordinary
+        ADMIN member of their family, so allowing it would let a family admin
+        seize a privileged account. Privilege guards live here (shared,
+        unit-testable) rather than inline in the route.
         """
         if admin.is_super_admin:
             return True
@@ -146,7 +152,16 @@ class PermissionService:
                 FamilyMembership.family_id == family_id,
             )
         )
-        return result.scalar_one_or_none() is not None
+        target_membership = result.scalar_one_or_none()
+        if target_membership is None:
+            return False
+
+        # A family admin may reset only MEMBER passwords — never a super admin
+        # or a peer admin.
+        if target_user.is_super_admin or target_membership.role == FamilyRole.ADMIN:
+            return False
+
+        return True
 
     @staticmethod
     async def get_user_role_in_family(

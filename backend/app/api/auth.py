@@ -1,5 +1,6 @@
 """Authentication endpoints - login, register, password management."""
 
+import logging
 import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
@@ -30,6 +31,9 @@ from app.schemas.auth import (
 )
 from app.services import auth as auth_service
 from app.services.email import get_smtp_config, send_password_reset_email
+from app.services.permissions import permissions
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
@@ -61,6 +65,30 @@ def _clear_session_cookie(response: Response) -> None:
         samesite="lax",
         path="/",
     )
+
+
+async def _send_password_reset_email_bg(
+    to_email: str, reset_token: str, base_url: str, expiry_days: int
+) -> None:
+    """Send a password-reset email from a BackgroundTask with its own DB session.
+
+    The request-scoped session is closed once the response is sent, so background
+    work must open its own session (mirrors send_notification_background).
+    Best-effort: failures are logged, never surfaced to the caller (F13).
+    """
+    from app.db import async_session_maker
+
+    async with async_session_maker() as session:
+        try:
+            await send_password_reset_email(
+                db=session,
+                to_email=to_email,
+                reset_token=reset_token,
+                base_url=base_url,
+                expiry_days=expiry_days,
+            )
+        except Exception:
+            logger.error("Password reset email failed", exc_info=True)
 
 
 # ============ Dependencies ============
@@ -123,9 +151,21 @@ async def get_optional_user(
 
 async def require_family_context(
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
 ) -> User:
-    """Require user to have an active family context."""
-    if not user.current_family_id:
+    """Require user to have a LIVE active family membership.
+
+    SECURITY (F2): a non-null ``current_family_id`` is not proof of access. A
+    member removed from a family keeps a stale id pointing at it, and routes
+    that only checked "is a family selected" would keep serving that family's
+    data after revocation. Verify an actual ``FamilyMembership`` still exists
+    so every route gated on family context re-checks live membership. Super
+    admins short-circuit true (matches ``is_family_member``). The response
+    shape is unchanged (same 400) so callers see no difference.
+    """
+    if not user.current_family_id or not await permissions.is_family_member(
+        db, user, user.current_family_id
+    ):
         raise HTTPException(
             status_code=400,
             detail="Please select a family first",
@@ -316,6 +356,7 @@ async def switch_family(
 async def forgot_password(
     request: Request,
     body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Request password reset email."""
@@ -334,9 +375,12 @@ async def forgot_password(
         smtp_config = await get_smtp_config(db)
 
         if smtp_config.is_configured:
-            # Send actual email
-            await send_password_reset_email(
-                db=db,
+            # SECURITY (F13): send off the request path so the response time does
+            # not depend on whether the account existed — the SMTP round-trip was
+            # the dominant timing oracle. (A residual DB-write asymmetry between
+            # the hit/miss paths remains and is accepted for the homelab model.)
+            background_tasks.add_task(
+                _send_password_reset_email_bg,
                 to_email=body.email,
                 reset_token=token,
                 base_url=base_url,
@@ -375,19 +419,25 @@ async def reset_password(
 @router.post("/change-password")
 async def change_password(
     request: ChangePasswordRequest,
+    response: Response,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
     """Change password (requires current password)."""
-    success = await auth_service.change_password(
+    # SECURITY (F5): a successful change revokes every existing session (all
+    # other devices) and any outstanding magic-link token; the service mints one
+    # fresh session for the current device, which we re-cookie here so the caller
+    # stays logged in.
+    new_session_token = await auth_service.change_password(
         db, user, request.current_password, request.new_password
     )
-    if not success:
+    if not new_session_token:
         raise HTTPException(
             status_code=400,
             detail="Current password is incorrect",
         )
 
+    _set_session_cookie(response, new_session_token)
     return {"message": "Password changed successfully"}
 
 
@@ -402,18 +452,24 @@ async def admin_reset_password(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # If not super admin, verify target is in same family
-    if not admin.is_super_admin:
-        target_membership = await auth_service.get_user_membership(
-            db, target_user.id, admin.active_family_id
+    # SECURITY (N1): a family admin may reset only ordinary MEMBER passwords —
+    # never a super admin's or a peer admin's (which would seize that account).
+    # The full policy (super-admin bypass, same-family, privilege guard) lives
+    # in PermissionService so it is shared and unit-testable. Keep the message
+    # generic so it does not reveal the target's role.
+    if not await permissions.can_reset_user_password(
+        db, admin, target_user, admin.active_family_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="You can only reset passwords for members of your family",
         )
-        if not target_membership:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only reset passwords for members of your family",
-            )
 
     await auth_service.set_password(db, target_user, request.new_password)
+    # SECURITY (F5): an admin reset must actually lock the target out — revoke
+    # all of their tokens (existing sessions + any live magic-link) so the new
+    # password is the only way back in.
+    await auth_service.revoke_all_user_tokens(db, target_user.id)
 
     return {"message": "Password reset successfully"}
 
@@ -614,10 +670,13 @@ async def regenerate_family_code(
 async def send_magic_link(
     request: Request,
     body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Send a magic link for password recovery (backwards compat)."""
-    return await forgot_password(request=request, body=body, db=db)
+    return await forgot_password(
+        request=request, body=body, background_tasks=background_tasks, db=db
+    )
 
 
 # Alias for backwards compatibility

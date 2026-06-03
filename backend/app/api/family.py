@@ -324,6 +324,43 @@ async def remove_member(
         await db.delete(visibility)
 
     await db.delete(membership)
+
+    # SECURITY (F2): a deleted membership leaves the removed user's
+    # current_family_id dangling — it still points at this family, and the FK
+    # is ondelete=SET NULL only on *family* deletion, never on membership
+    # removal. Clean up before commit so the revocation actually takes effect:
+    #   1. If their active context was this family, switch it to one they still
+    #      belong to (the last-membership guard above guarantees ≥1 remains).
+    #      Mirrors the auto-switch on family delete; never NULL it out while a
+    #      valid family remains (that strands multi-family users).
+    #   2. Revoke their session tokens. verify_password never resets
+    #      current_family_id, so without this a fresh login would re-stale the
+    #      context against the family they were just removed from.
+    target_user = await auth_service.get_user_by_id(db, user_id)
+    if target_user and target_user.current_family_id == admin.active_family_id:
+        remaining_result = await db.execute(
+            select(FamilyMembership.family_id)
+            .where(
+                FamilyMembership.user_id == user_id,
+                FamilyMembership.family_id != admin.active_family_id,
+            )
+            .limit(1)
+        )
+        target_user.current_family_id = remaining_result.scalar_one_or_none()
+
+    await auth_service.revoke_user_sessions(db, user_id)
+
+    # SECURITY (F8): the family iCal feed is authed solely by a bearer token in
+    # the URL, which the removed member still holds — session revocation does not
+    # touch it. Rotate it so their subscription stops resolving at the origin.
+    # The token is family-wide, so every remaining member must re-add the feed
+    # URL: accepted trade-off for immediate, automatic revocation (owner decision
+    # 2026-06-02). Paired with the feed's no-store header so no CDN keeps serving
+    # the old token after rotation.
+    family = await auth_service.get_family_by_id(db, admin.active_family_id)
+    if family and family.calendar_feed_token:
+        family.calendar_feed_token = auth_service.generate_calendar_feed_token()
+
     await db.commit()
 
     return {"message": f"{display_name} has been removed from the family"}

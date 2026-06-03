@@ -3,10 +3,12 @@
  */
 
 // User and Family types
+// SECURITY (F4): no family_code here — the join secret is not returned on
+// general auth responses. Admins read it from the admin-only family-code
+// endpoints (see settingsApi.getFamilyCode) / AdminFamilyInfo.
 export interface FamilyInfo {
   id: string
   name: string
-  family_code: string
   role: 'admin' | 'member'
 }
 

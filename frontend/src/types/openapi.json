@@ -887,12 +887,8 @@
         "type": "object"
       },
       "FamilyInfo": {
-        "description": "Family basic info for listing.",
+        "description": "Family basic info for listing.\n\nSECURITY (F4): deliberately omits ``family_code``. This schema is reused by\n``UserResponse`` / ``UserWithFamilyContext`` and serialized on every general\nauth response (``/me``, ``/login``, ``/register``, ``/switch-family``), so it\nmust not carry the family join secret. The code is exposed only via the\nadmin-only endpoints and ``AdminFamilyInfo``.",
         "properties": {
-          "family_code": {
-            "title": "Family Code",
-            "type": "string"
-          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -909,7 +905,6 @@
         "required": [
           "id",
           "name",
-          "family_code",
           "role"
         ],
         "title": "FamilyInfo",

@@ -2,7 +2,7 @@
 
 import random
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Event, FamilyMembership, User
@@ -58,10 +58,20 @@ async def add_exclusion(
     return exclusion
 
 
-async def remove_exclusion(session: AsyncSession, exclusion_id: str) -> bool:
-    """Remove an exclusion rule."""
+async def remove_exclusion(session: AsyncSession, exclusion_id: str, event_id: str) -> bool:
+    """Remove an exclusion rule, scoped to its event.
+
+    SECURITY (F6): the caller authorizes a specific path event_id; the delete
+    must match on BOTH the exclusion id AND that event_id, or a manager of
+    event A could delete an exclusion belonging to event B by guessing its id
+    (cross-event/family IDOR). This is the shared sink — scope it here, not at
+    the route.
+    """
     result = await session.execute(
-        select(GiftExchangeExclusion).where(GiftExchangeExclusion.id == exclusion_id)
+        select(GiftExchangeExclusion).where(
+            GiftExchangeExclusion.id == exclusion_id,
+            GiftExchangeExclusion.event_id == event_id,
+        )
     )
     exclusion = result.scalar_one_or_none()
     if exclusion:
@@ -69,6 +79,31 @@ async def remove_exclusion(session: AsyncSession, exclusion_id: str) -> bool:
         await session.commit()
         return True
     return False
+
+
+async def delete_event_gift_exchange_data(session: AsyncSession, event_id: str) -> None:
+    """Delete all gift-exchange rows for an event (assignments, exclusions, messages).
+
+    ``event_id`` on these tables is an unconstrained string with no FK, and the
+    app does not enable SQLite FK enforcement at runtime, so hard-deleting an
+    Event does NOT cascade to them. Call this from the event-delete path so a
+    deleted event leaves no dangling gift-exchange rows (F7 follow-up). Does not
+    commit — the caller's event-delete commit covers it atomically.
+    """
+    for model in (GiftExchangeAssignment, GiftExchangeExclusion, GiftExchangeMessage):
+        await session.execute(delete(model).where(model.event_id == event_id))
+
+
+async def delete_family_gift_exchange_data(session: AsyncSession, family_id: str) -> None:
+    """Delete gift-exchange rows for every event belonging to a family.
+
+    Family deletion ORM-cascades its events but cannot reach these FK-less,
+    event_id-keyed rows (same reason as delete_event_gift_exchange_data). Purge
+    them by sub-selecting the family's event ids. Does not commit.
+    """
+    family_event_ids = select(Event.id).where(Event.family_id == family_id)
+    for model in (GiftExchangeAssignment, GiftExchangeExclusion, GiftExchangeMessage):
+        await session.execute(delete(model).where(model.event_id.in_(family_event_ids)))
 
 
 async def get_assignments(session: AsyncSession, event_id: str) -> list[GiftExchangeAssignment]:

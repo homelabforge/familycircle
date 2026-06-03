@@ -275,7 +275,9 @@ class NotificationDispatcher:
 
                 results[service.service_name] = success
             except Exception as e:
-                logger.error("Error sending to %s: %s", service.service_name, e)
+                # F10: never stringify the raw exception here — a propagated
+                # httpx error would carry the secret-bearing destination URL.
+                logger.error("Error sending to %s: %s", service.service_name, type(e).__name__)
                 results[service.service_name] = False
             finally:
                 await service.close()

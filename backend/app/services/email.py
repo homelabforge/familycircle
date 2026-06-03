@@ -6,6 +6,7 @@ Handles sending emails for:
 - Event cancellation notifications
 """
 
+import html
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -255,13 +256,17 @@ async def send_family_invitation_email(
     """Send family invitation email with join code."""
     app_name = await get_app_name(db)
     join_url = f"{base_url}/login?join={family_code}"
+    # F12: escape user-controlled values for the HTML body only (the plain-text
+    # body and the subject are not HTML contexts and must stay raw).
+    inviter_html = html.escape(inviter_name)
+    family_html = html.escape(family_name)
 
     content = f"""
         <h2>You're Invited!</h2>
-        <p><strong>{inviter_name}</strong> has invited you to join <strong>{family_name}</strong> on {app_name}.</p>
+        <p><strong>{inviter_html}</strong> has invited you to join <strong>{family_html}</strong> on {app_name}.</p>
         <p>{app_name} helps families coordinate events, gift exchanges, potlucks, and more.</p>
         <p style="text-align: center;">
-            <a href="{join_url}" class="button">Join {family_name}</a>
+            <a href="{join_url}" class="button">Join {family_html}</a>
         </p>
         <p>Or use this family code when registering:</p>
         <p style="text-align: center;">
@@ -309,20 +314,26 @@ async def send_event_cancelled_email(
     """Send event cancellation notification."""
     app_name = await get_app_name(db)
 
+    # F12: escape user-controlled values for the HTML body (raw stays in the
+    # plain-text body / subject below).
+    recipient_html = html.escape(recipient_name)
+    event_title_html = html.escape(event_title)
+    cancelled_by_html = html.escape(cancelled_by)
+
     reason_html = ""
     reason_text = ""
     if cancellation_reason:
-        reason_html = f"<p><strong>Reason:</strong> {cancellation_reason}</p>"
+        reason_html = f"<p><strong>Reason:</strong> {html.escape(cancellation_reason)}</p>"
         reason_text = f"Reason: {cancellation_reason}"
 
     content = f"""
         <h2>Event Cancelled</h2>
-        <p>Hi {recipient_name},</p>
+        <p>Hi {recipient_html},</p>
         <div class="cancelled">
-            <p style="margin: 0;"><strong>{event_title}</strong> scheduled for <strong>{event_date}</strong> has been cancelled.</p>
+            <p style="margin: 0;"><strong>{event_title_html}</strong> scheduled for <strong>{event_date}</strong> has been cancelled.</p>
             {reason_html}
         </div>
-        <p>This event was cancelled by {cancelled_by}.</p>
+        <p>This event was cancelled by {cancelled_by_html}.</p>
         <p>We apologize for any inconvenience.</p>
     """
 

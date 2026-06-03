@@ -2299,10 +2299,14 @@ export interface components {
         /**
          * FamilyInfo
          * @description Family basic info for listing.
+         *
+         *     SECURITY (F4): deliberately omits ``family_code``. This schema is reused by
+         *     ``UserResponse`` / ``UserWithFamilyContext`` and serialized on every general
+         *     auth response (``/me``, ``/login``, ``/register``, ``/switch-family``), so it
+         *     must not carry the family join secret. The code is exposed only via the
+         *     admin-only endpoints and ``AdminFamilyInfo``.
          */
         FamilyInfo: {
-            /** Family Code */
-            family_code: string;
             /** Id */
             id: string;
             /** Name */

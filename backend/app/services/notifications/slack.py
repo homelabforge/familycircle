@@ -4,7 +4,7 @@ import logging
 
 import httpx
 
-from app.services.notifications.base import NotificationService
+from app.services.notifications.base import NotificationService, safe_http_error
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +69,10 @@ class SlackNotificationService(NotificationService):
             return False
 
         except httpx.HTTPStatusError as e:
-            logger.error("[slack] HTTP error: %s", e)
+            logger.error("[slack] send failed: %s", safe_http_error(e))
             return False
         except (httpx.ConnectError, httpx.TimeoutException) as e:
-            logger.error("[slack] Connection error: %s", e)
+            logger.error("[slack] send failed: %s", safe_http_error(e))
             return False
         except (ValueError, KeyError) as e:
             logger.error("[slack] Invalid data: %s", e)
@@ -91,4 +91,4 @@ class SlackNotificationService(NotificationService):
             return False, "Failed to send test notification"
 
         except Exception as e:
-            return False, f"Connection test failed: {str(e)}"
+            return False, f"Connection test failed: {safe_http_error(e)}"

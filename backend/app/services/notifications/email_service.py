@@ -1,5 +1,6 @@
 """Email notification service wrapping FamilyCircle's existing SMTP infrastructure."""
 
+import html
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -66,12 +67,17 @@ class EmailNotificationService(NotificationService):
                 "urgent": "#F44336",
             }.get(priority, "#4f46e5")
 
+            # F12: escape user-controlled content for the HTML body (the plain-text
+            # body above and the subject stay raw — they are not HTML contexts).
+            title_html = html.escape(title)
+            message_html = html.escape(message)
+
             body_html = f"""
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
     <div style="border-top: 3px solid {priority_color}; padding: 20px;">
-        <h2 style="color: {priority_color}; margin: 0 0 15px 0;">{title}</h2>
-        <p style="color: #333; line-height: 1.6;">{message}</p>
-        {f'<p><a href="{url}" style="color: {priority_color};">View Details</a></p>' if url else ""}
+        <h2 style="color: {priority_color}; margin: 0 0 15px 0;">{title_html}</h2>
+        <p style="color: #333; line-height: 1.6;">{message_html}</p>
+        {f'<p><a href="{html.escape(url)}" style="color: {priority_color};">View Details</a></p>' if url else ""}
     </div>
     <div style="text-align: center; padding: 15px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb;">
         Sent by FamilyCircle

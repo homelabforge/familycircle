@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
+from fastapi import BackgroundTasks
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
@@ -134,7 +135,9 @@ class TestMagicLinkArgWiring:
         req = _make_request()
         body = ForgotPasswordRequest(email="nobody@example.com")
 
-        result = await forgot_password(request=req, body=body, db=db)
+        result = await forgot_password(
+            request=req, body=body, background_tasks=BackgroundTasks(), db=db
+        )
         assert "message" in result
         assert "nobody@example.com" in result["message"]
 
@@ -158,7 +161,9 @@ class TestMagicLinkArgWiring:
 
         # This would crash with AttributeError('AsyncSession has no attribute base_url')
         # if send_magic_link were still passing db as req
-        result = await forgot_password(request=req, body=body, db=db)
+        result = await forgot_password(
+            request=req, body=body, background_tasks=BackgroundTasks(), db=db
+        )
         assert "message" in result
         # SMTP not configured, but DEBUG is not set → dev_token must NOT be returned
         assert "dev_token" not in result
