@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Authentication: registration verifies the password before linking an existing account; password change and admin reset invalidate existing sessions; family admins can no longer reset super-admin/peer-admin passwords; login and forgot-password hardened against timing-based account enumeration
+- Authorization: family context requires live membership, and member removal switches active family, revokes sessions, and rotates the calendar feed token; gift-exchange exclusion deletion and wishlist visibility scoped to a live same-family event; gift-exchange participants no longer expose member emails
+- Information disclosure: family join codes removed from general auth responses; calendar feed served `Cache-Control: private, no-store`; notification error logs and test responses no longer leak webhook/bot-token URLs
+- Output encoding: poll CSV export neutralizes spreadsheet formula injection; user content HTML-escaped in email and notification bodies
+
 ### Fixed
 - Service worker routes document-destination requests (browser/Cloudflare speculative prefetch of SPA routes) through the navigation fallback with a 5s timeout, so a cancelled/transient prefetch no longer surfaces as an "Uncaught (in promise) Failed to fetch"
 
