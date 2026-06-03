@@ -1,5 +1,6 @@
 """Authentication endpoints - login, register, password management."""
 
+import logging
 import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
@@ -32,6 +33,8 @@ from app.services import auth as auth_service
 from app.services.email import get_smtp_config, send_password_reset_email
 from app.services.permissions import permissions
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
@@ -62,6 +65,30 @@ def _clear_session_cookie(response: Response) -> None:
         samesite="lax",
         path="/",
     )
+
+
+async def _send_password_reset_email_bg(
+    to_email: str, reset_token: str, base_url: str, expiry_days: int
+) -> None:
+    """Send a password-reset email from a BackgroundTask with its own DB session.
+
+    The request-scoped session is closed once the response is sent, so background
+    work must open its own session (mirrors send_notification_background).
+    Best-effort: failures are logged, never surfaced to the caller (F13).
+    """
+    from app.db import async_session_maker
+
+    async with async_session_maker() as session:
+        try:
+            await send_password_reset_email(
+                db=session,
+                to_email=to_email,
+                reset_token=reset_token,
+                base_url=base_url,
+                expiry_days=expiry_days,
+            )
+        except Exception:
+            logger.error("Password reset email failed", exc_info=True)
 
 
 # ============ Dependencies ============
@@ -329,6 +356,7 @@ async def switch_family(
 async def forgot_password(
     request: Request,
     body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Request password reset email."""
@@ -347,9 +375,12 @@ async def forgot_password(
         smtp_config = await get_smtp_config(db)
 
         if smtp_config.is_configured:
-            # Send actual email
-            await send_password_reset_email(
-                db=db,
+            # SECURITY (F13): send off the request path so the response time does
+            # not depend on whether the account existed — the SMTP round-trip was
+            # the dominant timing oracle. (A residual DB-write asymmetry between
+            # the hit/miss paths remains and is accepted for the homelab model.)
+            background_tasks.add_task(
+                _send_password_reset_email_bg,
                 to_email=body.email,
                 reset_token=token,
                 base_url=base_url,
@@ -639,10 +670,13 @@ async def regenerate_family_code(
 async def send_magic_link(
     request: Request,
     body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Send a magic link for password recovery (backwards compat)."""
-    return await forgot_password(request=request, body=body, db=db)
+    return await forgot_password(
+        request=request, body=body, background_tasks=background_tasks, db=db
+    )
 
 
 # Alias for backwards compatibility

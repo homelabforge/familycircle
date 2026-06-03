@@ -5,7 +5,27 @@ import logging
 from abc import ABC, abstractmethod
 from types import TracebackType
 
+import httpx
+
 logger = logging.getLogger(__name__)
+
+
+def safe_http_error(exc: Exception) -> str:
+    """Describe an httpx error WITHOUT the secret-bearing request URL (CWE-532).
+
+    Slack/Discord webhook URLs carry the secret in the path, Telegram embeds the
+    bot token in the path, and gotify can carry a token in the query — and httpx
+    puts the full request URL in ``str(exc)``. Return only the status (or error
+    type) and the host, never the path/query, so notification error logs can't
+    leak the destination's credentials.
+    """
+    if isinstance(exc, httpx.HTTPStatusError):
+        detail = f"HTTP {exc.response.status_code}"
+    else:
+        detail = type(exc).__name__
+    request = getattr(exc, "request", None)
+    host = request.url.host if request is not None else "unknown"
+    return f"{detail} (host={host})"
 
 
 class NotificationService(ABC):
@@ -42,7 +62,11 @@ class NotificationService(ABC):
                     return True
             except Exception as e:
                 logger.warning(
-                    f"[{self.service_name}] Attempt {attempt + 1}/{max_attempts} failed: {e}"
+                    "[%s] Attempt %s/%s failed: %s",
+                    self.service_name,
+                    attempt + 1,
+                    max_attempts,
+                    safe_http_error(e),
                 )
 
             if attempt < max_attempts - 1:

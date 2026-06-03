@@ -30,7 +30,7 @@ export const giftExchangeApi = {
     api.get<{ messages: GiftExchangeMessage[] }>(`/gift-exchange/${eventId}/messages`),
 
   getParticipants: (eventId: string) =>
-    api.get<{ participants: { id: string; display_name: string; email: string }[] }>(
+    api.get<{ participants: { id: string; display_name: string }[] }>(
       `/gift-exchange/${eventId}/participants`
     ),
 }

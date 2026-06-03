@@ -364,12 +364,14 @@ async def get_participants(
 
     participants = await ss_service.get_participants(db, event_id, user.active_family_id)
 
+    # SECURITY (F11): do not leak member emails here — this endpoint ignored
+    # ProfileVisibility.show_email, and the participant picker only needs id +
+    # display_name. Email stays behind the visibility-gated member endpoints.
     return {
         "participants": [
             {
                 "id": str(u.id),
                 "display_name": membership.display_name,
-                "email": u.email,
             }
             for u, membership in participants
         ]

@@ -23,6 +23,7 @@ from app.models.wedding_detail import WeddingPartyMember
 from app.schemas.event import EventCreate, EventUpdate
 from app.schemas.wedding import WeddingPartyMemberCreate
 from app.services.email import get_smtp_config, send_event_cancelled_email
+from app.services.gift_exchange import delete_event_gift_exchange_data
 from app.services.notifications.fire import send_notification_background
 from app.services.permissions import permissions
 from app.services.recurrence import recurrence_to_dict
@@ -557,6 +558,10 @@ async def delete_event(
             detail="Cannot delete an event with RSVPs. Cancel it first.",
         )
 
+    # F7 follow-up: gift-exchange rows key off event_id as a bare string with no
+    # FK (and runtime FK enforcement is off), so they don't cascade on delete.
+    # Purge them explicitly so the deleted event leaves nothing dangling.
+    await delete_event_gift_exchange_data(db, event_id)
     await db.delete(event)
     await db.commit()
 

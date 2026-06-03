@@ -24,6 +24,10 @@ from app.models.token import Token, TokenType
 
 ph = PasswordHasher()
 
+# F13: a fixed argon2 hash (same params as real hashes) used to spend comparable
+# time on the login miss path so it does not leak account existence via timing.
+_DUMMY_PASSWORD_HASH = ph.hash("familycircle-timing-equalizer")
+
 
 def generate_family_code() -> str:
     """Generate a unique family code."""
@@ -249,6 +253,13 @@ async def delete_family(session: AsyncSession, family_id: str) -> tuple[str, lis
             alt_family_id  # None if no other families (shouldn't happen — orphan guard)
         )
 
+    # F7 follow-up: ORM cascade reaches memberships/events/visibility but NOT the
+    # FK-less, event_id-keyed gift-exchange rows — purge them before the cascade
+    # removes the events they reference.
+    from app.services.gift_exchange import delete_family_gift_exchange_data
+
+    await delete_family_gift_exchange_data(session, family_id)
+
     # Safe to delete — cascades handle memberships, events, visibility
     await session.delete(family)
     await session.flush()
@@ -352,6 +363,13 @@ async def verify_password(
     """
     user = await get_user_by_email_with_families(session, email)
     if not user or not user.password_hash:
+        # SECURITY (F13): run a dummy verify against a fixed hash so the
+        # account-missing path costs about the same as a real check, closing the
+        # login timing oracle that would otherwise reveal whether an email exists.
+        try:
+            ph.verify(_DUMMY_PASSWORD_HASH, password)
+        except VerifyMismatchError:
+            pass
         return None, None
 
     try:
