@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-06-03
+
 ### Security
 - Authentication: registration verifies the password before linking an existing account; password change and admin reset invalidate existing sessions; family admins can no longer reset super-admin/peer-admin passwords; login and forgot-password hardened against timing-based account enumeration
 - Authorization: family context requires live membership, and member removal switches active family, revokes sessions, and rotates the calendar feed token; gift-exchange exclusion deletion and wishlist visibility scoped to a live same-family event; gift-exchange participants no longer expose member emails
