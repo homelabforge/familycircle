@@ -18,9 +18,9 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "pydantic[email]>=2.13.4",
     "pydantic-settings>=2.6.0",
-    "python-multipart>=0.0.29",
+    "python-multipart>=0.0.30",
     "argon2-cffi>=23.1.0",
-    "aiosmtplib>=4.0.0",
+    "aiosmtplib>=5.1.1",
     "jinja2>=3.1.5",
     "httpx>=0.28.0",
     "apscheduler>=3.11.2",
@@ -35,7 +35,7 @@ dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
-    "pyright>=1.1.408",
+    "pyright>=1.1.410",
     "ruff>=0.15.15",
 ]
 
