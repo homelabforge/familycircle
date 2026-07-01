@@ -12,31 +12,31 @@ authors = [
     { name = "HomeLabForge", email = "contact@homelabforge.io" }
 ]
 dependencies = [
-    "fastapi>=0.136.3",
-    "granian>=2.7.5",
+    "fastapi>=0.139.0",
+    "granian>=2.7.8",
     "sqlalchemy[asyncio]>=2.0.50",
     "aiosqlite>=0.22.1",
     "pydantic[email]>=2.13.4",
     "pydantic-settings>=2.14.2",
-    "python-multipart>=0.0.31",
+    "python-multipart>=0.0.32",
     "argon2-cffi>=23.1.0",
-    "aiosmtplib>=5.1.1",
+    "aiosmtplib>=5.1.2",
     "jinja2>=3.1.5",
     "httpx>=0.28.0",
-    "apscheduler>=3.11.2",
+    "apscheduler>=3.11.3",
     "python-magic>=0.4.27",
-    "icalendar>=7.1.2",
+    "icalendar>=7.2.0",
     "python-dateutil>=2.9.0",
-    "slowapi>=0.1.9",
+    "slowapi>=0.1.10",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.0.3",
+    "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
-    "pyright>=1.1.410",
-    "ruff>=0.15.15",
+    "pyright>=1.1.411",
+    "ruff>=0.15.20",
 ]
 
 [tool.hatch.build.targets.wheel]
